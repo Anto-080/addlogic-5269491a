@@ -1,7 +1,7 @@
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Facebook, Linkedin, Mail, UserCheck } from "lucide-react";
+import { Globe, Briefcase, Mail, UserCheck } from "lucide-react";
 
 const MOCK_CONNECTIONS = [
   { name: "Dr. Sarah Chen", platform: "linkedin", interests: ["Biological Systems", "Biochem"], affinity: 92, avatar: "SC" },
