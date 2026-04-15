@@ -21,8 +21,8 @@ export default function Connections() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { icon: Facebook, label: "Facebook", desc: "Find friends with similar research interests" },
-            { icon: Linkedin, label: "LinkedIn", desc: "Connect with professionals in your tier" },
+            { icon: Globe, label: "Facebook", desc: "Find friends with similar research interests" },
+            { icon: Briefcase, label: "LinkedIn", desc: "Connect with professionals in your tier" },
             { icon: Mail, label: "Share ID Card", desc: "Exchange contact info with high-affinity matches" },
           ].map((item) => (
             <Card key={item.label} className="bg-card border-border/50 hover:border-primary/30 transition-colors cursor-pointer">
