@@ -50,19 +50,45 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">
-                  {available ? "Available to contacts" : "Do Not Disturb / Work in Progress"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Broadcast your status to friends and contacts connected via Facebook, LinkedIn, X and other platforms.
-                  Turn off when you're deep in a research session — they'll see a "Work in Progress" indicator instead of pinging you.
-                </p>
+              <div className="flex-1 flex items-start gap-3">
+                {/* Stylised icon: Smiley when available, Pacman Ghost when DND */}
+                <div className="shrink-0 mt-0.5">
+                  {available ? (
+                    // Smiley face — visible & friendly
+                    <svg viewBox="0 0 32 32" width="36" height="36" aria-label="Available smiley">
+                      <circle cx="16" cy="16" r="14" fill="hsl(var(--primary))" />
+                      <circle cx="11" cy="13" r="2" fill="hsl(var(--primary-foreground))" />
+                      <circle cx="21" cy="13" r="2" fill="hsl(var(--primary-foreground))" />
+                      <path d="M9 19 Q16 25 23 19" stroke="hsl(var(--primary-foreground))" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    // Pacman ghost — invisible / DND
+                    <svg viewBox="0 0 32 32" width="36" height="36" aria-label="Do not disturb ghost">
+                      <path
+                        d="M4 16 a12 12 0 0 1 24 0 V28 l-3 -2 -3 2 -3 -2 -3 2 -3 -2 -3 2 -3 -2 -3 2 Z"
+                        fill="hsl(var(--crimson))"
+                      />
+                      <circle cx="12" cy="15" r="2.4" fill="white" />
+                      <circle cx="20" cy="15" r="2.4" fill="white" />
+                      <circle cx="12.5" cy="15.5" r="1.1" fill="hsl(var(--background))" />
+                      <circle cx="20.5" cy="15.5" r="1.1" fill="hsl(var(--background))" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">
+                    {available ? "Available to contacts" : "Do Not Disturb / Work in Progress"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Broadcast your status to friends and contacts connected via Facebook, LinkedIn, X and other platforms.
+                    Turn off when you're deep in a research session — they'll see a "Work in Progress" indicator instead of pinging you.
+                  </p>
+                </div>
               </div>
               <Switch checked={available} onCheckedChange={setAvailable} />
             </div>
             <div className="bg-secondary/30 rounded-lg p-3 text-xs text-muted-foreground">
-              <strong className="text-foreground">Tip:</strong> the Data Collection & GPS Precision toggles now live on the Dashboard front page so you can flip them quickly between sessions.
+              <strong className="text-foreground">Tip:</strong> the merged Data Collection & GPS Precision toggle lives on the Dashboard front page so you can flip it quickly between sessions.
             </div>
           </CardContent>
         </Card>
