@@ -49,23 +49,26 @@ export default function Tiers() {
           </div>
         </Card>
 
-        {/* Seasonal spectrum tracker */}
+        {/* Seasonal spectrum tracker — HORIZONTAL */}
         <Card className="bg-card border-border/50 p-4">
           <div className="flex items-center gap-2 mb-3">
             <Activity className="h-4 w-4 text-primary" />
             <p className="text-sm font-semibold text-foreground">Seasonal Spectrum Tracker</p>
           </div>
-          <div className="flex gap-3">
-            <div className="tier-spectrum w-3 rounded-full shrink-0" style={{ minHeight: 360 }} />
-            <div className="flex-1 text-xs text-muted-foreground space-y-1">
-              <p><span className="text-foreground font-medium">Purple top</span> — Biological & systemically important science (locked).</p>
-              <p><span className="text-foreground font-medium">Green</span> — Ecology, finance.</p>
-              <p><span className="text-foreground font-medium">Blue</span> — Tech, art & culture.</p>
-              <p><span className="text-foreground font-medium">Pink → Peach</span> — News, entertainment, food, real estate, shopping, personal care.</p>
-              <p><span className="text-foreground font-medium">Orange</span> — Clothes, sports & eSports.</p>
-              <p><span className="text-foreground font-medium">Bloody red bottom</span> — Betting, adult (locked).</p>
-              <p className="pt-2 italic">Mid tiers re-rank gently every few seconds to simulate seasonal trend shifts.</p>
-            </div>
+          <div className="tier-spectrum w-full h-3 rounded-full mb-2" />
+          <div className="flex justify-between text-[10px] text-muted-foreground mb-3 px-1">
+            <span>Tier 1</span>
+            <span>Tier 17</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <p><span className="text-foreground font-medium">Purple</span> — Biological & systemic science (locked)</p>
+            <p><span className="text-foreground font-medium">Green</span> — Ecology, finance</p>
+            <p><span className="text-foreground font-medium">Azure → Blue</span> — Real Estate → Technological Advancements</p>
+            <p><span className="text-foreground font-medium">Peach</span> — Personal Shopping</p>
+            <p><span className="text-foreground font-medium">Pink</span> — Personal Care</p>
+            <p><span className="text-foreground font-medium">Orange</span> — Clothes, Sports & eSports</p>
+            <p className="sm:col-span-2"><span className="text-foreground font-medium">Bloody red</span> — Betting, adult (locked)</p>
+            <p className="sm:col-span-2 pt-2 italic">Mid tiers re-rank gently every few seconds to simulate seasonal trend shifts.</p>
           </div>
         </Card>
 
