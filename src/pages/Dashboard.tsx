@@ -114,39 +114,28 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Toggles row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="bg-card border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">Data Collection Consent</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Share anonymized usage with analyst partners. Unlocks <span className="text-primary">rewarded videos</span>, tailored coupons & offers.
-                  </p>
-                </div>
-                <Switch checked={dataConsent} onCheckedChange={setDataConsent} />
+        {/* Merged Data + GPS Precision Toggle */}
+        <Card className="bg-card border-border/50 glow-amber">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  Data Collection & GPS Precision Targeting
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Single switch — share anonymized usage <span className="text-foreground/80">and</span> live location with sponsor partners.
+                  Unlocks <span className="text-primary">premium-priced ads</span>, rewarded videos, tailored coupons, and a <span className="text-primary">bonus XP multiplier</span>.
+                  Sponsors pay top-rate for max accuracy. Heads up: <span className="text-foreground/80">drains battery faster</span> and increases unskippable video frequency.
+                </p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary" /> GPS Precision Targeting
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Share live location for <span className="text-primary">premium-priced ads</span> & a bonus XP multiplier.
-                    Sponsors pay top-rate for max accuracy. Heads up: <span className="text-foreground/80">drains battery faster</span> and increases unskippable video frequency.
-                  </p>
-                </div>
-                <Switch checked={gpsEnabled} onCheckedChange={setGpsEnabled} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              <Switch
+                checked={dataConsent && gpsEnabled}
+                onCheckedChange={(v) => { setDataConsent(v); setGpsEnabled(v); }}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Primary tier badge */}
         <Card className="bg-card border-border/50">
