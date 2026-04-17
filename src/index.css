@@ -78,20 +78,20 @@
     -webkit-text-fill-color: transparent;
   }
 
-  /* Organic / fluid amber XP fill — animated gradient sheen */
+  /* Organic / fluid Strong Amber XP fill (#A87E00) — animated gradient sheen */
   .xp-fluid {
     background: linear-gradient(
       90deg,
-      hsl(38 92% 45%) 0%,
-      hsl(43 96% 60%) 35%,
-      hsl(48 100% 70%) 50%,
-      hsl(43 96% 60%) 65%,
-      hsl(38 92% 45%) 100%
+      hsl(45 100% 22%) 0%,
+      hsl(45 100% 33%) 35%,
+      hsl(45 100% 45%) 50%,
+      hsl(45 100% 33%) 65%,
+      hsl(45 100% 22%) 100%
     );
     background-size: 200% 100%;
     animation: xp-flow 4s linear infinite;
     border-radius: 9999px;
-    box-shadow: inset 0 1px 2px hsl(48 100% 80% / 0.5), 0 0 12px hsl(38 92% 50% / 0.5);
+    box-shadow: inset 0 1px 2px hsl(45 100% 55% / 0.4), 0 0 12px hsl(45 100% 33% / 0.5);
   }
   @keyframes xp-flow {
     0%   { background-position: 0% 50%; }
