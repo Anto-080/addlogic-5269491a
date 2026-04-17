@@ -1,10 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
-import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS } from "@/lib/mockData";
+import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useState, useEffect } from "react";
-import { Zap, TrendingUp, Clock, Award, Star } from "lucide-react";
+import { Zap, TrendingUp, Clock, Award, Star, MapPin, ShieldAlert, Newspaper } from "lucide-react";
 
 function AnimatedCounter({ target, prefix = "$" }: { target: number; prefix?: string }) {
   const [val, setVal] = useState(0);
@@ -20,6 +19,7 @@ function AnimatedCounter({ target, prefix = "$" }: { target: number; prefix?: st
 
 export default function Dashboard() {
   const [dataConsent, setDataConsent] = useState(false);
+  const [gpsEnabled, setGpsEnabled] = useState(false);
   const [liveXp, setLiveXp] = useState(MOCK_EARNINGS.xp);
   const [liveMultiplier, setLiveMultiplier] = useState(MOCK_EARNINGS.currentMultiplier);
 
@@ -28,14 +28,16 @@ export default function Dashboard() {
       setLiveXp((v) => Math.min(v + Math.random() * 3, MOCK_EARNINGS.xpToNext));
       setLiveMultiplier((v) => {
         const jitter = (Math.random() - 0.5) * 0.1;
-        return Math.max(1, Math.min(14, v + jitter));
+        return Math.max(0.5, Math.min(10, v + jitter));
       });
     }, 2000);
     return () => clearInterval(interval);
   }, []);
 
   const xpPercent = (liveXp / MOCK_EARNINGS.xpToNext) * 100;
-  const primaryTier = TIERS[3]; // Tech tier as example
+  // Multiplier bar: 0.5x → 10x maps 0% → 100%
+  const multPercent = ((liveMultiplier - 0.5) / (10 - 0.5)) * 100;
+  const primaryTier = TIERS[3]; // Ecology
 
   return (
     <AppLayout>
@@ -68,7 +70,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Experience Bar */}
+        {/* Experience + Multiplier Bars */}
         <Card className="bg-card border-border/50 glow-amber">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -76,51 +78,124 @@ export default function Dashboard() {
               Experience Level {MOCK_EARNINGS.level}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">{Math.floor(liveXp).toLocaleString()} / {MOCK_EARNINGS.xpToNext.toLocaleString()} XP</span>
-              <span className="text-crimson font-semibold">x{liveMultiplier.toFixed(1)} Multiplier</span>
+              <span className="text-foreground/80 font-medium">{xpPercent.toFixed(1)}%</span>
             </div>
-            <div className="relative">
-              <Progress value={xpPercent} className="h-4 bg-secondary" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[10px] font-bold text-primary-foreground drop-shadow">{xpPercent.toFixed(1)}%</span>
+
+            {/* Organic XP bar */}
+            <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary/60">
+              <div
+                className="xp-fluid h-full transition-[width] duration-700 ease-out"
+                style={{ width: `${xpPercent}%` }}
+              />
+            </div>
+
+            {/* Crimson multiplier sub-bar */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[11px]">
+                <span className="text-muted-foreground">Active Multiplier</span>
+                <span className="font-semibold" style={{ color: "hsl(348 83% 60%)" }}>
+                  x{liveMultiplier.toFixed(2)} · range 0.5× – 10×
+                </span>
+              </div>
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary/40">
+                <div
+                  className="multiplier-fluid h-full transition-[width] duration-700 ease-out"
+                  style={{ width: `${multPercent}%` }}
+                />
               </div>
             </div>
+
             <p className="text-xs text-muted-foreground">
-              XP grows by <span className="text-crimson font-medium">time × tier multiplier</span>. Higher tier research = faster leveling.
-              Level unlocks bonuses, partnerships, and investment pools.
+              XP grows by <span className="text-foreground/90 font-medium">time × tier multiplier</span>. The crimson bar reflects your current tier multiplier — fills to max at Tier 1 (10×), minimum on Adult content (0.5×).
             </p>
           </CardContent>
         </Card>
 
-        {/* Tier Badge & Data Consent Row */}
+        {/* Toggles row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card className="bg-card border-border/50">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="text-3xl">{primaryTier.icon}</div>
-              <div>
-                <p className="text-xs text-muted-foreground">Primary Research Tier</p>
-                <p className="text-sm font-semibold text-foreground">{primaryTier.name}</p>
-                <p className="text-xs text-crimson">x{primaryTier.multiplier} earning multiplier</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border/50">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Data Consent</p>
-                  <p className="text-xs text-muted-foreground">
-                    {dataConsent ? "Sharing enabled — unlocks rewarded videos & tailored offers" : "Off — enable for rewarded videos & personalized ads"}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">Data Collection Consent</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Share anonymized usage with analyst partners. Unlocks <span className="text-primary">rewarded videos</span>, tailored coupons & offers.
                   </p>
                 </div>
                 <Switch checked={dataConsent} onCheckedChange={setDataConsent} />
               </div>
             </CardContent>
           </Card>
+
+          <Card className="bg-card border-border/50">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" /> GPS Precision Targeting
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Share live location for <span className="text-primary">premium-priced ads</span> & a bonus XP multiplier.
+                    Sponsors pay top-rate for max accuracy. Heads up: <span className="text-foreground/80">drains battery faster</span> and increases unskippable video frequency.
+                  </p>
+                </div>
+                <Switch checked={gpsEnabled} onCheckedChange={setGpsEnabled} />
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Primary tier badge */}
+        <Card className="bg-card border-border/50">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="text-3xl">{primaryTier.icon}</div>
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground">Primary Research Tier</p>
+              <p className="text-sm font-semibold text-foreground">{primaryTier.name}</p>
+              <p className="text-xs text-foreground/70">x{primaryTier.multiplier} earning multiplier</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Daily Information Desk with dual-use warnings */}
+        <Card className="bg-card border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Newspaper className="h-5 w-5 text-primary" />
+              Daily Information Desk
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">
+              Curated articles. Topics involving dual-use technologies (CRISPR-Cas9, molecular chirality, receptor chimerism) are marked with safety advisories from accredited sources. ResearchRewards does not sponsor speculative dual-use research.
+            </p>
+            <div className="space-y-2">
+              {DAILY_DESK.map((item) => {
+                const tier = TIERS.find((t) => t.id === item.tier);
+                return (
+                  <div key={item.id} className="p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <span className="text-lg shrink-0">{tier?.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{item.title}</p>
+                        <p className="text-[11px] text-muted-foreground">{item.source} · Tier {item.tier}</p>
+                        {item.warning && (
+                          <div className="mt-2 flex items-start gap-2 p-2 rounded-md border border-destructive/40 bg-destructive/10">
+                            <ShieldAlert className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                            <p className="text-[11px] text-destructive-foreground/90">{item.warningText}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Milestones */}
         <Card className="bg-card border-border/50">
