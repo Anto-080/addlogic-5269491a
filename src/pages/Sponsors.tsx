@@ -95,7 +95,7 @@ export default function Sponsors() {
               ts: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
               company,
               tier,
-              action: "new",
+              action: "new" as const,
               amount,
             },
             ...f,
