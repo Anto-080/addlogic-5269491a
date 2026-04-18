@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useState, useEffect } from "react";
-import { Zap, TrendingUp, Clock, Award, Star, MapPin, ShieldAlert, Newspaper } from "lucide-react";
+import { Zap, TrendingUp, Clock, Award, Star, Map, ShieldAlert, Newspaper, Cookie, Check } from "lucide-react";
 
 function AnimatedCounter({ target, prefix = "$" }: { target: number; prefix?: string }) {
   const [val, setVal] = useState(0);
@@ -114,25 +114,46 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Merged Data + GPS Precision Toggle */}
+        {/* Data Consent + GPS Precision (split) */}
         <Card className="bg-card border-border/50 glow-amber">
-          <CardContent className="p-4">
+          <CardContent className="p-4 space-y-4">
+            {/* Row A — Data Consent */}
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  Data Collection & GPS Precision Targeting
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Single switch — share anonymized usage <span className="text-foreground/80">and</span> live location with sponsor partners.
-                  Unlocks <span className="text-primary">premium-priced ads</span>, rewarded videos, tailored coupons, and a <span className="text-primary">bonus XP multiplier</span>.
-                  Sponsors pay top-rate for max accuracy. Heads up: <span className="text-foreground/80">drains battery faster</span> and increases unskippable video frequency.
-                </p>
+              <div className="flex items-start gap-3 flex-1">
+                <Cookie className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "hsl(32 65% 45%)" }} />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">Accept All Cookies</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Allow the app to accept all cookies while you surf. Unlocks{" "}
+                    <span className="text-primary">higher rewards</span> and rewarded videos.
+                  </p>
+                </div>
               </div>
-              <Switch
-                checked={dataConsent && gpsEnabled}
-                onCheckedChange={(v) => { setDataConsent(v); setGpsEnabled(v); }}
-              />
+              <Switch checked={dataConsent} onCheckedChange={setDataConsent} />
+            </div>
+
+            <div className="h-px bg-border/60" />
+
+            {/* Row B — GPS Precision */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1">
+                <Map className="h-5 w-5 mt-0.5 shrink-0 text-primary" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">GPS Precision Targeting</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Share live location for premium-priced ads, exclusive regional coupons (unlocks a Wallet coupons section),
+                    highest-paying spots & videos, and a <span className="text-primary">bonus XP multiplier</span>.
+                    Drains battery faster.
+                  </p>
+                  {gpsEnabled && (
+                    <p className="mt-2 text-[11px] text-foreground/80 flex items-center gap-1">
+                      <Check className="h-3 w-3 text-primary" />
+                      Regional Coupons unlocked in Wallet (mock)
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Switch checked={gpsEnabled} onCheckedChange={setGpsEnabled} />
             </div>
           </CardContent>
         </Card>
