@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useState, useEffect } from "react";
-import { Zap, TrendingUp, Clock, Award, Star, MapPin, ShieldAlert, Newspaper } from "lucide-react";
+import { Zap, TrendingUp, Clock, Award, Star, Map, ShieldAlert, Newspaper, Cookie, Check } from "lucide-react";
 
 function AnimatedCounter({ target, prefix = "$" }: { target: number; prefix?: string }) {
   const [val, setVal] = useState(0);
