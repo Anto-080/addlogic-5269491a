@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TIERS, MOCK_ARTICLES } from "@/lib/mockData";
 import { Star, Play, X, Search, Clock, DollarSign } from "lucide-react";
+import { BrowserPicker } from "@/components/BrowserPicker";
 
 function StarRating({ onRate }: { onRate: (n: number) => void }) {
   const [hover, setHover] = useState(0);
@@ -116,6 +117,9 @@ export default function Research() {
             className="pl-10 bg-secondary/50"
           />
         </div>
+
+        {/* Browser Picker — open external search engines in new tabs */}
+        <BrowserPicker />
 
         {/* Tier Filter */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">

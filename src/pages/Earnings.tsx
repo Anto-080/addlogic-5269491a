@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { MOCK_EARNINGS, MOCK_WEEKLY_EARNINGS, TIERS } from "@/lib/mockData";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { ArrowUpRight, Wallet, TrendingUp } from "lucide-react";
+import { StablecoinWithdraw } from "@/components/StablecoinWithdraw";
 
 export default function Earnings() {
   const tierEarnings = TIERS.slice(0, 6).map((t) => ({
@@ -101,6 +102,9 @@ export default function Earnings() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Stablecoin (MiniPay / Google Wallet / self-custody) withdrawal */}
+        <StablecoinWithdraw available={MOCK_EARNINGS.allTime} />
       </div>
     </AppLayout>
   );
