@@ -34,10 +34,6 @@ export function StablecoinWithdraw({ available }: { available: number }) {
       toast({ title: "Invalid amount", description: `Enter an amount between $0.01 and $${available.toFixed(2)}.`, variant: "destructive" });
       return;
     }
-    if (provider === "selfcust" && address.trim().length < 20) {
-      toast({ title: "Wallet address required", description: "Paste a valid wallet address to continue.", variant: "destructive" });
-      return;
-    }
     toast({
       title: "Withdrawal queued",
       description: `${net.toFixed(2)} ${selected.coin} → ${selected.name}. Settlement typically completes within 2 minutes.`,
