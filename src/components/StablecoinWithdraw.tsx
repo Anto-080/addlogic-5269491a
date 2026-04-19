@@ -22,7 +22,6 @@ const PROVIDERS: Provider[] = [
 export function StablecoinWithdraw({ available }: { available: number }) {
   const [provider, setProvider] = useState<string>("minipay");
   const [amount, setAmount] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
 
   const selected = PROVIDERS.find((p) => p.id === provider)!;
   const numericAmount = parseFloat(amount) || 0;
@@ -103,14 +102,6 @@ export function StablecoinWithdraw({ available }: { available: number }) {
             onChange={(e) => setAmount(e.target.value)}
             className="bg-secondary/50"
           />
-          {provider === "selfcust" && (
-            <Input
-              placeholder="Wallet address (0x… or Solana)"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="bg-secondary/50 text-xs font-mono"
-            />
-          )}
         </div>
 
         {/* Summary */}
