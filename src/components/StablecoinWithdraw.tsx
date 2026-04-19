@@ -60,7 +60,7 @@ export function StablecoinWithdraw({ available }: { available: number }) {
         </p>
 
         {/* Provider grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {PROVIDERS.map((p) => (
             <button
               key={p.id}
@@ -77,6 +77,12 @@ export function StablecoinWithdraw({ available }: { available: number }) {
               <p className="text-[10px] text-foreground/70 mt-2">Fee {p.fee} · {p.coin}</p>
             </button>
           ))}
+        </div>
+
+        <div className="rounded-lg border border-border/40 bg-secondary/30 p-2 text-[11px] text-muted-foreground leading-snug">
+          <strong className="text-foreground">Why no anonymous wallets?</strong> Self-custody EVM/Solana payouts would let bot
+          farms spin up infinite anonymous accounts and drain the advertiser pool — shrinking real researchers' rewards.
+          Identity-tied rails (MiniPay, Google Wallet) keep the system fair.
         </div>
 
         {/* Amount + (optional) address */}
