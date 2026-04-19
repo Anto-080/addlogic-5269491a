@@ -1,74 +1,56 @@
-## Plan: Multi-section refinements
+## Plan: Nav, Icons, Branding Frame & Bank Vault
 
-### 1. Top quick-access nav bar (in `AppLayout.tsx` header)
+### 1. Quick-access top nav — fix visibility
 
-Add a row of shortcut buttons between the sidebar trigger and the wallet:
+The nav row exists in `AppLayout.tsx` but only shows ≥sm (640px). User's viewport is 411px so it's hidden. Changes:
 
-- **Research** (Search icon) → `/research`
-- **Tiers & Sponsors** (Layers icon) → `/tiers` (merged page)
-- **Investments** (TrendingUp icon) → `/investments`
-- Active route highlighted with amber underline/bg
-- Wallet pill becomes clickable → `/earnings` (with subtle "shortcut" indicator above the Wallet icon — small dot/chevron)
-- Hidden on very small screens, shown ≥sm
+- Put tbe Shortcuts squeezed above before the Earnings, show **icon-only** (label hidden <md)
+- Update links to: **Dashboard** (LayoutDashboard), **Research** (Search), **Tiers & Sponsors** (Layers) — drop Investments from the quick row
+- Make the user avatar circle (top-right "A") a `NavLink` to `/settings` with hover ring
 
-### 2. Wallet — remove self-custody section
+### 2. Replace emoji tier icons everywhere with `TierIcon`
 
-In `src/components/StablecoinWithdraw.tsx`: remove the "Self-custody (USDT)" provider entry. Keep MiniPay + Google Wallet only. Add a short note explaining anonymous wallets are excluded to protect the ad-revenue pool from bot abuse.
+Audit + replace `tier.icon` (emoji string from `mockData.ts`) usages with `<TierIcon tierId={...} />`:
 
-### 3. Merge Tiers + Sponsors into one page
+- `src/pages/Dashboard.tsx` — top interests list
+- `src/pages/Research.tsx` — tier chips/filters
+- `src/pages/Earnings.tsx` — per-tier earnings rows
+- `src/pages/Tiers.tsx` — both Tiers and Sponsor Bidding views (confirm)
+- `src/components/AdBanner.tsx` — tier-matched ad chip
+- Any other `tier.icon` references found via search
+Keep `icon` field in mockData for backward compat but stop rendering it.
 
-- Keep route `/tiers` as the merged page; redirect `/sponsors` → `/tiers`
-- Add a top **Tabs/Switch**: `Interest Tiers` | `Sponsor Live Bidding`
-- **Tiers view**: current tier list (unchanged structurally)
-- **Sponsor view**: same 17 tier rows but each row shows live bid stats (current top bid, # bidders, traffic volume, engagement, user and investor multiplier which is the  same) + a `Place Bid` button that opens a small dialog (mock)
-- Remove `Sponsors` route from sidebar; rename sidebar item to "Tiers & Sponsors"
-- Update `App.tsx` routes
-- Color fix in `mockData.ts`: Real Estate → Technology range now blues (light → deep). Currently Personal Shopping=peach, Personal Care=pink. Re-map:
-  - Real Estate `#7DB9E8` (light blue)
-  - Food `#5BA3D9`
-  - Entertainment `#3F8FCC`
-  - Global News `#2A7BBF`
-  - Art & Culture `#1F66A8`
-  - Technology `#15528F` (deep blue)
-  - Personal Shopping stays peach, Personal Care stays pink (unchanged)
-- Update `.tier-spectrum` gradient in `index.css` to match
-- Add Stylised, non Emojis, type of Interest Related Icons, delineated Symple, as the Smiley and Ghost of the Availability Button, Simple and Effective, yet not Overly "Goofy".
-  &nbsp;
+### 3. Tiers & Sponsors page — Biochemistry-branded silver frame
 
-### 4. Split Data Consent toggle into two
+- Wrap the **top 3 purple high-priority tiers** (Biological Sciences, Biochemistry, Scientific Research) in a single rounded card with a **Scotty Silver (#758A9C)** 1.5px border + soft inner glow
+- Above the frame, inside the same border (connected, no gap), place a **"Biochemistry" wordmark banner** — recreated as inline SVG text using a similar slab/condensed style (no logo file, avoids trademark) in the same silver tone, retain the Same "O-C" interconnections of Letters as in the Image with Letter"C" being Written Inside the "O" of Biochemistry.
+- Remove the **color-name legend** ("Green = Ecology/Finance" etc.) — keep only the horizontal priority spectrum bar
+- Banner copy: "· BIOCHEMISTRY ·" with Underneath in Little " Priority Research" in a Similar Font 
+- Banner use the same Scotty Silver (#758A9C) colour of the Frame for the Wording. 
 
-On Dashboard, replace the single merged toggle with one card containing **two** toggles styled like the Settings availability toggle:
+### 4. Earnings → Bank vault rebrand
 
-- **Cookie Auto-Accept** — stylized cookie SVG icon. Description: app auto-accepts cookies during in-app browsing for max ad targeting & returns.
-- **GPS Precision** — stylized map-pin SVG icon. Description: enables high-end regional ad rewards + XP multiplier + unlocks "Regional Coupons" list on Dashboard.
-- When GPS is on, show a new **Regional Coupons** mock card on Dashboard (3-4 sample local offers).
-
-### 5. In-app browser for Research + ad banners
-
-- Convert `BrowserPicker.tsx` flow: instead of `window.open(...)`, render the search result inside an **in-app `<iframe>**` on the Research page when a query is submitted.
-- Layout: `[Top Ad Banner] / [iframe search results] / [Bottom Ad Banner]`
-- Cookie auto-accept toggle state read from a shared store (simple localStorage or React context) — when on, show "Cookies auto-accepted" badge in the iframe header strip.
-- Note: many sites (Google) block iframe embedding via `X-Frame-Options`. Will use Opera/Ecosia/Brave as defaults (more permissive) and show a fallback "Open in new tab" button when iframe fails to load. Will add a brief disclaimer.
-- If Embedding is not Available the Research start a Set of Add Banners In App which the User have to Open before Reading the Article/Research and After. The App just take Track of Screen Touch and Up/Down Movements for Forbidding Bots to Acquire Free Revenues.
-- Ad banners are mock components showing a tier-matched placeholder ad (uses user's top interest tier color).
-- One Small Horizontal Button Above in Research Section Allow you to see when Retributed Sonsoref Videos are Available.
-  &nbsp;
+- Swap `Wallet` icon → `Landmark` Vault  icon in:
+  - `AppSidebar.tsx` — Earnings sidebar entry
+  - `AppLayout.tsx` — top-right earnings shortcut pill
+- Keep `Wallet` icon **only** inside `StablecoinWithdraw.tsx` on the withdrawal button
+- In `Earnings.tsx`, add a short **"Vault" explainer card**: earnings accumulate securely in-app; withdraw any time to MiniPay/Google Wallet; later phases enable auto-restake loop (Ads → Stake → Yield → Stablecoin → Restake)
+- Add a small ASCII-style flow diagram component:
+  ```text
+  Ads → Stake → Yield → Stablecoin ↺
+  ```
+- Note re: third-party custody/hacker-defense partnerships: Lovable does not bundle a custody partner. I'll add a placeholder "Secured by [Vault Provider]" badge that you can swap when a real provider (e.g. Fireblocks, Turnkey) is wired in — purely cosmetic for now.
 
 ### Files to touch
 
-- `src/components/AppLayout.tsx` — add quick-nav row
-- `src/components/AppSidebar.tsx` — remove Sponsors entry, rename Tiers
-- `src/App.tsx` — redirect /sponsors → /tiers
-- `src/pages/Tiers.tsx` — add Tabs (Tiers | Sponsor Bidding), inline sponsor bidding view
-- `src/pages/Sponsors.tsx` — keep file but make it a redirect (or delete & remove import)
-- `src/lib/mockData.ts` — recolor blue range tiers
-- `src/index.css` — update `.tier-spectrum` gradient
-- `src/pages/Dashboard.tsx` — split toggle into two (Cookie + GPS), add Regional Coupons card (visible when GPS on)
-- `src/components/StablecoinWithdraw.tsx` — remove self-custody, add bot-pool note
-- `src/components/BrowserPicker.tsx` + `src/pages/Research.tsx` — in-app iframe + top/bottom ad banners
-- New: `src/components/InAppBrowser.tsx`, `src/components/AdBanner.tsx`
+- `src/components/AppLayout.tsx` — nav visibility, link set, avatar→Settings, Wallet→Landmark
+- `src/components/AppSidebar.tsx` — Earnings icon → Landmark
+- `src/pages/Tiers.tsx` — silver-framed top-3 + Biochemistry banner, remove color legend
+- `src/pages/Dashboard.tsx`, `src/pages/Research.tsx`, `src/pages/Earnings.tsx`, `src/components/AdBanner.tsx` — replace emoji with `<TierIcon>`
+- `src/pages/Earnings.tsx` — add Vault explainer + flow diagram
+- `src/index.css` — `.silver-frame` utility, optional shimmer
 
 ### Notes
 
-- Iframe embedding limitation will be handled gracefully with fallback or by Opening a New Tab in the User Predefined Browser After the User Tapped over Few Ads, the Not-In-App Research can be Overcomed by Putting In-Apps Ads and suggesting the User the Retributions come After Clicking the Highest Paying Ads. By this Mean we don't Substitute for the User Browsing Choices we just add a Revenue Stream for them Coming from their Own Researches.
-- Shared toggle state via lightweight React context (`SettingsContext`) to avoid prop drilling between Dashboard and Research/InAppBrowser.
+- Biochemistry banner is recreated as styled SVG text (not the uploaded PNG) to keep it crisp at any size and avoid embedding a possibly-trademarked raster. The "O-C" Letter Interconnection Remain.
+- No new routes, no backend changes.
