@@ -244,6 +244,15 @@ export default function Research() {
       </div>
 
       {showInterstitial && <InterstitialAd onClose={() => setShowInterstitial(false)} />}
+      {browser && (
+        <InAppBrowser
+          url={browser.url}
+          fallbackUrl={browser.url}
+          engineName={browser.engineName}
+          primaryTierId={primaryTierId}
+          onClose={() => setBrowser(null)}
+        />
+      )}
     </AppLayout>
   );
 }
