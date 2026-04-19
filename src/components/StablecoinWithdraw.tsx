@@ -17,7 +17,6 @@ type Provider = {
 const PROVIDERS: Provider[] = [
   { id: "minipay",  name: "MiniPay",        icon: Smartphone, desc: "Opera's mobile stablecoin wallet — instant cUSD/USDT settlement on Celo.",  fee: "0.5%", coin: "cUSD" },
   { id: "gwallet",  name: "Google Wallet",  icon: Wallet,     desc: "Convert to USDC and load directly into Google Wallet for everyday spending.", fee: "1.2%", coin: "USDC" },
-  { id: "selfcust", name: "Self-custody",   icon: Coins,      desc: "Withdraw to any EVM/Solana address. You hold the keys, we never touch them.",  fee: "0.3%", coin: "USDT" },
 ];
 
 export function StablecoinWithdraw({ available }: { available: number }) {
