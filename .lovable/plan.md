@@ -4,7 +4,7 @@
 
 The nav row exists in `AppLayout.tsx` but only shows ≥sm (640px). User's viewport is 411px so it's hidden. Changes:
 
-- Put tbe Shortcuts squeezed above before the Earnings, show **icon-only** (label hidden <md)
+- Show on all sizes (remove `hidden sm:flex`); on small screens show **icon-only** (label hidden <md)
 - Update links to: **Dashboard** (LayoutDashboard), **Research** (Search), **Tiers & Sponsors** (Layers) — drop Investments from the quick row
 - Make the user avatar circle (top-right "A") a `NavLink` to `/settings` with hover ring
 
@@ -23,14 +23,13 @@ Keep `icon` field in mockData for backward compat but stop rendering it.
 ### 3. Tiers & Sponsors page — Biochemistry-branded silver frame
 
 - Wrap the **top 3 purple high-priority tiers** (Biological Sciences, Biochemistry, Scientific Research) in a single rounded card with a **Scotty Silver (#758A9C)** 1.5px border + soft inner glow
-- Above the frame, inside the same border (connected, no gap), place a **"Biochemistry" wordmark banner** — recreated as inline SVG text using a similar slab/condensed style (no logo file, avoids trademark) in the same silver tone, retain the Same "O-C" interconnections of Letters as in the Image with Letter"C" being Written Inside the "O" of Biochemistry.
+- Above the frame, inside the same border (connected, no gap), place a **"Biochemistry" wordmark banner** — recreated as inline SVG text using a similar slab/condensed style (no logo file, avoids trademark) in the same silver tone
 - Remove the **color-name legend** ("Green = Ecology/Finance" etc.) — keep only the horizontal priority spectrum bar
-- Banner copy: "· BIOCHEMISTRY ·" with Underneath in Little " Priority Research" in a Similar Font 
-- Banner use the same Scotty Silver (#758A9C) colour of the Frame for the Wording. 
+- Banner copy: "BIOCHEMISTRY · TOP PRIORITY RESEARCH"
 
 ### 4. Earnings → Bank vault rebrand
 
-- Swap `Wallet` icon → `Landmark` Vault  icon in:
+- Swap `Wallet` icon → `Landmark` (bank columns) icon in:
   - `AppSidebar.tsx` — Earnings sidebar entry
   - `AppLayout.tsx` — top-right earnings shortcut pill
 - Keep `Wallet` icon **only** inside `StablecoinWithdraw.tsx` on the withdrawal button
@@ -52,5 +51,5 @@ Keep `icon` field in mockData for backward compat but stop rendering it.
 
 ### Notes
 
-- Biochemistry banner is recreated as styled SVG text (not the uploaded PNG) to keep it crisp at any size and avoid embedding a possibly-trademarked raster. The "O-C" Letter Interconnection Remain.
+- Biochemistry banner is recreated as styled SVG text (not the uploaded PNG) to keep it crisp at any size and avoid embedding a possibly-trademarked raster.
 - No new routes, no backend changes.
