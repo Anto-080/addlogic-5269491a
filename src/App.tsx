@@ -4,13 +4,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Research from "./pages/Research";
 import Tiers from "./pages/Tiers";
 import Earnings from "./pages/Earnings";
-import Sponsors from "./pages/Sponsors";
 import Connections from "./pages/Connections";
 import Investments from "./pages/Investments";
 import Settings from "./pages/Settings";
@@ -39,20 +39,22 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/research" element={<ProtectedRoute><Research /></ProtectedRoute>} />
-            <Route path="/tiers" element={<ProtectedRoute><Tiers /></ProtectedRoute>} />
-            <Route path="/earnings" element={<ProtectedRoute><Earnings /></ProtectedRoute>} />
-            <Route path="/sponsors" element={<ProtectedRoute><Sponsors /></ProtectedRoute>} />
-            <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
-            <Route path="/investments" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <SettingsProvider>
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/research" element={<ProtectedRoute><Research /></ProtectedRoute>} />
+              <Route path="/tiers" element={<ProtectedRoute><Tiers /></ProtectedRoute>} />
+              <Route path="/earnings" element={<ProtectedRoute><Earnings /></ProtectedRoute>} />
+              <Route path="/sponsors" element={<Navigate to="/tiers?view=sponsors" replace />} />
+              <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
+              <Route path="/investments" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </SettingsProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

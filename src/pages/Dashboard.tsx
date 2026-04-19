@@ -3,7 +3,8 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useState, useEffect } from "react";
-import { Zap, TrendingUp, Clock, Award, Star, MapPin, ShieldAlert, Newspaper } from "lucide-react";
+import { Zap, TrendingUp, Clock, Award, Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
+import { useSettings } from "@/contexts/SettingsContext";
 
 function AnimatedCounter({ target, prefix = "$" }: { target: number; prefix?: string }) {
   const [val, setVal] = useState(0);
@@ -18,8 +19,7 @@ function AnimatedCounter({ target, prefix = "$" }: { target: number; prefix?: st
 }
 
 export default function Dashboard() {
-  const [dataConsent, setDataConsent] = useState(false);
-  const [gpsEnabled, setGpsEnabled] = useState(false);
+  const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
   const [liveXp, setLiveXp] = useState(MOCK_EARNINGS.xp);
   const [liveMultiplier, setLiveMultiplier] = useState(MOCK_EARNINGS.currentMultiplier);
 
@@ -114,28 +114,92 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Merged Data + GPS Precision Toggle */}
+        {/* Data Analysis Permissions — split into two */}
         <Card className="bg-card border-border/50 glow-amber">
-          <CardContent className="p-4">
+          <CardContent className="p-4 space-y-4">
+            <p className="text-sm font-semibold text-foreground">Data Analysis Permissions</p>
+
+            {/* Cookie auto-accept */}
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  Data Collection & GPS Precision Targeting
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Single switch — share anonymized usage <span className="text-foreground/80">and</span> live location with sponsor partners.
-                  Unlocks <span className="text-primary">premium-priced ads</span>, rewarded videos, tailored coupons, and a <span className="text-primary">bonus XP multiplier</span>.
-                  Sponsors pay top-rate for max accuracy. Heads up: <span className="text-foreground/80">drains battery faster</span> and increases unskippable video frequency.
-                </p>
+              <div className="flex items-start gap-3 flex-1">
+                <div className="shrink-0 mt-0.5">
+                  {/* Stylised cookie SVG */}
+                  <svg viewBox="0 0 32 32" width="36" height="36" aria-label="Cookie">
+                    <circle cx="16" cy="16" r="13" fill={cookieAutoAccept ? "hsl(var(--primary))" : "hsl(var(--secondary))"} stroke="hsl(var(--border))" strokeWidth="1.5" />
+                    <circle cx="11" cy="12" r="1.6" fill="hsl(var(--primary-foreground))" opacity={cookieAutoAccept ? 1 : 0.4} />
+                    <circle cx="20" cy="11" r="1.2" fill="hsl(var(--primary-foreground))" opacity={cookieAutoAccept ? 1 : 0.4} />
+                    <circle cx="22" cy="18" r="1.6" fill="hsl(var(--primary-foreground))" opacity={cookieAutoAccept ? 1 : 0.4} />
+                    <circle cx="13" cy="20" r="1.3" fill="hsl(var(--primary-foreground))" opacity={cookieAutoAccept ? 1 : 0.4} />
+                    <circle cx="18" cy="22" r="1.1" fill="hsl(var(--primary-foreground))" opacity={cookieAutoAccept ? 1 : 0.4} />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">Cookie Auto-Accept</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Auto-confirm all cookies inside the in-app research browser for maximum returns and ad-hoc targeting.
+                  </p>
+                </div>
               </div>
-              <Switch
-                checked={dataConsent && gpsEnabled}
-                onCheckedChange={(v) => { setDataConsent(v); setGpsEnabled(v); }}
-              />
+              <Switch checked={cookieAutoAccept} onCheckedChange={setCookieAutoAccept} />
+            </div>
+
+            <div className="border-t border-border/40" />
+
+            {/* GPS precision */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1">
+                <div className="shrink-0 mt-0.5">
+                  {/* Stylised map-pin SVG */}
+                  <svg viewBox="0 0 32 32" width="36" height="36" aria-label="GPS pin">
+                    <path
+                      d="M16 3 C10 3 6 7 6 13 C6 20 16 29 16 29 C16 29 26 20 26 13 C26 7 22 3 16 3 Z"
+                      fill={gpsPrecision ? "hsl(var(--primary))" : "hsl(var(--secondary))"}
+                      stroke="hsl(var(--border))"
+                      strokeWidth="1.5"
+                    />
+                    <circle cx="16" cy="13" r="4" fill={gpsPrecision ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))"} />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">GPS Precision</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Share live location for higher XP multipliers, premium regional ad-rates and unlock the Regional Coupons feed below.
+                  </p>
+                </div>
+              </div>
+              <Switch checked={gpsPrecision} onCheckedChange={setGpsPrecision} />
             </div>
           </CardContent>
         </Card>
+
+        {/* Regional Coupons — only when GPS enabled */}
+        {gpsPrecision && (
+          <Card className="bg-card border-border/50">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Tag className="h-5 w-5 text-primary" /> Regional Coupons
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  { brand: "GreenLeaf Café", offer: "20% off espresso", dist: "0.4 km" },
+                  { brand: "MetroBooks", offer: "Buy 2 get 1 free — science", dist: "1.1 km" },
+                  { brand: "EcoMart", offer: "$5 off bulk produce", dist: "2.0 km" },
+                  { brand: "FitLab Gym", offer: "First week free trial", dist: "2.6 km" },
+                ].map((c) => (
+                  <div key={c.brand} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{c.brand}</p>
+                      <p className="text-xs text-muted-foreground">{c.offer}</p>
+                    </div>
+                    <span className="text-[10px] text-primary font-medium">{c.dist}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Primary tier badge */}
         <Card className="bg-card border-border/50">

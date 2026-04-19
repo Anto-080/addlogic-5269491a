@@ -20,24 +20,32 @@ const BROWSERS: Browser[] = [
   { id: "opera",   name: "Opera",   emoji: "🅾️", searchUrl: "https://www.opera.com/search?q={q}",                  blurb: "Built-in VPN & crypto wallet" },
 ];
 
-export function BrowserPicker() {
-  const [selected, setSelected] = useState<string>("google");
+type BrowserPickerProps = {
+  onSearch?: (args: { url: string; engineName: string }) => void;
+};
+
+export function BrowserPicker({ onSearch }: BrowserPickerProps = {}) {
+  const [selected, setSelected] = useState<string>("ecosia");
   const [query, setQuery] = useState("");
   const [customUrl, setCustomUrl] = useState("");
 
   const launch = () => {
     const q = encodeURIComponent(query.trim());
     if (!q) return;
+    let url = "";
+    let engineName = "Custom";
     if (selected === "custom") {
       const tmpl = customUrl.trim();
       if (!tmpl) return;
-      const url = tmpl.includes("{q}") ? tmpl.replace("{q}", q) : `${tmpl}${tmpl.includes("?") ? "&" : "?"}q=${q}`;
-      window.open(url, "_blank", "noopener,noreferrer");
-      return;
+      url = tmpl.includes("{q}") ? tmpl.replace("{q}", q) : `${tmpl}${tmpl.includes("?") ? "&" : "?"}q=${q}`;
+    } else {
+      const browser = BROWSERS.find((b) => b.id === selected);
+      if (!browser) return;
+      url = browser.searchUrl.replace("{q}", q);
+      engineName = browser.name;
     }
-    const browser = BROWSERS.find((b) => b.id === selected);
-    if (!browser) return;
-    window.open(browser.searchUrl.replace("{q}", q), "_blank", "noopener,noreferrer");
+    if (onSearch) onSearch({ url, engineName });
+    else window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (

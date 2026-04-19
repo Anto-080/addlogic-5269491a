@@ -4,8 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TIERS, MOCK_ARTICLES } from "@/lib/mockData";
-import { Star, Play, X, Search, Clock, DollarSign } from "lucide-react";
+import { Star, Play, X, Search, Clock, DollarSign, Video } from "lucide-react";
 import { BrowserPicker } from "@/components/BrowserPicker";
+import { InAppBrowser } from "@/components/InAppBrowser";
+import { TierIcon } from "@/components/TierIcon";
 
 function StarRating({ onRate }: { onRate: (n: number) => void }) {
   const [hover, setHover] = useState(0);
@@ -79,6 +81,9 @@ export default function Research() {
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [articleCount, setArticleCount] = useState(0);
+  const [browser, setBrowser] = useState<{ url: string; engineName: string } | null>(null);
+  const [showSponsoredVideos, setShowSponsoredVideos] = useState(false);
+  const primaryTierId = selectedTier ?? 4;
 
   const filteredArticles = MOCK_ARTICLES.filter((a) => {
     if (selectedTier && a.tier !== selectedTier) return false;
@@ -118,15 +123,44 @@ export default function Research() {
           />
         </div>
 
-        {/* Browser Picker — open external search engines in new tabs */}
-        <BrowserPicker />
+        {/* Sponsored videos shortcut */}
+        <button
+          onClick={() => setShowSponsoredVideos((v) => !v)}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-md bg-secondary/40 hover:bg-secondary/60 border border-border/40 text-xs"
+        >
+          <span className="flex items-center gap-2 text-foreground">
+            <Video className="h-3.5 w-3.5 text-primary" />
+            Retributed Sponsor Videos available
+          </span>
+          <span className="text-primary font-medium">{showSponsoredVideos ? "Hide" : "Show"} (3)</span>
+        </button>
+
+        {showSponsoredVideos && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="bg-card border-border/50">
+                <CardContent className="p-3">
+                  <div className="aspect-video rounded bg-secondary/50 flex items-center justify-center mb-2">
+                    <Play className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="text-xs font-medium text-foreground">Sponsor clip #{i}</p>
+                  <p className="text-[10px] text-muted-foreground">15s · earn $1.20 + 2× XP</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Browser Picker — opens in-app iframe */}
+        <BrowserPicker onSearch={(args) => setBrowser(args)} />
 
         {/* Tier Filter */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           <Button variant={selectedTier === null ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(null)}>All</Button>
           {TIERS.map((t) => (
-            <Button key={t.id} variant={selectedTier === t.id ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(t.id)} className="shrink-0">
-              {t.icon} <span className="ml-1 text-xs">{t.id}</span>
+            <Button key={t.id} variant={selectedTier === t.id ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(t.id)} className="shrink-0 gap-1" style={selectedTier === t.id ? undefined : { color: t.color }}>
+              <TierIcon tierId={t.id} size={14} />
+              <span className="text-xs">{t.id}</span>
             </Button>
           ))}
         </div>
@@ -210,6 +244,15 @@ export default function Research() {
       </div>
 
       {showInterstitial && <InterstitialAd onClose={() => setShowInterstitial(false)} />}
+      {browser && (
+        <InAppBrowser
+          url={browser.url}
+          fallbackUrl={browser.url}
+          engineName={browser.engineName}
+          primaryTierId={primaryTierId}
+          onClose={() => setBrowser(null)}
+        />
+      )}
     </AppLayout>
   );
 }

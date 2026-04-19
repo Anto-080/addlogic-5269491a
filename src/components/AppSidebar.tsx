@@ -12,12 +12,11 @@ import {
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Research", url: "/research", icon: Search },
-  { title: "Interest Tiers", url: "/tiers", icon: Layers },
+  { title: "Tiers & Sponsors", url: "/tiers", icon: Layers },
   { title: "Earnings", url: "/earnings", icon: Wallet },
 ];
 
 const secondaryItems = [
-  { title: "Sponsors", url: "/sponsors", icon: Megaphone },
   { title: "Connections", url: "/connections", icon: Users },
   { title: "Investments", url: "/investments", icon: Lock },
   { title: "Settings", url: "/settings", icon: Settings },

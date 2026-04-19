@@ -1,16 +1,35 @@
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
+} from "@/components/ui/dialog";
 import { TIERS } from "@/lib/mockData";
-import { ArrowUpRight, Lock, ChevronDown, Activity } from "lucide-react";
+import { TierIcon } from "@/components/TierIcon";
+import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+
+// Deterministic mock bid stats per tier
+function bidStats(id: number, multiplier: number) {
+  const seed = id * 7;
+  const topBid = Math.max(0.2, multiplier * 0.42 + (seed % 5) * 0.15);
+  const bidders = 3 + (seed % 11);
+  const traffic = (multiplier * 1800 + seed * 137).toFixed(0);
+  const engagement = ((multiplier * 0.9 + (seed % 4)) % 9).toFixed(1);
+  return { topBid, bidders, traffic: Number(traffic), engagement };
+}
 
 export default function Tiers() {
   const maxMultiplier = TIERS[0].multiplier;
   const [expanded, setExpanded] = useState<number | null>(null);
   const [seasonalShuffle, setSeasonalShuffle] = useState(0);
+  const [params, setParams] = useSearchParams();
+  const view = params.get("view") === "sponsors" ? "sponsors" : "tiers";
 
-  // Mock seasonal reorder: only mid-tiers (positions 5-12, i.e. ids 5..13) shuffle.
-  // Top 4 (1-4) and bottom 4 (14-17) stay locked in place.
   useEffect(() => {
     const t = setInterval(() => setSeasonalShuffle((s) => s + 1), 6000);
     return () => clearInterval(t);
@@ -20,7 +39,6 @@ export default function Tiers() {
     const top = TIERS.filter((t) => t.id <= 4);
     const bottom = TIERS.filter((t) => t.id >= 14);
     const mid = TIERS.filter((t) => t.id > 4 && t.id < 14);
-    // Deterministic seasonal jitter based on shuffle index
     const scored = mid.map((t, i) => ({
       t,
       score: t.multiplier + Math.sin(seasonalShuffle * 0.7 + i) * 0.4,
@@ -33,111 +51,214 @@ export default function Tiers() {
     <AppLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Interest Tiers</h1>
+          <h1 className="text-2xl font-bold text-foreground">Tiers & Sponsors</h1>
           <p className="text-sm text-muted-foreground">
-            17 tiers ranked by societal importance. Top 4 and bottom 4 are <strong className="text-foreground">locked in place</strong> — we never push betting or adult content just because they earn faster. Mid tiers gently shift with seasonal research trends.
+            17 tiers ranked by societal importance. Switch to Sponsor Live Bidding to see auction activity.
           </p>
         </div>
 
-        <Card className="bg-card border-border/50 p-4">
-          <div className="flex items-start gap-3">
-            <ArrowUpRight className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-            <div className="text-sm text-muted-foreground">
-              <strong className="text-foreground">Redistribution Model:</strong> a portion of ad revenue from lower tiers flows upward.
-              Tier 17 browsing indirectly funds Tier 1 breakthroughs. Even casual sessions contribute to life-saving research.
-            </div>
-          </div>
-        </Card>
+        <Tabs value={view} onValueChange={(v) => setParams(v === "sponsors" ? { view: "sponsors" } : {})}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="tiers">Interest Tiers</TabsTrigger>
+            <TabsTrigger value="sponsors">Sponsor Live Bidding</TabsTrigger>
+          </TabsList>
 
-        {/* Seasonal spectrum tracker — HORIZONTAL */}
-        <Card className="bg-card border-border/50 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Activity className="h-4 w-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">Seasonal Spectrum Tracker</p>
-          </div>
-          <div className="tier-spectrum w-full h-3 rounded-full mb-2" />
-          <div className="flex justify-between text-[10px] text-muted-foreground mb-3 px-1">
-            <span>Tier 1</span>
-            <span>Tier 17</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <p><span className="text-foreground font-medium">Purple</span> — Biological & systemic science (locked)</p>
-            <p><span className="text-foreground font-medium">Green</span> — Ecology, finance</p>
-            <p><span className="text-foreground font-medium">Azure → Blue</span> — Real Estate → Technological Advancements</p>
-            <p><span className="text-foreground font-medium">Peach</span> — Personal Shopping</p>
-            <p><span className="text-foreground font-medium">Pink</span> — Personal Care</p>
-            <p><span className="text-foreground font-medium">Orange</span> — Clothes, Sports & eSports</p>
-            <p className="sm:col-span-2"><span className="text-foreground font-medium">Bloody red</span> — Betting, adult (locked)</p>
-            <p className="sm:col-span-2 pt-2 italic">Mid tiers re-rank gently every few seconds to simulate seasonal trend shifts.</p>
-          </div>
-        </Card>
+          {/* ============ TIERS ============ */}
+          <TabsContent value="tiers" className="space-y-4 mt-4">
+            <Card className="bg-card border-border/50 p-4">
+              <div className="flex items-start gap-3">
+                <ArrowUpRight className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <div className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Redistribution Model:</strong> a portion of ad revenue from lower tiers flows upward.
+                  Tier 17 browsing indirectly funds Tier 1 breakthroughs.
+                </div>
+              </div>
+            </Card>
 
-        <div className="space-y-3">
-          {orderedTiers.map((tier) => {
-            const barWidth = (tier.multiplier / maxMultiplier) * 100;
-            const isOpen = expanded === tier.id;
-            return (
-              <Card
-                key={tier.id}
-                className="bg-card border-border/50 hover:border-primary/30 transition-all"
-                style={{ borderLeft: `3px solid ${tier.color}` }}
-              >
-                <CardContent className="p-4">
-                  <button
-                    type="button"
-                    onClick={() => setExpanded(isOpen ? null : tier.id)}
-                    className="w-full text-left"
+            <Card className="bg-card border-border/50 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Activity className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">Seasonal Spectrum Tracker</p>
+              </div>
+              <div className="tier-spectrum w-full h-3 rounded-full mb-2" />
+              <div className="flex justify-between text-[10px] text-muted-foreground mb-3 px-1">
+                <span>Tier 1</span><span>Tier 17</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <p><span className="text-foreground font-medium">Purple</span> — Biological & systemic science (locked)</p>
+                <p><span className="text-foreground font-medium">Green</span> — Ecology, finance</p>
+                <p><span className="text-foreground font-medium">Deep → Light Blue</span> — Technology → Real Estate</p>
+                <p><span className="text-foreground font-medium">Peach</span> — Personal Shopping</p>
+                <p><span className="text-foreground font-medium">Pink</span> — Personal Care</p>
+                <p><span className="text-foreground font-medium">Orange</span> — Clothes, Sports & eSports</p>
+                <p className="sm:col-span-2"><span className="text-foreground font-medium">Bloody red</span> — Betting, adult (locked)</p>
+              </div>
+            </Card>
+
+            <div className="space-y-3">
+              {orderedTiers.map((tier) => {
+                const barWidth = (tier.multiplier / maxMultiplier) * 100;
+                const isOpen = expanded === tier.id;
+                return (
+                  <Card
+                    key={tier.id}
+                    className="bg-card border-border/50 hover:border-primary/30 transition-all"
+                    style={{ borderLeft: `3px solid ${tier.color}` }}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="text-3xl shrink-0 w-12 text-center">{tier.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="min-w-0">
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              Tier {tier.id}
-                              {tier.locked && <Lock className="h-3 w-3" />}
-                            </span>
-                            <h3 className="text-sm font-semibold text-foreground truncate">{tier.name}</h3>
+                    <CardContent className="p-4">
+                      <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
+                        <div className="flex items-center gap-4">
+                          <div className="shrink-0 w-12 flex justify-center" style={{ color: tier.color }}>
+                            <TierIcon tierId={tier.id} size={28} />
                           </div>
-                          <div className="text-right shrink-0 ml-2 flex items-center gap-2">
-                            <div>
-                              <p className="text-lg font-bold" style={{ color: tier.color }}>x{tier.multiplier}</p>
-                              <p className="text-[10px] text-muted-foreground">multiplier</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="min-w-0">
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  Tier {tier.id}
+                                  {tier.locked && <Lock className="h-3 w-3" />}
+                                </span>
+                                <h3 className="text-sm font-semibold text-foreground truncate">{tier.name}</h3>
+                              </div>
+                              <div className="text-right shrink-0 ml-2 flex items-center gap-2">
+                                <div>
+                                  <p className="text-lg font-bold" style={{ color: tier.color }}>x{tier.multiplier}</p>
+                                  <p className="text-[10px] text-muted-foreground">multiplier</p>
+                                </div>
+                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                              </div>
                             </div>
-                            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                            <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
+                              <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: tier.color }} />
+                            </div>
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>{tier.researchers.toLocaleString()} researchers</span>
+                              <span className="text-gold font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
-                          <div
-                            className="h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${barWidth}%`, backgroundColor: tier.color }}
-                          />
+                      </button>
+                      {isOpen && (
+                        <div className="mt-3 pt-3 border-t border-border/40">
+                          <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {tier.subcategories.map((s) => (
+                              <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/60 text-foreground/80 border border-border/40">{s}</span>
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{tier.researchers.toLocaleString()} researchers</span>
-                          <span className="text-gold font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          {/* ============ SPONSOR LIVE BIDDING ============ */}
+          <TabsContent value="sponsors" className="space-y-4 mt-4">
+            <Card className="bg-card border-border/50 p-4">
+              <div className="flex items-start gap-3">
+                <Gavel className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Sponsors auction over specific tiers and sub-interests. Winning bids set the per-impression price researchers
+                  earn — and the matching multiplier shared with investors backing that tier.
+                </p>
+              </div>
+            </Card>
+
+            <div className="space-y-3">
+              {TIERS.map((tier) => {
+                const stats = bidStats(tier.id, tier.multiplier);
+                return (
+                  <Card key={tier.id} className="bg-card border-border/50" style={{ borderLeft: `3px solid ${tier.color}` }}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span style={{ color: tier.color }}><TierIcon tierId={tier.id} size={26} /></span>
+                          <div className="min-w-0">
+                            <p className="text-xs text-muted-foreground">Tier {tier.id}</p>
+                            <p className="text-sm font-semibold text-foreground truncate">{tier.name}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-base font-bold text-gradient-gold">${stats.topBid.toFixed(2)}</p>
+                          <p className="text-[10px] text-muted-foreground">top bid / impression</p>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                  {isOpen && (
-                    <div className="mt-3 pt-3 border-t border-border/40">
-                      <p className="text-[11px] text-muted-foreground mb-2">Subcategories (grow as the community researches):</p>
-                      <div className="flex flex-wrap gap-2">
-                        {tier.subcategories.map((s) => (
-                          <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/60 text-foreground/80 border border-border/40">
-                            {s}
-                          </span>
-                        ))}
+
+                      <div className="grid grid-cols-4 gap-2 text-center bg-secondary/30 rounded-lg p-2">
+                        <div>
+                          <Users className="h-3 w-3 mx-auto text-muted-foreground" />
+                          <p className="text-xs font-semibold text-foreground">{stats.bidders}</p>
+                          <p className="text-[9px] text-muted-foreground">bidders</p>
+                        </div>
+                        <div>
+                          <TrendingUp className="h-3 w-3 mx-auto text-muted-foreground" />
+                          <p className="text-xs font-semibold text-foreground">{stats.traffic.toLocaleString()}</p>
+                          <p className="text-[9px] text-muted-foreground">traffic</p>
+                        </div>
+                        <div>
+                          <Eye className="h-3 w-3 mx-auto text-muted-foreground" />
+                          <p className="text-xs font-semibold text-foreground">{stats.engagement}</p>
+                          <p className="text-[9px] text-muted-foreground">engagement</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold" style={{ color: tier.color }}>x{tier.multiplier}</p>
+                          <p className="text-[9px] text-muted-foreground">user/inv mult.</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+
+                      <BidDialog tier={tier} topBid={stats.topBid} />
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
+  );
+}
+
+function BidDialog({ tier, topBid }: { tier: typeof TIERS[number]; topBid: number }) {
+  const [bid, setBid] = useState((topBid + 0.05).toFixed(2));
+  const [sub, setSub] = useState(tier.subcategories[0] ?? "");
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="secondary" className="w-full gap-1">
+          <Gavel className="h-3 w-3" /> Place Bid
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2" style={{ color: tier.color }}>
+            <TierIcon tierId={tier.id} size={20} /> Bid on {tier.name}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Sponsors out-bidding the current top bid (${topBid.toFixed(2)}) lock the tier slot for the next session.
+          </p>
+          <label className="text-xs text-muted-foreground">Sub-interest</label>
+          <select
+            value={sub}
+            onChange={(e) => setSub(e.target.value)}
+            className="w-full bg-secondary/50 rounded-md px-3 py-2 text-sm border border-border"
+          >
+            {tier.subcategories.map((s) => <option key={s}>{s}</option>)}
+          </select>
+          <label className="text-xs text-muted-foreground">Bid (USD / impression)</label>
+          <Input type="number" step="0.01" value={bid} onChange={(e) => setBid(e.target.value)} className="bg-secondary/50" />
+        </div>
+        <DialogFooter>
+          <Button onClick={() => toast({ title: "Bid placed (mock)", description: `$${bid} on ${sub} · Tier ${tier.id}` })}>
+            Confirm Bid
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

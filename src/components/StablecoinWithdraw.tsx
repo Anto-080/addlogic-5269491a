@@ -17,13 +17,11 @@ type Provider = {
 const PROVIDERS: Provider[] = [
   { id: "minipay",  name: "MiniPay",        icon: Smartphone, desc: "Opera's mobile stablecoin wallet — instant cUSD/USDT settlement on Celo.",  fee: "0.5%", coin: "cUSD" },
   { id: "gwallet",  name: "Google Wallet",  icon: Wallet,     desc: "Convert to USDC and load directly into Google Wallet for everyday spending.", fee: "1.2%", coin: "USDC" },
-  { id: "selfcust", name: "Self-custody",   icon: Coins,      desc: "Withdraw to any EVM/Solana address. You hold the keys, we never touch them.",  fee: "0.3%", coin: "USDT" },
 ];
 
 export function StablecoinWithdraw({ available }: { available: number }) {
   const [provider, setProvider] = useState<string>("minipay");
   const [amount, setAmount] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
 
   const selected = PROVIDERS.find((p) => p.id === provider)!;
   const numericAmount = parseFloat(amount) || 0;
@@ -34,10 +32,6 @@ export function StablecoinWithdraw({ available }: { available: number }) {
   const submit = () => {
     if (numericAmount <= 0 || numericAmount > available) {
       toast({ title: "Invalid amount", description: `Enter an amount between $0.01 and $${available.toFixed(2)}.`, variant: "destructive" });
-      return;
-    }
-    if (provider === "selfcust" && address.trim().length < 20) {
-      toast({ title: "Wallet address required", description: "Paste a valid wallet address to continue.", variant: "destructive" });
       return;
     }
     toast({
@@ -61,7 +55,7 @@ export function StablecoinWithdraw({ available }: { available: number }) {
         </p>
 
         {/* Provider grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {PROVIDERS.map((p) => (
             <button
               key={p.id}
@@ -78,6 +72,12 @@ export function StablecoinWithdraw({ available }: { available: number }) {
               <p className="text-[10px] text-foreground/70 mt-2">Fee {p.fee} · {p.coin}</p>
             </button>
           ))}
+        </div>
+
+        <div className="rounded-lg border border-border/40 bg-secondary/30 p-2 text-[11px] text-muted-foreground leading-snug">
+          <strong className="text-foreground">Why no anonymous wallets?</strong> Self-custody EVM/Solana payouts would let bot
+          farms spin up infinite anonymous accounts and drain the advertiser pool — shrinking real researchers' rewards.
+          Identity-tied rails (MiniPay, Google Wallet) keep the system fair.
         </div>
 
         {/* Amount + (optional) address */}
@@ -98,14 +98,6 @@ export function StablecoinWithdraw({ available }: { available: number }) {
             onChange={(e) => setAmount(e.target.value)}
             className="bg-secondary/50"
           />
-          {provider === "selfcust" && (
-            <Input
-              placeholder="Wallet address (0x… or Solana)"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="bg-secondary/50 text-xs font-mono"
-            />
-          )}
         </div>
 
         {/* Summary */}
