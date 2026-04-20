@@ -3,11 +3,12 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useState, useEffect } from "react";
-import { Zap, TrendingUp, Clock, Award, Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
+import { Zap, Clock, Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
+import { UsdcIcon } from "@/components/icons/UsdcIcon";
 import { useSettings } from "@/contexts/SettingsContext";
 import { TierIcon } from "@/components/TierIcon";
 
-function AnimatedCounter({ target, prefix = "$" }: { target: number; prefix?: string }) {
+function AnimatedCounter({ target }: { target: number }) {
   const [val, setVal] = useState(0);
   useEffect(() => {
     const step = target / 40;
@@ -16,7 +17,7 @@ function AnimatedCounter({ target, prefix = "$" }: { target: number; prefix?: st
     }, 30);
     return () => clearInterval(interval);
   }, [target]);
-  return <span>{prefix}{val.toFixed(2)}</span>;
+  return <span className="inline-flex items-center gap-1"><UsdcIcon size={16} />{val.toFixed(2)}</span>;
 }
 
 export default function Dashboard() {
@@ -51,9 +52,9 @@ export default function Dashboard() {
         {/* Earnings Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { label: "Today", value: MOCK_EARNINGS.today, icon: Clock },
-            { label: "This Week", value: MOCK_EARNINGS.thisWeek, icon: TrendingUp },
-            { label: "All Time", value: MOCK_EARNINGS.allTime, icon: Award },
+            { label: "Today", value: MOCK_EARNINGS.today },
+            { label: "This Week", value: MOCK_EARNINGS.thisWeek },
+            { label: "All Time", value: MOCK_EARNINGS.allTime },
           ].map((item) => (
             <Card key={item.label} className="bg-card border-border/50">
               <CardContent className="p-4">
@@ -64,7 +65,7 @@ export default function Dashboard() {
                       <AnimatedCounter target={item.value} />
                     </p>
                   </div>
-                  <item.icon className="h-8 w-8 text-primary/40" />
+                  <UsdcIcon size={32} className="opacity-60" />
                 </div>
               </CardContent>
             </Card>
@@ -186,7 +187,7 @@ export default function Dashboard() {
                 {[
                   { brand: "GreenLeaf Café", offer: "20% off espresso", dist: "0.4 km" },
                   { brand: "MetroBooks", offer: "Buy 2 get 1 free — science", dist: "1.1 km" },
-                  { brand: "EcoMart", offer: "$5 off bulk produce", dist: "2.0 km" },
+                  { brand: "EcoMart", offer: "5 USDC off bulk produce", dist: "2.0 km" },
                   { brand: "FitLab Gym", offer: "First week free trial", dist: "2.6 km" },
                 ].map((c) => (
                   <div key={c.brand} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
@@ -273,7 +274,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-gradient-gold">${m.earned.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-gradient-gold inline-flex items-center gap-1"><UsdcIcon size={12} />{m.earned.toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground">+{m.xpGained} XP</p>
                     </div>
                   </div>
