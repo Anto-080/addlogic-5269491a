@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MOCK_EARNINGS, MOCK_WEEKLY_EARNINGS, TIERS } from "@/lib/mockData";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { ArrowUpRight, Wallet, TrendingUp } from "lucide-react";
+import { ArrowUpRight, Wallet, TrendingUp, Vault, ShieldCheck } from "lucide-react";
 import { StablecoinWithdraw } from "@/components/StablecoinWithdraw";
+import { TierIcon } from "@/components/TierIcon";
 
 export default function Earnings() {
   const tierEarnings = TIERS.slice(0, 6).map((t) => ({
-    name: t.icon,
+    tierId: t.id,
+    color: t.color,
     tier: t.name,
     earned: Math.random() * 200 + 50,
     redistribution: Math.random() * 40,
@@ -18,9 +20,38 @@ export default function Earnings() {
     <AppLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Earnings & Wallet</h1>
-          <p className="text-sm text-muted-foreground">Track your research income and see how redistribution works.</p>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Vault className="h-6 w-6 text-primary" /> Vault & Earnings
+          </h1>
+          <p className="text-sm text-muted-foreground">Earnings accumulate securely in-app — withdraw anytime to MiniPay or Google Wallet.</p>
         </div>
+
+        {/* Vault explainer */}
+        <Card className="bg-card border-border/50 glow-amber">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <Vault className="h-6 w-6 text-primary mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">In-app Vault</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Your ad revenue is stored securely in-app and protected from third-party threats. Withdraw to MiniPay or Google Wallet
+                  at any moment. In later phases, the Vault enables an automatic restake loop:
+                </p>
+                <pre className="mt-2 text-[11px] bg-secondary/40 rounded-md p-2 text-foreground/80 overflow-x-auto">
+{`Ads → Stake → Yield → Stablecoin ↺`}
+                </pre>
+              </div>
+            </div>
+            <a
+              href="https://www.kiln.fi/post/kiln-powers-stablecoin-earn-product-for-minipay-users-on-celo-targeting-1-3b-unbanked-globally"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-full bg-secondary/60 border border-border/40 text-foreground/80 hover:text-primary hover:border-primary/40 transition-colors"
+            >
+              <ShieldCheck className="h-3 w-3" /> Secured by Kiln Vault Provider
+            </a>
+          </CardContent>
+        </Card>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -68,7 +99,7 @@ export default function Earnings() {
             </p>
             {tierEarnings.map((t, i) => (
               <div key={i} className="flex items-center gap-3">
-                <span className="text-xl w-8 text-center">{t.name}</span>
+                <span className="w-8 flex justify-center" style={{ color: t.color }}><TierIcon tierId={t.tierId} size={20} /></span>
                 <div className="flex-1">
                   <div className="flex gap-1 h-4">
                     <div className="bg-primary/80 rounded-sm" style={{ width: `${(t.earned / 250) * 100}%` }} />
@@ -90,20 +121,20 @@ export default function Earnings() {
         <Card className="bg-card border-border/50 glow-amber">
           <CardContent className="p-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Wallet className="h-8 w-8 text-primary" />
+              <Vault className="h-8 w-8 text-primary" />
               <div>
                 <p className="text-lg font-bold text-foreground">${MOCK_EARNINGS.allTime.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">Available for withdrawal</p>
+                <p className="text-xs text-muted-foreground">Vault balance — available for withdrawal</p>
               </div>
             </div>
             <Button className="gap-2">
-              <TrendingUp className="h-4 w-4" />
+              <Wallet className="h-4 w-4" />
               Withdraw
             </Button>
           </CardContent>
         </Card>
 
-        {/* Stablecoin (MiniPay / Google Wallet / self-custody) withdrawal */}
+        {/* Stablecoin (MiniPay / Google Wallet) withdrawal */}
         <StablecoinWithdraw available={MOCK_EARNINGS.allTime} />
       </div>
     </AppLayout>
