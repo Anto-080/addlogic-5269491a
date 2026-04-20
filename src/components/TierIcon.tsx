@@ -140,6 +140,15 @@ const ICONS: Record<number, JSX.Element> = {
       <path d="M6 12h12" />
     </>
   ),
+  // 18 — Tourism & Travel / backpack
+  18: (
+    <>
+      <path d="M9 3h6v3H9z" />
+      <path d="M6 8c0-1 1-2 3-2h6c2 0 3 1 3 2v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8Z" />
+      <path d="M9 13h6" />
+      <path d="M10 16h4" />
+    </>
+  ),
 };
 
 export function TierIcon({ tierId, size = 24, className }: Props) {

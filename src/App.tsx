@@ -14,6 +14,7 @@ import Earnings from "./pages/Earnings";
 import Connections from "./pages/Connections";
 import Investments from "./pages/Investments";
 import Settings from "./pages/Settings";
+import Offers from "./pages/Offers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
               <Route path="/investments" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/offers" element={<ProtectedRoute><Offers /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </SettingsProvider>

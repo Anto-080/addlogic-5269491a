@@ -3,7 +3,9 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { MOCK_EARNINGS } from "@/lib/mockData";
-import { Vault, Search, Layers, LayoutDashboard } from "lucide-react";
+import { Search, Layers, LayoutDashboard } from "lucide-react";
+import { RoundVault } from "@/components/icons/RoundVault";
+import { UsdcIcon } from "@/components/icons/UsdcIcon";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -59,8 +61,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 aria-label="Open Vault"
                 title="Vault"
               >
-                <Vault className="h-4 w-4 text-primary" />
-                <span className="text-xs sm:text-sm font-semibold text-primary">${MOCK_EARNINGS.allTime.toFixed(2)}</span>
+                <RoundVault size={16} className="text-primary" />
+                <UsdcIcon size={12} />
+                <span className="text-xs sm:text-sm font-semibold text-primary">{MOCK_EARNINGS.allTime.toFixed(2)}</span>
               </NavLink>
 
               <NavLink

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Coins, Smartphone, Wallet } from "lucide-react";
+import { UsdcIcon } from "@/components/icons/UsdcIcon";
 import { toast } from "@/hooks/use-toast";
 
 type Provider = {
@@ -31,7 +32,7 @@ export function StablecoinWithdraw({ available }: { available: number }) {
 
   const submit = () => {
     if (numericAmount <= 0 || numericAmount > available) {
-      toast({ title: "Invalid amount", description: `Enter an amount between $0.01 and $${available.toFixed(2)}.`, variant: "destructive" });
+      toast({ title: "Invalid amount", description: `Enter an amount between 0.01 and ${available.toFixed(2)} USDC.`, variant: "destructive" });
       return;
     }
     toast({
@@ -83,12 +84,12 @@ export function StablecoinWithdraw({ available }: { available: number }) {
         {/* Amount + (optional) address */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Amount (USD)</span>
+            <span className="text-muted-foreground inline-flex items-center gap-1">Amount (<UsdcIcon size={10} />)</span>
             <button
               onClick={() => setAmount(available.toFixed(2))}
-              className="text-primary hover:underline"
+              className="text-primary hover:underline inline-flex items-center gap-1"
             >
-              Max ${available.toFixed(2)}
+              Max <UsdcIcon size={10} />{available.toFixed(2)}
             </button>
           </div>
           <Input
@@ -102,8 +103,8 @@ export function StablecoinWithdraw({ available }: { available: number }) {
 
         {/* Summary */}
         <div className="rounded-lg bg-secondary/40 p-3 text-xs space-y-1">
-          <div className="flex justify-between"><span className="text-muted-foreground">Gross</span><span className="text-foreground">${numericAmount.toFixed(2)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Fee ({selected.fee})</span><span className="text-crimson">−${fee.toFixed(2)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Gross</span><span className="text-foreground inline-flex items-center gap-1"><UsdcIcon size={10} />{numericAmount.toFixed(2)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Fee ({selected.fee})</span><span className="text-crimson inline-flex items-center gap-1">−<UsdcIcon size={10} />{fee.toFixed(2)}</span></div>
           <div className="flex justify-between font-semibold pt-1 border-t border-border/40"><span className="text-foreground">You receive</span><span className="text-gradient-gold">{net.toFixed(2)} {selected.coin}</span></div>
         </div>
 
