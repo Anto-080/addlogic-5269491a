@@ -1,31 +1,20 @@
-import {
-  LayoutDashboard, Search, Layers, Vault, Settings, Users, Lock, LogOut
-} from "lucide-react";
+import { Users, Lock, LogOut, Tag } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 
-const mainItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Research", url: "/research", icon: Search },
-  { title: "Tiers & Sponsors", url: "/tiers", icon: Layers },
-  { title: "Earnings", url: "/earnings", icon: Vault },
-];
-
 const secondaryItems = [
   { title: "Connections", url: "/connections", icon: Users },
   { title: "Investments", url: "/investments", icon: Lock },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Offers", url: "/offers", icon: Tag },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
   const { signOut, user } = useAuth();
 
   return (
@@ -40,24 +29,6 @@ export function AppSidebar() {
           )}
           {collapsed && <span className="text-xl">🔬</span>}
         </div>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className="hover:bg-accent/50" activeClassName="bg-accent text-primary font-medium">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>More</SidebarGroupLabel>
