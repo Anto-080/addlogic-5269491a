@@ -10,7 +10,8 @@ export const TIERS = [
   { id: 5,  name: "Financial & Economic Services",         icon: "📊", multiplier: 6.5,  color: "hsl(135, 50%, 45%)", researchers: 4560, avgEarning: 26.40, locked: false, subcategories: ["Macro analysis", "Investing", "Sustainable finance"] },
   // Blues range: deep blue (Tech) → light blue (Real Estate)
   { id: 6,  name: "Technological Advancements",            icon: "💻", multiplier: 5.8,  color: "#15528F", researchers: 5890, avgEarning: 22.80, locked: false, subcategories: ["AI", "Robotics", "Software", "Hardware"] },
-  { id: 7,  name: "Art & Culture / Humanistic",            icon: "🎨", multiplier: 5.2,  color: "#1F66A8", researchers: 6340, avgEarning: 19.40, locked: false, subcategories: ["Painting", "History", "Philosophy", "Architecture"] },
+  { id: 7,  name: "Art & Culture / Humanism",              icon: "🎨", multiplier: 5.2,  color: "#1F66A8", researchers: 6340, avgEarning: 19.40, locked: false, subcategories: ["Painting", "History", "Philosophy", "Architecture"] },
+  { id: 18, name: "Tourism & Travel",                      icon: "🎒", multiplier: 3.2,  color: "#4FA3D9", researchers: 8230, avgEarning: 10.40, locked: false, subcategories: ["Backpacking", "City breaks", "Adventure travel", "Cultural tours"] },
   { id: 8,  name: "Global News",                           icon: "🌍", multiplier: 4.5,  color: "#2A7BBF", researchers: 8920, avgEarning: 16.20, locked: false, subcategories: ["Geopolitics", "Climate news", "Tech news"] },
   { id: 9,  name: "Entertainment: Movies, Games, Books",   icon: "🎬", multiplier: 4.0,  color: "#3F8FCC", researchers: 12400, avgEarning: 13.40, locked: false, subcategories: ["Films", "Video games", "Music", "Books"] },
   { id: 10, name: "Food: Recipes, Nutrition, Diets",       icon: "🍽️", multiplier: 3.5,  color: "#5BA3D9", researchers: 7120, avgEarning: 11.80, locked: false, subcategories: ["Recipes", "Nutrition", "Diet plans"] },
@@ -78,4 +79,16 @@ export const DAILY_DESK = [
   { id: 2, title: "CRISPR-Cas9 off-target effects: new safety review", tier: 2, source: "Nature", warning: true, warningText: "Dual-use technology — read accredited risk analysis before applying concepts." },
   { id: 3, title: "EU climate package: 2030 targets locked", tier: 4, source: "Reuters", warning: false },
   { id: 4, title: "Molecular chirality switching: speculative review", tier: 2, source: "Cell", warning: true, warningText: "Dual-use research of concern — see WHO guidance on biosecurity." },
+];
+
+// CPA marketplace — free listings, sponsors pay only on completed purchase
+export const MOCK_OFFERS = [
+  { id: 1, merchant: "GeneLab Kits",      tierId: 1,  title: "At-home epigenetics test kit",        originalPrice: 199.00, salePrice: 149.00, discount: 25, cpaPayout: 8.50 },
+  { id: 2, merchant: "EcoBottle",         tierId: 4,  title: "Recycled-ocean-plastic flask",        originalPrice: 32.00,  salePrice: 24.00,  discount: 25, cpaPayout: 1.80 },
+  { id: 3, merchant: "QuantumBooks",      tierId: 6,  title: "Bundle: AI + Robotics handbook",      originalPrice: 78.00,  salePrice: 54.60,  discount: 30, cpaPayout: 3.20 },
+  { id: 4, merchant: "TrailMate",         tierId: 18, title: "20% off backpack + city pass",        originalPrice: 120.00, salePrice: 96.00,  discount: 20, cpaPayout: 4.40 },
+  { id: 5, merchant: "MetroBooks",        tierId: 7,  title: "Renaissance art coffee-table book",   originalPrice: 45.00,  salePrice: 33.75,  discount: 25, cpaPayout: 2.10 },
+  { id: 6, merchant: "FreshFork",         tierId: 10, title: "Mediterranean recipe box (4 weeks)",  originalPrice: 89.00,  salePrice: 62.30,  discount: 30, cpaPayout: 3.60 },
+  { id: 7, merchant: "ScreenStream+",     tierId: 9,  title: "3 months premium subscription",        originalPrice: 45.00,  salePrice: 27.00,  discount: 40, cpaPayout: 2.40 },
+  { id: 8, merchant: "GreenFin Advisors", tierId: 5,  title: "Sustainable portfolio review",         originalPrice: 250.00, salePrice: 175.00, discount: 30, cpaPayout: 12.00 },
 ];
