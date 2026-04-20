@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { TIERS } from "@/lib/mockData";
 import { TierIcon } from "@/components/TierIcon";
+import { UsdcIcon } from "@/components/icons/UsdcIcon";
 import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -128,7 +129,7 @@ export default function Tiers() {
                                     Tier {tier.id}
                                     {tier.locked && <Lock className="h-3 w-3" />}
                                   </span>
-                                  <h3 className="text-sm font-semibold text-foreground truncate">{tier.name}</h3>
+                                  <h3 className={`text-sm font-semibold text-foreground ${isOpen ? "" : "truncate"}`}>{tier.name}</h3>
                                 </div>
                                 <div className="text-right shrink-0 ml-2 flex items-center gap-2">
                                   <div>
@@ -143,7 +144,7 @@ export default function Tiers() {
                               </div>
                               <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>{tier.researchers.toLocaleString()} researchers</span>
-                                <span className="text-gold font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
+                                <span className="text-gold font-medium inline-flex items-center gap-1">Avg <UsdcIcon size={10} />{tier.avgEarning.toFixed(2)}/day</span>
                               </div>
                             </div>
                           </div>
@@ -188,7 +189,7 @@ export default function Tiers() {
                                   Tier {tier.id}
                                   {tier.locked && <Lock className="h-3 w-3" />}
                                 </span>
-                                <h3 className="text-sm font-semibold text-foreground truncate">{tier.name}</h3>
+                                <h3 className={`text-sm font-semibold text-foreground ${isOpen ? "" : "truncate"}`}>{tier.name}</h3>
                               </div>
                               <div className="text-right shrink-0 ml-2 flex items-center gap-2">
                                 <div>
@@ -203,7 +204,7 @@ export default function Tiers() {
                             </div>
                             <div className="flex justify-between text-xs text-muted-foreground">
                               <span>{tier.researchers.toLocaleString()} researchers</span>
-                              <span className="text-gold font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
+                              <span className="text-gold font-medium inline-flex items-center gap-1">Avg <UsdcIcon size={10} />{tier.avgEarning.toFixed(2)}/day</span>
                             </div>
                           </div>
                         </div>
@@ -252,7 +253,7 @@ export default function Tiers() {
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-base font-bold text-gradient-gold">${stats.topBid.toFixed(2)}</p>
+                          <p className="text-base font-bold text-gradient-gold inline-flex items-center gap-1"><UsdcIcon size={13} />{stats.topBid.toFixed(2)}</p>
                           <p className="text-[10px] text-muted-foreground">top bid / impression</p>
                         </div>
                       </div>
@@ -309,8 +310,8 @@ function BidDialog({ tier, topBid }: { tier: typeof TIERS[number]; topBid: numbe
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Sponsors out-bidding the current top bid (${topBid.toFixed(2)}) lock the tier slot for the next session.
+          <p className="text-xs text-muted-foreground inline-flex items-center gap-1 flex-wrap">
+            Sponsors out-bidding the current top bid (<UsdcIcon size={10} />{topBid.toFixed(2)}) lock the tier slot for the next session.
           </p>
           <label className="text-xs text-muted-foreground">Sub-interest</label>
           <select
@@ -320,11 +321,11 @@ function BidDialog({ tier, topBid }: { tier: typeof TIERS[number]; topBid: numbe
           >
             {tier.subcategories.map((s) => <option key={s}>{s}</option>)}
           </select>
-          <label className="text-xs text-muted-foreground">Bid (USD / impression)</label>
+          <label className="text-xs text-muted-foreground inline-flex items-center gap-1">Bid (<UsdcIcon size={10} /> / impression)</label>
           <Input type="number" step="0.01" value={bid} onChange={(e) => setBid(e.target.value)} className="bg-secondary/50" />
         </div>
         <DialogFooter>
-          <Button onClick={() => toast({ title: "Bid placed (mock)", description: `$${bid} on ${sub} · Tier ${tier.id}` })}>
+          <Button onClick={() => toast({ title: "Bid placed (mock)", description: `${bid} USDC on ${sub} · Tier ${tier.id}` })}>
             Confirm Bid
           </Button>
         </DialogFooter>
