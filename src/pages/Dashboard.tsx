@@ -5,6 +5,7 @@ import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockDat
 import { useState, useEffect } from "react";
 import { Zap, TrendingUp, Clock, Award, Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
+import { TierIcon } from "@/components/TierIcon";
 
 function AnimatedCounter({ target, prefix = "$" }: { target: number; prefix?: string }) {
   const [val, setVal] = useState(0);
@@ -204,7 +205,7 @@ export default function Dashboard() {
         {/* Primary tier badge */}
         <Card className="bg-card border-border/50">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="text-3xl">{primaryTier.icon}</div>
+            <div style={{ color: primaryTier.color }}><TierIcon tierId={primaryTier.id} size={32} /></div>
             <div className="flex-1">
               <p className="text-xs text-muted-foreground">Primary Research Tier</p>
               <p className="text-sm font-semibold text-foreground">{primaryTier.name}</p>
@@ -231,7 +232,7 @@ export default function Dashboard() {
                 return (
                   <div key={item.id} className="p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
                     <div className="flex items-start gap-3">
-                      <span className="text-lg shrink-0">{tier?.icon}</span>
+                      <span className="shrink-0" style={{ color: tier?.color }}>{tier && <TierIcon tierId={tier.id} size={20} />}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground">{item.title}</p>
                         <p className="text-[11px] text-muted-foreground">{item.source} · Tier {item.tier}</p>
@@ -265,7 +266,7 @@ export default function Dashboard() {
                 return (
                   <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
                     <div className="flex items-center gap-3">
-                      <span className="text-xl">{tier?.icon}</span>
+                      <span style={{ color: tier?.color }}>{tier && <TierIcon tierId={tier.id} size={22} />}</span>
                       <div>
                         <p className="text-sm font-medium text-foreground">{m.title}</p>
                         <p className="text-xs text-muted-foreground">{m.date} · Tier {m.tier}</p>

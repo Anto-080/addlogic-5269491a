@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Search, Layers, Wallet, Settings, Megaphone, Users, Lock, LogOut
+  LayoutDashboard, Search, Layers, Vault, Settings, Users, Lock, LogOut
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -13,7 +13,7 @@ const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Research", url: "/research", icon: Search },
   { title: "Tiers & Sponsors", url: "/tiers", icon: Layers },
-  { title: "Earnings", url: "/earnings", icon: Wallet },
+  { title: "Earnings", url: "/earnings", icon: Vault },
 ];
 
 const secondaryItems = [
