@@ -12,6 +12,7 @@ import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Ey
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import biochemTitle from "@/assets/biochemistry-title.png";
 
 // Deterministic mock bid stats per tier
 function bidStats(id: number, multiplier: number) {
@@ -81,22 +82,91 @@ export default function Tiers() {
                 <p className="text-sm font-semibold text-foreground">Seasonal Spectrum Tracker</p>
               </div>
               <div className="tier-spectrum w-full h-3 rounded-full mb-2" />
-              <div className="flex justify-between text-[10px] text-muted-foreground mb-3 px-1">
+              <div className="flex justify-between text-[10px] text-muted-foreground px-1">
                 <span>Tier 1</span><span>Tier 17</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <p><span className="text-foreground font-medium">Purple</span> — Biological & systemic science (locked)</p>
-                <p><span className="text-foreground font-medium">Green</span> — Ecology, finance</p>
-                <p><span className="text-foreground font-medium">Deep → Light Blue</span> — Technology → Real Estate</p>
-                <p><span className="text-foreground font-medium">Peach</span> — Personal Shopping</p>
-                <p><span className="text-foreground font-medium">Pink</span> — Personal Care</p>
-                <p><span className="text-foreground font-medium">Orange</span> — Clothes, Sports & eSports</p>
-                <p className="sm:col-span-2"><span className="text-foreground font-medium">Bloody red</span> — Betting, adult (locked)</p>
               </div>
             </Card>
 
+            {/* Silver-framed top-3 high-priority tiers with Biochemistry banner */}
+            <div className="silver-frame rounded-2xl overflow-hidden">
+              <a
+                href="https://pubs.acs.org/journal/bichaw"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="silver-banner block px-4 py-3 hover:opacity-90 transition-opacity"
+                aria-label="Visit ACS Biochemistry Journal"
+              >
+                <img
+                  src={biochemTitle}
+                  alt="ACS Biochemistry Journal"
+                  className="h-10 sm:h-12 w-auto mx-auto object-contain"
+                />
+                <p className="text-[10px] text-center mt-1 tracking-wider uppercase" style={{ color: "#758A9C" }}>
+                  Top Priority Research · ACS Biochemistry
+                </p>
+              </a>
+              <div className="p-3 space-y-3">
+                {orderedTiers.filter((t) => t.id <= 3).map((tier) => {
+                  const barWidth = (tier.multiplier / maxMultiplier) * 100;
+                  const isOpen = expanded === tier.id;
+                  return (
+                    <Card
+                      key={tier.id}
+                      className="bg-card border-border/50 hover:border-primary/30 transition-all"
+                      style={{ borderLeft: `3px solid ${tier.color}` }}
+                    >
+                      <CardContent className="p-4">
+                        <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
+                          <div className="flex items-center gap-4">
+                            <div className="shrink-0 w-12 flex justify-center" style={{ color: tier.color }}>
+                              <TierIcon tierId={tier.id} size={28} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="min-w-0">
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                    Tier {tier.id}
+                                    {tier.locked && <Lock className="h-3 w-3" />}
+                                  </span>
+                                  <h3 className="text-sm font-semibold text-foreground truncate">{tier.name}</h3>
+                                </div>
+                                <div className="text-right shrink-0 ml-2 flex items-center gap-2">
+                                  <div>
+                                    <p className="text-lg font-bold" style={{ color: tier.color }}>x{tier.multiplier}</p>
+                                    <p className="text-[10px] text-muted-foreground">multiplier</p>
+                                  </div>
+                                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                                </div>
+                              </div>
+                              <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
+                                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: tier.color }} />
+                              </div>
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>{tier.researchers.toLocaleString()} researchers</span>
+                                <span className="text-gold font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                        {isOpen && (
+                          <div className="mt-3 pt-3 border-t border-border/40">
+                            <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {tier.subcategories.map((s) => (
+                                <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/60 text-foreground/80 border border-border/40">{s}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="space-y-3">
-              {orderedTiers.map((tier) => {
+              {orderedTiers.filter((t) => t.id > 3).map((tier) => {
                 const barWidth = (tier.multiplier / maxMultiplier) * 100;
                 const isOpen = expanded === tier.id;
                 return (

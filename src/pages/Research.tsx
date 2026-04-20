@@ -196,7 +196,7 @@ export default function Research() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm">{tier?.icon}</span>
+                        <span style={{ color: tier?.color }}>{tier && <TierIcon tierId={tier.id} size={16} />}</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">Tier {article.tier}</span>
                         <span className="text-[10px] text-muted-foreground">{article.source}</span>
                       </div>
