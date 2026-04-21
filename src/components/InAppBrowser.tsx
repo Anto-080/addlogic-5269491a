@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Cookie, ShieldCheck, AlertTriangle, Hand } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { AdBanner } from "@/components/AdBanner";
+import { isAndroidNative, openInOperaWebView } from "@/lib/operaWebView";
 
 type Props = {
   url: string;
@@ -20,6 +21,15 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
   const [topAdOpened, setTopAdOpened] = useState(false);
   const [bottomAdOpened, setBottomAdOpened] = useState(false);
   const [touches, setTouches] = useState(0);
+
+  // On Android native shells, hand off to Opera WebView and close the in-app preview.
+  useEffect(() => {
+    if (isAndroidNative()) {
+      openInOperaWebView(url).then((handed) => {
+        if (handed) onClose();
+      });
+    }
+  }, [url, onClose]);
 
   // If iframe doesn't fire load within 4s, assume X-Frame-Options blocked it.
   useEffect(() => {
@@ -47,7 +57,9 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
       {/* Header strip */}
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border bg-card">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs text-muted-foreground shrink-0">{engineName}</span>
+          <span className="text-[10px] flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FF1B2D]/15 text-[#FF1B2D] shrink-0">
+            <ShieldCheck className="h-3 w-3" /> Opera WebView
+          </span>
           <span className="text-xs text-foreground/70 truncate font-mono">{url}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -83,8 +95,8 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
             src={url}
             onLoad={() => setLoaded(true)}
             className="w-full h-full rounded-lg border border-border bg-white"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            title="In-app search"
+            sandbox="allow-scripts allow-forms allow-popups"
+            title="Opera WebView preview"
           />
         ) : (
           <div className="h-full w-full rounded-lg border border-dashed border-border/60 bg-card flex items-center justify-center p-4">
