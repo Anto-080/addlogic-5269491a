@@ -5,7 +5,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { MOCK_EARNINGS } from "@/lib/mockData";
 import { Search, Layers, LayoutDashboard } from "lucide-react";
 import { RoundVault } from "@/components/icons/RoundVault";
-import { UsdcIcon } from "@/components/icons/UsdcIcon";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +13,8 @@ const QUICK_LINKS = [
   { to: "/research", label: "Research", icon: Search },
   { to: "/tiers", label: "Tiers & Sponsors", icon: Layers },
 ];
+
+const VAULT_GOLD = "#B0903D";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -31,7 +32,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 ml-auto">
-              {/* Quick-access icon shortcuts (always visible, icon-only on small) */}
               <nav className="flex items-center gap-0.5">
                 {QUICK_LINKS.map((l) => {
                   const active = location.pathname.startsWith(l.to);
@@ -61,9 +61,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 aria-label="Open Vault"
                 title="Vault"
               >
-                <RoundVault size={16} className="text-primary" />
-                <UsdcIcon size={12} />
-                <span className="text-xs sm:text-sm font-semibold text-primary">{MOCK_EARNINGS.allTime.toFixed(2)}</span>
+                <RoundVault size={18} color={VAULT_GOLD} />
+                <span className="text-xs sm:text-sm font-semibold text-money">${MOCK_EARNINGS.allTime.toFixed(2)}</span>
               </NavLink>
 
               <NavLink
