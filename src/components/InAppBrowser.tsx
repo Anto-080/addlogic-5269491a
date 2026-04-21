@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Cookie, ShieldCheck, AlertTriangle, Hand } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { AdBanner } from "@/components/AdBanner";
+import { isAndroidNative, openInOperaWebView } from "@/lib/operaWebView";
 
 type Props = {
   url: string;
@@ -20,6 +21,15 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
   const [topAdOpened, setTopAdOpened] = useState(false);
   const [bottomAdOpened, setBottomAdOpened] = useState(false);
   const [touches, setTouches] = useState(0);
+
+  // On Android native shells, hand off to Opera WebView and close the in-app preview.
+  useEffect(() => {
+    if (isAndroidNative()) {
+      openInOperaWebView(url).then((handed) => {
+        if (handed) onClose();
+      });
+    }
+  }, [url, onClose]);
 
   // If iframe doesn't fire load within 4s, assume X-Frame-Options blocked it.
   useEffect(() => {
