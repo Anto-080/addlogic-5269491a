@@ -203,7 +203,7 @@ export default function Research() {
                       <h3 className="text-sm font-medium text-foreground leading-snug">{article.title}</h3>
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{article.readTime}</span>
-                        <span className="flex items-center gap-1 text-money font-medium"><DollarSign className="h-3 w-3" />{article.earnings.toFixed(2)}</span>
+                        <span className="flex items-center gap-1 text-gold font-medium"><DollarSign className="h-3 w-3" />{article.earnings.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -225,7 +225,7 @@ export default function Research() {
             <div className="flex items-center gap-4">
               <div>
                 <p className="text-[10px] text-muted-foreground">Session Earnings</p>
-                <p className="text-lg font-bold text-money">${sessionEarnings.toFixed(2)}</p>
+                <p className="text-lg font-bold text-gradient-gold">${sessionEarnings.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-[10px] text-muted-foreground">Articles</p>

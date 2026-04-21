@@ -2,23 +2,49 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, Search } from "lucide-react";
+import { Globe, ExternalLink } from "lucide-react";
+
+type Browser = {
+  id: string;
+  name: string;
+  emoji: string;
+  // {q} placeholder for the URL-encoded query
+  searchUrl: string;
+  blurb: string;
+};
+
+const BROWSERS: Browser[] = [
+  { id: "google",  name: "Google",  emoji: "🔎", searchUrl: "https://www.google.com/search?q={q}",                 blurb: "Largest index, fastest results" },
+  { id: "ecosia",  name: "Ecosia",  emoji: "🌳", searchUrl: "https://www.ecosia.org/search?q={q}",                 blurb: "Plants trees with ad revenue" },
+  { id: "brave",   name: "Brave",   emoji: "🦁", searchUrl: "https://search.brave.com/search?q={q}",               blurb: "Independent index, privacy-first" },
+  { id: "opera",   name: "Opera",   emoji: "🅾️", searchUrl: "https://www.opera.com/search?q={q}",                  blurb: "Built-in VPN & crypto wallet" },
+];
 
 type BrowserPickerProps = {
   onSearch?: (args: { url: string; engineName: string }) => void;
 };
 
-// Opera-only — uses Opera WebView on Android (hardened against third-party fraud)
-// and a sandboxed iframe preview on the web.
 export function BrowserPicker({ onSearch }: BrowserPickerProps = {}) {
+  const [selected, setSelected] = useState<string>("ecosia");
   const [query, setQuery] = useState("");
+  const [customUrl, setCustomUrl] = useState("");
 
   const launch = () => {
     const q = encodeURIComponent(query.trim());
     if (!q) return;
-    // Opera's default search redirector
-    const url = `https://www.opera.com/search?q=${q}`;
-    if (onSearch) onSearch({ url, engineName: "Opera WebView" });
+    let url = "";
+    let engineName = "Custom";
+    if (selected === "custom") {
+      const tmpl = customUrl.trim();
+      if (!tmpl) return;
+      url = tmpl.includes("{q}") ? tmpl.replace("{q}", q) : `${tmpl}${tmpl.includes("?") ? "&" : "?"}q=${q}`;
+    } else {
+      const browser = BROWSERS.find((b) => b.id === selected);
+      if (!browser) return;
+      url = browser.searchUrl.replace("{q}", q);
+      engineName = browser.name;
+    }
+    if (onSearch) onSearch({ url, engineName });
     else window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -26,27 +52,53 @@ export function BrowserPicker({ onSearch }: BrowserPickerProps = {}) {
     <Card className="bg-card border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-primary" />
-          Powered by Opera WebView
+          <Globe className="h-5 w-5 text-primary" />
+          External Browser Search
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">
-          Searches open inside Opera's hardened WebView on Android — multi-layer protection against malicious third-party
-          activity. In the web preview, results render in a sandboxed in-app frame.
+          Pick a search engine, type a query, and we'll open the results in a new tab. Earn full XP whether you stay in-app or roam the wider web.
         </p>
 
-        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-[#FF1B2D] flex items-center justify-center text-white font-bold text-sm shrink-0">
-            O
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-foreground">Opera WebView</p>
-            <p className="text-[10px] text-muted-foreground leading-tight">
-              Built-in fraud blocker, tracker shield, ad-integrity verification
-            </p>
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          {BROWSERS.map((b) => (
+            <button
+              key={b.id}
+              onClick={() => setSelected(b.id)}
+              className={`p-3 rounded-lg border text-left transition-colors ${
+                selected === b.id
+                  ? "border-primary bg-primary/10"
+                  : "border-border/50 bg-secondary/30 hover:bg-secondary/50"
+              }`}
+            >
+              <div className="text-xl mb-1">{b.emoji}</div>
+              <p className="text-xs font-semibold text-foreground">{b.name}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">{b.blurb}</p>
+            </button>
+          ))}
+          <button
+            onClick={() => setSelected("custom")}
+            className={`p-3 rounded-lg border text-left transition-colors ${
+              selected === "custom"
+                ? "border-primary bg-primary/10"
+                : "border-border/50 bg-secondary/30 hover:bg-secondary/50"
+            }`}
+          >
+            <div className="text-xl mb-1">⚙️</div>
+            <p className="text-xs font-semibold text-foreground">Custom</p>
+            <p className="text-[10px] text-muted-foreground leading-tight">Your own search URL</p>
+          </button>
         </div>
+
+        {selected === "custom" && (
+          <Input
+            placeholder="https://example.com/search?q={q}"
+            value={customUrl}
+            onChange={(e) => setCustomUrl(e.target.value)}
+            className="bg-secondary/50 text-xs"
+          />
+        )}
 
         <div className="flex gap-2">
           <Input
@@ -57,8 +109,8 @@ export function BrowserPicker({ onSearch }: BrowserPickerProps = {}) {
             className="bg-secondary/50"
           />
           <Button onClick={launch} className="gap-2 shrink-0">
-            <Search className="h-4 w-4" />
-            Search
+            <ExternalLink className="h-4 w-4" />
+            Open
           </Button>
         </div>
       </CardContent>

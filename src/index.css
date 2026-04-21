@@ -78,12 +78,6 @@
     -webkit-text-fill-color: transparent;
   }
 
-  /* Money color — applied to all monetary numbers, earnings bars, money buttons */
-  .text-money { color: #9A7246; }
-  .bg-money { background-color: #9A7246; }
-  .bg-money:hover { background-color: #876237; }
-  .border-money { border-color: #9A7246; }
-
   /* Organic / fluid Strong Amber XP fill (#A87E00) — animated gradient sheen */
   .xp-fluid {
     background: linear-gradient(
