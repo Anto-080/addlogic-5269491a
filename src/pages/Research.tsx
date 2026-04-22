@@ -8,7 +8,7 @@ import { BrowserPicker } from "@/components/BrowserPicker";
 import { InAppBrowser } from "@/components/InAppBrowser";
 import { TierIcon } from "@/components/TierIcon";
 import { useSettings } from "@/contexts/SettingsContext";
-import workInProgressImg from "@/assets/work-in-progress.png";
+import { WipTapeBanner } from "@/components/WipTapeBanner";
 import { useMemo } from "react";
 
 function StarRating({ onRate }: { onRate: (n: number) => void }) {
@@ -159,17 +159,19 @@ export default function Research() {
 
         {/* Top-tier gating banner (L<35) */}
         {userLevel < TOP_TIER_GATE && (
-          <Card className="border-2" style={{ borderColor: "#E5C100", background: "#E5C10010" }}>
-            <CardContent className="p-4 flex items-start gap-3">
-              <img src={workInProgressImg} alt="Work in progress" className="h-14 w-14 object-contain shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">Top-tier research locked</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  For Accredited Scientists: <strong>Connect through LinkedIn for Early Access</strong>. Unlocks at Level {TOP_TIER_GATE}.
-                </p>
-                <Button size="sm" className="mt-2 gap-2 bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white">
-                  <ExternalLink className="h-3 w-3" /> Connect via LinkedIn
-                </Button>
+          <Card className="border-border/60">
+            <CardContent className="p-4 space-y-3">
+              <WipTapeBanner />
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Top-tier research locked</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    For Accredited Scientists: <strong>Connect through LinkedIn for Early Access</strong>. Unlocks at Level {TOP_TIER_GATE}.
+                  </p>
+                  <Button size="sm" className="mt-2 gap-2 bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white">
+                    <ExternalLink className="h-3 w-3" /> Connect via LinkedIn
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
