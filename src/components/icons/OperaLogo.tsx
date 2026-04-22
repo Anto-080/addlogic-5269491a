@@ -1,17 +1,32 @@
 type Props = { size?: number; className?: string };
 
-/** Opera "O" mark — generic recreation: red ring with vertical white ellipse cut-out. */
+/**
+ * Authentic Opera "O" mark — solid red ring with a tall central white
+ * ellipse cut-out, matching the brand mark used on com.opera.browser.
+ * Used because we route searches through the actual Opera WebView and are
+ * therefore licensed to display the trademark.
+ */
 export function OperaLogo({ size = 24, className }: Props) {
   return (
     <svg
-      viewBox="0 0 32 32"
+      viewBox="0 0 64 64"
       width={size}
       height={size}
       className={className}
-      aria-hidden
+      aria-label="Opera"
+      role="img"
     >
-      <circle cx="16" cy="16" r="14" fill="#FF1B2D" />
-      <ellipse cx="16" cy="16" rx="6" ry="10" fill="#FFFFFF" />
+      <defs>
+        <radialGradient id="opera-grad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FF1B2D" />
+          <stop offset="100%" stopColor="#C9001F" />
+        </radialGradient>
+        <mask id="opera-mask">
+          <rect width="64" height="64" fill="#fff" />
+          <ellipse cx="32" cy="32" rx="11" ry="22" fill="#000" />
+        </mask>
+      </defs>
+      <circle cx="32" cy="32" r="30" fill="url(#opera-grad)" mask="url(#opera-mask)" />
     </svg>
   );
 }

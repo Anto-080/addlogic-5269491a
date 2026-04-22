@@ -179,4 +179,14 @@
   .bg-money { background-color: #9A7246; }
   .bg-money:hover { background-color: #8a6539; }
   .fill-money { fill: #9A7246; }
+
+  /* Eternal Emerald — used for analytics toggles & gating chrome */
+  .text-emerald-eternal { color: #004627; }
+  .bg-emerald-eternal { background-color: #004627; }
+  .border-emerald-eternal { border-color: #004627; }
+
+  /* Switch tint override: emerald for analytics toggles (cookies / GPS / dev sims) */
+  button[role="switch"][data-emerald="true"][data-state="checked"] {
+    background-color: #004627 !important;
+  }
 }
