@@ -117,22 +117,26 @@ export default function Dashboard() {
               <div className="flex items-start gap-3 flex-1">
                 <div className="shrink-0 mt-0.5">
                   <svg viewBox="0 0 32 32" width="36" height="36" aria-label="Cookie">
-                    <circle cx="16" cy="16" r="13" fill={cookieAutoAccept ? "hsl(var(--primary))" : "hsl(var(--secondary))"} stroke="hsl(var(--border))" strokeWidth="1.5" />
-                    <circle cx="11" cy="12" r="1.6" fill="hsl(var(--primary-foreground))" opacity={cookieAutoAccept ? 1 : 0.4} />
-                    <circle cx="20" cy="11" r="1.2" fill="hsl(var(--primary-foreground))" opacity={cookieAutoAccept ? 1 : 0.4} />
-                    <circle cx="22" cy="18" r="1.6" fill="hsl(var(--primary-foreground))" opacity={cookieAutoAccept ? 1 : 0.4} />
-                    <circle cx="13" cy="20" r="1.3" fill="hsl(var(--primary-foreground))" opacity={cookieAutoAccept ? 1 : 0.4} />
-                    <circle cx="18" cy="22" r="1.1" fill="hsl(var(--primary-foreground))" opacity={cookieAutoAccept ? 1 : 0.4} />
+                    <circle cx="16" cy="16" r="13" fill={cookieAutoAccept ? "#004627" : "hsl(var(--secondary))"} stroke="hsl(var(--border))" strokeWidth="1.5" />
+                    <circle cx="11" cy="12" r="1.6" fill="#9A7246" opacity={cookieAutoAccept ? 1 : 0.4} />
+                    <circle cx="20" cy="11" r="1.2" fill="#9A7246" opacity={cookieAutoAccept ? 1 : 0.4} />
+                    <circle cx="22" cy="18" r="1.6" fill="#9A7246" opacity={cookieAutoAccept ? 1 : 0.4} />
+                    <circle cx="13" cy="20" r="1.3" fill="#9A7246" opacity={cookieAutoAccept ? 1 : 0.4} />
+                    <circle cx="18" cy="22" r="1.1" fill="#9A7246" opacity={cookieAutoAccept ? 1 : 0.4} />
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">Cookie Auto-Accept</p>
+                  <p className="text-sm font-semibold text-foreground">Cookie Auto-Accept &amp; Profile Sync</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Auto-confirm all cookies inside the in-app research browser for maximum returns and ad-hoc targeting.
+                    Activates two-way cookie handling: <strong className="text-foreground/90">retrieves first-, third-party
+                    and commercial cookies</strong> already on your device to map your dominant interests, and
+                    <strong className="text-foreground/90"> auto-accepts every cookie banner</strong> while you browse
+                    inside the in-app Opera WebView. Powers ad-hoc, retributed advertising tailored to what you actually
+                    care about — required for the rewards engine to function.
                   </p>
                 </div>
               </div>
-              <Switch checked={cookieAutoAccept} onCheckedChange={setCookieAutoAccept} />
+              <Switch checked={cookieAutoAccept} onCheckedChange={setCookieAutoAccept} data-emerald="true" />
             </div>
 
             <div className="border-t border-border/40" />
@@ -141,18 +145,21 @@ export default function Dashboard() {
               <div className="flex items-start gap-3 flex-1">
                 <div className="shrink-0 mt-0.5">
                   <svg viewBox="0 0 32 32" width="36" height="36" aria-label="GPS pin">
-                    <path d="M16 3 C10 3 6 7 6 13 C6 20 16 29 16 29 C16 29 26 20 26 13 C26 7 22 3 16 3 Z" fill={gpsPrecision ? "hsl(var(--primary))" : "hsl(var(--secondary))"} stroke="hsl(var(--border))" strokeWidth="1.5" />
-                    <circle cx="16" cy="13" r="4" fill={gpsPrecision ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))"} />
+                    <path d="M16 3 C10 3 6 7 6 13 C6 20 16 29 16 29 C16 29 26 20 26 13 C26 7 22 3 16 3 Z" fill={gpsPrecision ? "#004627" : "hsl(var(--secondary))"} stroke="hsl(var(--border))" strokeWidth="1.5" />
+                    <circle cx="16" cy="13" r="4" fill={gpsPrecision ? "#9A7246" : "hsl(var(--muted-foreground))"} />
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">GPS Precision</p>
+                  <p className="text-sm font-semibold text-foreground">GPS &amp; Anonymous Device Analytics</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Share live location for higher XP multipliers, premium regional ad-rates and unlock the Regional Coupons feed below.
+                    Beyond live location, this unlocks the anonymous device-side signals cookies cannot see —
+                    <strong className="text-foreground/90"> handset model, OS, screen, locale, daily active-usage
+                    pattern, network type</strong>. Combined with the cookie sync above, it produces a non-PII profile
+                    used to match you to higher-paying regional ads and the Regional Coupons feed below.
                   </p>
                 </div>
               </div>
-              <Switch checked={gpsPrecision} onCheckedChange={setGpsPrecision} />
+              <Switch checked={gpsPrecision} onCheckedChange={setGpsPrecision} data-emerald="true" />
             </div>
           </CardContent>
         </Card>
