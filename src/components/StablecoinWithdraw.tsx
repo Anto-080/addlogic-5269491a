@@ -45,7 +45,7 @@ export function StablecoinWithdraw({ available }: { available: number }) {
     <Card className="bg-card border-border/50 glow-amber">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <Coins className="h-5 w-5 text-primary" />
+          <Coins className="h-5 w-5 text-money" />
           Stablecoin Withdrawal
         </CardTitle>
       </CardHeader>
@@ -61,11 +61,11 @@ export function StablecoinWithdraw({ available }: { available: number }) {
               onClick={() => setProvider(p.id)}
               className={`p-3 rounded-lg border text-left transition-colors ${
                 provider === p.id
-                  ? "border-primary bg-primary/10"
+                  ? "border-[#9A7246] bg-[#9A7246]/10"
                   : "border-border/50 bg-secondary/30 hover:bg-secondary/50"
               }`}
             >
-              <p.icon className="h-5 w-5 text-primary mb-2" />
+              <p.icon className="h-5 w-5 text-money mb-2" />
               <p className="text-xs font-semibold text-foreground">{p.name}</p>
               <p className="text-[10px] text-muted-foreground leading-tight mt-1">{p.desc}</p>
               <p className="text-[10px] text-foreground/70 mt-2">Fee {p.fee} · {p.coin}</p>
@@ -84,7 +84,7 @@ export function StablecoinWithdraw({ available }: { available: number }) {
             <span className="text-muted-foreground">Amount ($)</span>
             <button
               onClick={() => setAmount(available.toFixed(2))}
-              className="text-primary hover:underline"
+              className="text-money hover:underline"
             >
               Max ${available.toFixed(2)}
             </button>
