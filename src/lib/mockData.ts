@@ -3,9 +3,9 @@
 // Per spec: Red bottom (Adult, Betting), Orange (Sports/eSports), Pink→Peach (Clothes→Personal Care),
 // Blue shades (Personal Shopping → Tech), Green shades (Finance → Ecology), Violet→Purple (Sci Research → Bio Lifesaving).
 export const TIERS = [
-  { id: 1,  name: "Biological Systems & Life-saving Tech", icon: "🧬", multiplier: 10.0, color: "hsl(270, 70%, 45%)", researchers: 1240, avgEarning: 48.50, locked: true,  subcategories: ["Gene therapy", "Cancer research", "Vaccines", "Organ regeneration"] },
-  { id: 2,  name: "Biochemical Knowledge",                 icon: "🔬", multiplier: 9.2,  color: "hsl(265, 65%, 50%)", researchers: 2180, avgEarning: 42.30, locked: true,  subcategories: ["Enzymology", "Metabolism", "Protein folding"] },
-  { id: 3,  name: "Systematically Important Sci Research", icon: "🔭", multiplier: 8.5,  color: "hsl(258, 60%, 55%)", researchers: 3420, avgEarning: 36.80, locked: true,  subcategories: ["Fusion energy", "Quantum physics", "Materials science"] },
+  { id: 1,  name: "Biological Systems & Lifesaving Technologies", icon: "🧬", multiplier: 10.0, color: "hsl(270, 70%, 45%)", researchers: 1240, avgEarning: 48.50, locked: true,  subcategories: ["Genes Functioning", "Peptide Research", "Cancer research", "Vaccines", "Organ regeneration"] },
+  { id: 2,  name: "Biochemical Knowledge",                          icon: "🔬", multiplier: 9.2,  color: "hsl(265, 65%, 50%)", researchers: 2180, avgEarning: 42.30, locked: true,  subcategories: ["Enzymology", "Metabolism", "Protein folding"] },
+  { id: 3,  name: "Systematically Important Scientific Research",   icon: "🔭", multiplier: 8.5,  color: "hsl(258, 60%, 55%)", researchers: 3420, avgEarning: 36.80, locked: true,  subcategories: ["Fusion energy", "Quantum physics", "Materials science"] },
   { id: 4,  name: "Ecology & Natural Biomes",              icon: "🌿", multiplier: 7.5,  color: "hsl(150, 55%, 40%)", researchers: 4100, avgEarning: 31.20, locked: false, subcategories: ["Reforestation", "Ocean health", "Biodiversity"] },
   { id: 5,  name: "Financial & Economic Services",         icon: "📊", multiplier: 6.5,  color: "hsl(135, 50%, 45%)", researchers: 4560, avgEarning: 26.40, locked: false, subcategories: ["Macro analysis", "Investing", "Sustainable finance"] },
   // Blues range: deep blue (Tech) → light blue (Real Estate)
