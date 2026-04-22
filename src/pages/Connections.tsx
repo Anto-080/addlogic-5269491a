@@ -1,9 +1,20 @@
+import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, UserCheck, ExternalLink } from "lucide-react";
+import { Mail, UserCheck, ExternalLink, Check, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  buildAuthUrl,
+  consumeRedirect,
+  disconnect as disconnectProvider,
+  hasProviderConfig,
+  isConnected,
+  readConnections,
+  type SocialConnection,
+  type SocialProvider,
+} from "@/lib/socialOAuth";
 
 const MOCK_CONNECTIONS = [
   { name: "Dr. Sarah Chen", platform: "linkedin", interests: ["Biological Systems", "Biochem"], affinity: 92, avatar: "SC" },
@@ -12,26 +23,6 @@ const MOCK_CONNECTIONS = [
   { name: "James Okafor", platform: "facebook", interests: ["Global News", "Economics"], affinity: 78, avatar: "JO" },
 ];
 
-// Real OAuth handoff. Both providers use Lovable Cloud's OAuth proxy when
-// configured; if the provider is not enabled in the project, the call
-// surfaces a toast pointing to the connection setup.
-async function startOAuth(provider: "facebook" | "linkedin_oidc") {
-  try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: provider as "facebook",
-      options: { redirectTo: `${window.location.origin}/connections` },
-    });
-    if (error) throw error;
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Connection failed";
-    toast({
-      title: provider === "facebook" ? "Facebook connect" : "LinkedIn connect",
-      description: `${msg}. Provider must be enabled in backend settings.`,
-    });
-  }
-}
-
-// Brand-accurate inline glyphs (no third-party assets / no orange).
 function FacebookGlyph({ size = 24 }: { size?: number }) {
   return (
     <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden>
@@ -51,7 +42,117 @@ function LinkedInGlyph({ size = 24 }: { size?: number }) {
   );
 }
 
+const BRAND: Record<SocialProvider, { color: string; label: string; cta: string; Glyph: (p: { size?: number }) => JSX.Element }> = {
+  facebook: { color: "#1877F2", label: "Facebook", cta: "Connect with Meta", Glyph: FacebookGlyph },
+  linkedin: { color: "#0A66C2", label: "LinkedIn", cta: "Sign in with LinkedIn", Glyph: LinkedInGlyph },
+};
+
+function ProviderCard({
+  provider,
+  uid,
+  connection,
+  onChanged,
+}: {
+  provider: SocialProvider;
+  uid: string;
+  connection: SocialConnection | null;
+  onChanged: () => void;
+}) {
+  const cfg = BRAND[provider];
+  const configured = hasProviderConfig(provider);
+
+  const handleConnect = () => {
+    const url = buildAuthUrl(provider);
+    if (!url) {
+      toast({
+        title: `${cfg.label} not configured`,
+        description: `Set ${provider === "facebook" ? "VITE_FACEBOOK_APP_ID" : "VITE_LINKEDIN_CLIENT_ID"} in your environment to enable real OAuth.`,
+      });
+      return;
+    }
+    window.location.href = url;
+  };
+
+  const handleDisconnect = () => {
+    disconnectProvider(uid, provider);
+    onChanged();
+    toast({ title: `${cfg.label} disconnected` });
+  };
+
+  return (
+    <div
+      className="rounded-xl border bg-card transition-colors"
+      style={{ borderColor: connection ? cfg.color : "hsl(var(--border) / 0.5)" }}
+    >
+      <div className="p-4 text-center space-y-2">
+        <div className="flex justify-center"><cfg.Glyph size={36} /></div>
+        <p className="text-sm font-semibold text-foreground">{cfg.label}</p>
+
+        {connection ? (
+          <>
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
+              style={{ color: cfg.color, backgroundColor: `${cfg.color}1A` }}
+            >
+              <Check className="h-3 w-3" /> Connected
+            </span>
+            <p className="text-[10px] text-muted-foreground">
+              since {new Date(connection.connectedAt).toLocaleDateString()}
+            </p>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={handleDisconnect}>
+              <X className="h-3 w-3 mr-1" /> Disconnect
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="text-xs text-muted-foreground">
+              {provider === "facebook"
+                ? "Find friends with similar research interests"
+                : "Connect with professionals in your tier"}
+            </p>
+            <button
+              onClick={handleConnect}
+              className="inline-flex items-center gap-1 text-[11px] font-medium hover:underline"
+              style={{ color: cfg.color }}
+            >
+              <ExternalLink className="h-3 w-3" /> {cfg.cta}
+            </button>
+            {!configured && (
+              <p className="text-[10px] text-muted-foreground italic">
+                Provider ID not set — click to see setup hint
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Connections() {
+  const { user } = useAuth();
+  const uid = user?.id ?? "guest";
+  const [connections, setConnections] = useState<SocialConnection[]>(() => readConnections(uid));
+
+  const refresh = () => setConnections(readConnections(uid));
+
+  useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [uid]);
+
+  useEffect(() => {
+    const provider = consumeRedirect(uid);
+    if (provider) {
+      refresh();
+      toast({ title: `${BRAND[provider].label} connected`, description: "Authorization complete." });
+    }
+    const onChange = () => refresh();
+    window.addEventListener("social-connections-changed", onChange);
+    return () => window.removeEventListener("social-connections-changed", onChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid]);
+
+  const fb = connections.find((c) => c.provider === "facebook") ?? null;
+  const li = connections.find((c) => c.provider === "linkedin") ?? null;
+
   return (
     <AppLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
@@ -61,33 +162,8 @@ export default function Connections() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <button
-            onClick={() => startOAuth("facebook")}
-            className="text-left rounded-xl border border-border/50 bg-card hover:border-[#1877F2]/60 transition-colors"
-          >
-            <div className="p-4 text-center space-y-2">
-              <FacebookGlyph size={36} />
-              <p className="text-sm font-semibold text-foreground">Facebook</p>
-              <p className="text-xs text-muted-foreground">Find friends with similar research interests</p>
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: "#1877F2" }}>
-                <ExternalLink className="h-3 w-3" /> Connect with Meta
-              </span>
-            </div>
-          </button>
-
-          <button
-            onClick={() => startOAuth("linkedin_oidc")}
-            className="text-left rounded-xl border border-border/50 bg-card hover:border-[#0A66C2]/60 transition-colors"
-          >
-            <div className="p-4 text-center space-y-2">
-              <LinkedInGlyph size={36} />
-              <p className="text-sm font-semibold text-foreground">LinkedIn</p>
-              <p className="text-xs text-muted-foreground">Connect with professionals in your tier</p>
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: "#0A66C2" }}>
-                <ExternalLink className="h-3 w-3" /> Sign in with LinkedIn
-              </span>
-            </div>
-          </button>
+          <ProviderCard provider="facebook" uid={uid} connection={fb} onChanged={refresh} />
+          <ProviderCard provider="linkedin" uid={uid} connection={li} onChanged={refresh} />
 
           <div className="rounded-xl border border-border/50 bg-card">
             <div className="p-4 text-center space-y-2">
