@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import biochemTitle from "@/assets/biochemistry-title.png";
-import workInProgressImg from "@/assets/work-in-progress.png";
+import { WipTapeBanner } from "@/components/WipTapeBanner";
 
 const TOP_TIER_GATE = 35;
 
@@ -113,8 +113,8 @@ export default function Tiers() {
               <div className="p-3 space-y-3 relative">
                 {topTierLocked && (
                   <div className="absolute inset-0 z-10 backdrop-blur-sm bg-background/40 rounded-b-2xl flex items-center justify-center p-4">
-                    <div className="bg-card border-2 rounded-xl p-4 max-w-sm text-center space-y-2 shadow-xl" style={{ borderColor: "#E5C100" }}>
-                      <img src={workInProgressImg} alt="Work in progress" className="h-14 w-14 object-contain mx-auto" />
+                    <div className="bg-card border border-border/60 rounded-xl p-4 max-w-sm text-center space-y-3 shadow-xl">
+                      <WipTapeBanner />
                       <p className="text-sm font-semibold text-foreground">Top-tier research locked</p>
                       <p className="text-xs text-muted-foreground">
                         For Accredited Scientists: <strong>Connect through LinkedIn for Early Access</strong>. Unlocks at Level {TOP_TIER_GATE}.
