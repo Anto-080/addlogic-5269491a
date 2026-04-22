@@ -124,11 +124,10 @@ export default function Tiers() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <div className="min-w-0">
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                    Tier {tier.id}
-                                    {tier.locked && <Lock className="h-3 w-3" />}
-                                  </span>
-                                  <h3 className={`text-sm font-semibold text-foreground ${isOpen ? "" : "truncate"}`}>{tier.name}</h3>
+                                  <h3 className={`text-sm font-semibold text-foreground flex items-center gap-1 ${isOpen ? "" : "truncate"}`}>
+                                    {tier.name}
+                                    {tier.locked && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                  </h3>
                                 </div>
                                 <div className="text-right shrink-0 ml-2 flex items-center gap-2">
                                   <div>
@@ -143,7 +142,7 @@ export default function Tiers() {
                               </div>
                               <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>{tier.researchers.toLocaleString()} researchers</span>
-                                <span className="text-gold font-medium inline-flex items-center gap-1">Avg <UsdcIcon size={10} />{tier.avgEarning.toFixed(2)}/day</span>
+                                <span className="text-money font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
                               </div>
                             </div>
                           </div>
@@ -184,11 +183,10 @@ export default function Tiers() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <div className="min-w-0">
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                  Tier {tier.id}
-                                  {tier.locked && <Lock className="h-3 w-3" />}
-                                </span>
-                                <h3 className={`text-sm font-semibold text-foreground ${isOpen ? "" : "truncate"}`}>{tier.name}</h3>
+                                <h3 className={`text-sm font-semibold text-foreground flex items-center gap-1 ${isOpen ? "" : "truncate"}`}>
+                                  {tier.name}
+                                  {tier.locked && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                </h3>
                               </div>
                               <div className="text-right shrink-0 ml-2 flex items-center gap-2">
                                 <div>
@@ -203,7 +201,7 @@ export default function Tiers() {
                             </div>
                             <div className="flex justify-between text-xs text-muted-foreground">
                               <span>{tier.researchers.toLocaleString()} researchers</span>
-                              <span className="text-gold font-medium inline-flex items-center gap-1">Avg <UsdcIcon size={10} />{tier.avgEarning.toFixed(2)}/day</span>
+                              <span className="text-money font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
                             </div>
                           </div>
                         </div>
@@ -247,12 +245,11 @@ export default function Tiers() {
                         <div className="flex items-center gap-3 min-w-0">
                           <span style={{ color: tier.color }}><TierIcon tierId={tier.id} size={26} /></span>
                           <div className="min-w-0">
-                            <p className="text-xs text-muted-foreground">Tier {tier.id}</p>
                             <p className="text-sm font-semibold text-foreground truncate">{tier.name}</p>
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-base font-bold text-gradient-gold inline-flex items-center gap-1"><UsdcIcon size={13} />{stats.topBid.toFixed(2)}</p>
+                          <p className="text-base font-bold text-money">${stats.topBid.toFixed(2)}</p>
                           <p className="text-[10px] text-muted-foreground">top bid / impression</p>
                         </div>
                       </div>
