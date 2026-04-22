@@ -2,12 +2,14 @@ import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { TIERS, MOCK_ARTICLES } from "@/lib/mockData";
-import { Star, Play, X, Search, Clock, DollarSign, Video } from "lucide-react";
+import { TIERS, MOCK_ARTICLES, MOCK_USER } from "@/lib/mockData";
+import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink } from "lucide-react";
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { InAppBrowser } from "@/components/InAppBrowser";
 import { TierIcon } from "@/components/TierIcon";
+import { useSettings } from "@/contexts/SettingsContext";
+import workInProgressImg from "@/assets/work-in-progress.png";
+import { useMemo } from "react";
 
 function StarRating({ onRate }: { onRate: (n: number) => void }) {
   const [hover, setHover] = useState(0);
@@ -79,19 +81,31 @@ export default function Research() {
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
   const [sessionEarnings, setSessionEarnings] = useState(0);
   const [showInterstitial, setShowInterstitial] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [articleCount, setArticleCount] = useState(0);
   const [browser, setBrowser] = useState<{ url: string; engineName: string } | null>(null);
   const [showSponsoredVideos, setShowSponsoredVideos] = useState(false);
+  const { topInterestTiers } = useSettings();
+  const userLevel = MOCK_USER.level;
+  const TOP_TIER_GATE = 35;
   const primaryTierId = selectedTier ?? 4;
 
-  const filteredArticles = MOCK_ARTICLES.filter((a) => {
-    if (selectedTier && a.tier !== selectedTier) return false;
-    if (searchQuery && !a.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
+  // Sort feed: prioritize the tiers extracted from real device signals.
+  const filteredArticles = useMemo(() => {
+    let list = MOCK_ARTICLES.filter((a) => !selectedTier || a.tier === selectedTier);
+    if (topInterestTiers.length) {
+      list = [...list].sort((a, b) => {
+        const ai = topInterestTiers.indexOf(a.tier);
+        const bi = topInterestTiers.indexOf(b.tier);
+        const av = ai === -1 ? 999 : ai;
+        const bv = bi === -1 ? 999 : bi;
+        return av - bv;
+      });
+    }
+    return list;
+  }, [selectedTier, topInterestTiers]);
 
-  const handleReadArticle = (earnings: number) => {
+  const handleReadArticle = (earnings: number, tier: number) => {
+    if (tier <= 3 && userLevel < TOP_TIER_GATE) return; // gated
     setSessionEarnings((s) => s + earnings);
     setArticleCount((c) => {
       const next = c + 1;
@@ -109,18 +123,7 @@ export default function Research() {
       <div className="space-y-4 max-w-5xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Research Browser</h1>
-          <p className="text-sm text-muted-foreground">Select a tier, browse articles, and earn from your curiosity.</p>
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search topics, articles, interests..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-secondary/50"
-          />
+          <p className="text-sm text-muted-foreground">Browse via Opera WebView, earn from your curiosity.</p>
         </div>
 
         {/* Sponsored videos shortcut */}
@@ -129,10 +132,10 @@ export default function Research() {
           className="w-full flex items-center justify-between px-3 py-2 rounded-md bg-secondary/40 hover:bg-secondary/60 border border-border/40 text-xs"
         >
           <span className="flex items-center gap-2 text-foreground">
-            <Video className="h-3.5 w-3.5 text-primary" />
+            <Video className="h-3.5 w-3.5 text-money" />
             Retributed Sponsor Videos available
           </span>
-          <span className="text-primary font-medium">{showSponsoredVideos ? "Hide" : "Show"} (3)</span>
+          <span className="text-money font-medium">{showSponsoredVideos ? "Hide" : "Show"} (3)</span>
         </button>
 
         {showSponsoredVideos && (
@@ -141,7 +144,7 @@ export default function Research() {
               <Card key={i} className="bg-card border-border/50">
                 <CardContent className="p-3">
                   <div className="aspect-video rounded bg-secondary/50 flex items-center justify-center mb-2">
-                    <Play className="h-6 w-6 text-primary" />
+                    <Play className="h-6 w-6 text-money" />
                   </div>
                   <p className="text-xs font-medium text-foreground">Sponsor clip #{i}</p>
                   <p className="text-[10px] text-muted-foreground">15s · earn $1.20 + 2× XP</p>
@@ -151,8 +154,26 @@ export default function Research() {
           </div>
         )}
 
-        {/* Browser Picker — opens in-app iframe */}
-        <BrowserPicker onSearch={(args) => setBrowser(args)} />
+        {/* Browser Picker — Opera WebView (gated until L25) */}
+        <BrowserPicker onSearch={(args) => setBrowser(args)} userLevel={userLevel} />
+
+        {/* Top-tier gating banner (L<35) */}
+        {userLevel < TOP_TIER_GATE && (
+          <Card className="border-2" style={{ borderColor: "#E5C100", background: "#E5C10010" }}>
+            <CardContent className="p-4 flex items-start gap-3">
+              <img src={workInProgressImg} alt="Work in progress" className="h-14 w-14 object-contain shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">Top-tier research locked</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  For Accredited Scientists: <strong>Connect through LinkedIn for Early Access</strong>. Unlocks at Level {TOP_TIER_GATE}.
+                </p>
+                <Button size="sm" className="mt-2 gap-2 bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white">
+                  <ExternalLink className="h-3 w-3" /> Connect via LinkedIn
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tier Filter */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -190,8 +211,13 @@ export default function Research() {
         <div className="space-y-3">
           {filteredArticles.map((article) => {
             const tier = TIERS.find((t) => t.id === article.tier);
+            const locked = article.tier <= 3 && userLevel < TOP_TIER_GATE;
             return (
-              <Card key={article.id} className="bg-card border-border/50 hover:border-primary/20 transition-colors cursor-pointer" onClick={() => handleReadArticle(article.earnings)}>
+              <Card
+                key={article.id}
+                className={`bg-card border-border/50 transition-colors ${locked ? "opacity-50 cursor-not-allowed" : "hover:border-primary/20 cursor-pointer"}`}
+                onClick={() => handleReadArticle(article.earnings, article.tier)}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -199,6 +225,7 @@ export default function Research() {
                         <span style={{ color: tier?.color }}>{tier && <TierIcon tierId={tier.id} size={16} />}</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">Tier {article.tier}</span>
                         <span className="text-[10px] text-muted-foreground">{article.source}</span>
+                        {locked && <Lock className="h-3 w-3 text-muted-foreground ml-auto" />}
                       </div>
                       <h3 className="text-sm font-medium text-foreground leading-snug">{article.title}</h3>
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">

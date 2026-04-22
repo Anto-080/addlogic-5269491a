@@ -3,9 +3,9 @@
 // Per spec: Red bottom (Adult, Betting), Orange (Sports/eSports), Pink→Peach (Clothes→Personal Care),
 // Blue shades (Personal Shopping → Tech), Green shades (Finance → Ecology), Violet→Purple (Sci Research → Bio Lifesaving).
 export const TIERS = [
-  { id: 1,  name: "Biological Systems & Life-saving Tech", icon: "🧬", multiplier: 10.0, color: "hsl(270, 70%, 45%)", researchers: 1240, avgEarning: 48.50, locked: true,  subcategories: ["Gene therapy", "Cancer research", "Vaccines", "Organ regeneration"] },
-  { id: 2,  name: "Biochemical Knowledge",                 icon: "🔬", multiplier: 9.2,  color: "hsl(265, 65%, 50%)", researchers: 2180, avgEarning: 42.30, locked: true,  subcategories: ["Enzymology", "Metabolism", "Protein folding"] },
-  { id: 3,  name: "Systematically Important Sci Research", icon: "🔭", multiplier: 8.5,  color: "hsl(258, 60%, 55%)", researchers: 3420, avgEarning: 36.80, locked: true,  subcategories: ["Fusion energy", "Quantum physics", "Materials science"] },
+  { id: 1,  name: "Biological Systems & Lifesaving Technologies", icon: "🧬", multiplier: 10.0, color: "hsl(270, 70%, 45%)", researchers: 1240, avgEarning: 48.50, locked: true,  subcategories: ["Genes Functioning", "Peptide Research", "Cancer research", "Vaccines", "Organ regeneration"] },
+  { id: 2,  name: "Biochemical Knowledge",                          icon: "🔬", multiplier: 9.2,  color: "hsl(265, 65%, 50%)", researchers: 2180, avgEarning: 42.30, locked: true,  subcategories: ["Enzymology", "Metabolism", "Protein folding"] },
+  { id: 3,  name: "Systematically Important Scientific Research",   icon: "🔭", multiplier: 8.5,  color: "hsl(258, 60%, 55%)", researchers: 3420, avgEarning: 36.80, locked: true,  subcategories: ["Fusion energy", "Quantum physics", "Materials science"] },
   { id: 4,  name: "Ecology & Natural Biomes",              icon: "🌿", multiplier: 7.5,  color: "hsl(150, 55%, 40%)", researchers: 4100, avgEarning: 31.20, locked: false, subcategories: ["Reforestation", "Ocean health", "Biodiversity"] },
   { id: 5,  name: "Financial & Economic Services",         icon: "📊", multiplier: 6.5,  color: "hsl(135, 50%, 45%)", researchers: 4560, avgEarning: 26.40, locked: false, subcategories: ["Macro analysis", "Investing", "Sustainable finance"] },
   // Blues range: deep blue (Tech) → light blue (Real Estate)
@@ -92,3 +92,8 @@ export const MOCK_OFFERS = [
   { id: 7, merchant: "ScreenStream+",     tierId: 9,  title: "3 months premium subscription",        originalPrice: 45.00,  salePrice: 27.00,  discount: 40, cpaPayout: 2.40 },
   { id: 8, merchant: "GreenFin Advisors", tierId: 5,  title: "Sustainable portfolio review",         originalPrice: 250.00, salePrice: 175.00, discount: 30, cpaPayout: 12.00 },
 ];
+
+// Single source of truth for the current user's level (gate evaluation)
+export const MOCK_USER = {
+  level: MOCK_EARNINGS.level, // 23 — below the L25 / L35 / L50 / L100 gates
+};

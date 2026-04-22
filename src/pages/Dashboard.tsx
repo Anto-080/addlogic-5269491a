@@ -3,8 +3,10 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useState, useEffect } from "react";
-import { Zap, Star, ShieldAlert, Newspaper, Tag, DollarSign } from "lucide-react";
+import { Zap, Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
+import { SandglassIcon } from "@/components/icons/SandglassIcon";
+import { ClockIcon } from "@/components/icons/ClockIcon";
 import { useSettings } from "@/contexts/SettingsContext";
 import { TierIcon } from "@/components/TierIcon";
 
@@ -41,9 +43,9 @@ export default function Dashboard() {
   const primaryTier = TIERS[3];
 
   const summary = [
-    { label: "Today", value: MOCK_EARNINGS.today, isAllTime: false },
-    { label: "This Week", value: MOCK_EARNINGS.thisWeek, isAllTime: false },
-    { label: "All Time", value: MOCK_EARNINGS.allTime, isAllTime: true },
+    { label: "Today",     value: MOCK_EARNINGS.today,    Icon: SandglassIcon },
+    { label: "This Week", value: MOCK_EARNINGS.thisWeek, Icon: ClockIcon },
+    { label: "All Time",  value: MOCK_EARNINGS.allTime,  Icon: HexDollar },
   ];
 
   return (
@@ -66,11 +68,7 @@ export default function Dashboard() {
                       <AnimatedCounter target={item.value} />
                     </p>
                   </div>
-                  {item.isAllTime ? (
-                    <HexDollar size={32} />
-                  ) : (
-                    <DollarSign className="h-8 w-8 text-primary opacity-60" />
-                  )}
+                  <item.Icon size={32} />
                 </div>
               </CardContent>
             </Card>
@@ -81,7 +79,7 @@ export default function Dashboard() {
         <Card className="bg-card border-border/50 glow-amber">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
+              <Zap className="h-5 w-5 text-money" />
               Experience Level {MOCK_EARNINGS.level}
             </CardTitle>
           </CardHeader>
@@ -163,7 +161,7 @@ export default function Dashboard() {
           <Card className="bg-card border-border/50">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Tag className="h-5 w-5 text-primary" /> Regional Coupons
+                <Tag className="h-5 w-5 text-money" /> Regional Coupons
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -179,7 +177,7 @@ export default function Dashboard() {
                       <p className="text-sm font-medium text-foreground">{c.brand}</p>
                       <p className="text-xs text-muted-foreground">{c.offer}</p>
                     </div>
-                    <span className="text-[10px] text-primary font-medium">{c.dist}</span>
+                    <span className="text-[10px] text-money font-medium">{c.dist}</span>
                   </div>
                 ))}
               </div>
@@ -201,7 +199,7 @@ export default function Dashboard() {
         <Card className="bg-card border-border/50">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Newspaper className="h-5 w-5 text-primary" />
+              <Newspaper className="h-5 w-5 text-money" />
               Daily Information Desk
             </CardTitle>
           </CardHeader>

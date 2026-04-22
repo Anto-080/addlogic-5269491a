@@ -67,7 +67,11 @@
 
 @layer utilities {
   .glow-amber {
-    box-shadow: 0 0 20px hsl(38 92% 50% / 0.15);
+    /* Money-tinted glow — replaces the old amber/orange shadow */
+    box-shadow: 0 0 20px hsl(28 35% 44% / 0.22);
+  }
+  .glow-money {
+    box-shadow: 0 0 20px hsl(28 35% 44% / 0.25);
   }
   .glow-crimson {
     box-shadow: 0 0 20px hsl(348 83% 47% / 0.15);
@@ -76,6 +80,11 @@
     background: linear-gradient(135deg, hsl(43 96% 56%), hsl(38 92% 50%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+  /* Switch tint override — money color */
+  [data-state="checked"].peer\\:bg-primary,
+  button[role="switch"][data-state="checked"] {
+    background-color: #9A7246 !important;
   }
 
   /* Organic / fluid Strong Amber XP fill (#A87E00) — animated gradient sheen */
