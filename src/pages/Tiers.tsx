@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { TIERS } from "@/lib/mockData";
 import { TierIcon } from "@/components/TierIcon";
-import { UsdcIcon } from "@/components/icons/UsdcIcon";
 import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -54,9 +53,8 @@ export default function Tiers() {
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tiers & Sponsors</h1>
-          <p className="text-sm text-muted-foreground">
-            17 tiers ranked by societal importance. Switch to Sponsor Live Bidding to see auction activity.
-          </p>
+          <p className="text-sm text-muted-foreground">Tiers Ranked by Systemic Importance.</p>
+          <p className="text-sm text-muted-foreground">Switch to Sponsor Live Bidding to see auction activity.</p>
         </div>
 
         <Tabs value={view} onValueChange={(v) => setParams(v === "sponsors" ? { view: "sponsors" } : {})}>
