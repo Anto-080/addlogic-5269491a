@@ -6,13 +6,16 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
-import { TIERS } from "@/lib/mockData";
+import { TIERS, MOCK_USER } from "@/lib/mockData";
 import { TierIcon } from "@/components/TierIcon";
-import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye } from "lucide-react";
+import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import biochemTitle from "@/assets/biochemistry-title.png";
+import workInProgressImg from "@/assets/work-in-progress.png";
+
+const TOP_TIER_GATE = 35;
 
 // Deterministic mock bid stats per tier
 function bidStats(id: number, multiplier: number) {
@@ -30,6 +33,8 @@ export default function Tiers() {
   const [seasonalShuffle, setSeasonalShuffle] = useState(0);
   const [params, setParams] = useSearchParams();
   const view = params.get("view") === "sponsors" ? "sponsors" : "tiers";
+  const userLevel = MOCK_USER.level;
+  const topTierLocked = userLevel < TOP_TIER_GATE;
 
   useEffect(() => {
     const t = setInterval(() => setSeasonalShuffle((s) => s + 1), 6000);
@@ -105,7 +110,21 @@ export default function Tiers() {
                   ⟩ ACS
                 </a>
               </div>
-              <div className="p-3 space-y-3">
+              <div className="p-3 space-y-3 relative">
+                {topTierLocked && (
+                  <div className="absolute inset-0 z-10 backdrop-blur-sm bg-background/40 rounded-b-2xl flex items-center justify-center p-4">
+                    <div className="bg-card border-2 rounded-xl p-4 max-w-sm text-center space-y-2 shadow-xl" style={{ borderColor: "#E5C100" }}>
+                      <img src={workInProgressImg} alt="Work in progress" className="h-14 w-14 object-contain mx-auto" />
+                      <p className="text-sm font-semibold text-foreground">Top-tier research locked</p>
+                      <p className="text-xs text-muted-foreground">
+                        For Accredited Scientists: <strong>Connect through LinkedIn for Early Access</strong>. Unlocks at Level {TOP_TIER_GATE}.
+                      </p>
+                      <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white text-xs font-medium">
+                        <ExternalLink className="h-3 w-3" /> Connect via LinkedIn
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {orderedTiers.filter((t) => t.id <= 3).map((tier) => {
                   const barWidth = (tier.multiplier / maxMultiplier) * 100;
                   const isOpen = expanded === tier.id;
