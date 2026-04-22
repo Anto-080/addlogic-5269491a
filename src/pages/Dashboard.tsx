@@ -3,8 +3,10 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useState, useEffect } from "react";
-import { Zap, Star, ShieldAlert, Newspaper, Tag, DollarSign } from "lucide-react";
+import { Zap, Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
+import { SandglassIcon } from "@/components/icons/SandglassIcon";
+import { ClockIcon } from "@/components/icons/ClockIcon";
 import { useSettings } from "@/contexts/SettingsContext";
 import { TierIcon } from "@/components/TierIcon";
 
