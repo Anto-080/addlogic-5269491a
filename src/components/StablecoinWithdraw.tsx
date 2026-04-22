@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Coins, Smartphone, Wallet } from "lucide-react";
-import { UsdcIcon } from "@/components/icons/UsdcIcon";
 import { toast } from "@/hooks/use-toast";
 
 type Provider = {
@@ -32,7 +31,7 @@ export function StablecoinWithdraw({ available }: { available: number }) {
 
   const submit = () => {
     if (numericAmount <= 0 || numericAmount > available) {
-      toast({ title: "Invalid amount", description: `Enter an amount between 0.01 and ${available.toFixed(2)} USDC.`, variant: "destructive" });
+      toast({ title: "Invalid amount", description: `Enter an amount between $0.01 and $${available.toFixed(2)}.`, variant: "destructive" });
       return;
     }
     toast({
@@ -55,7 +54,6 @@ export function StablecoinWithdraw({ available }: { available: number }) {
           Convert your earnings to stablecoins (cUSD, USDC, USDT) and send to a mobile wallet or self-custody address. Fast, low-fee, no bank required.
         </p>
 
-        {/* Provider grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {PROVIDERS.map((p) => (
             <button
@@ -81,15 +79,14 @@ export function StablecoinWithdraw({ available }: { available: number }) {
           Identity-tied rails (MiniPay, Google Wallet) keep the system fair.
         </div>
 
-        {/* Amount + (optional) address */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground inline-flex items-center gap-1">Amount (<UsdcIcon size={10} />)</span>
+            <span className="text-muted-foreground">Amount ($)</span>
             <button
               onClick={() => setAmount(available.toFixed(2))}
-              className="text-primary hover:underline inline-flex items-center gap-1"
+              className="text-primary hover:underline"
             >
-              Max <UsdcIcon size={10} />{available.toFixed(2)}
+              Max ${available.toFixed(2)}
             </button>
           </div>
           <Input
@@ -101,14 +98,13 @@ export function StablecoinWithdraw({ available }: { available: number }) {
           />
         </div>
 
-        {/* Summary */}
         <div className="rounded-lg bg-secondary/40 p-3 text-xs space-y-1">
-          <div className="flex justify-between"><span className="text-muted-foreground">Gross</span><span className="text-foreground inline-flex items-center gap-1"><UsdcIcon size={10} />{numericAmount.toFixed(2)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Fee ({selected.fee})</span><span className="text-crimson inline-flex items-center gap-1">−<UsdcIcon size={10} />{fee.toFixed(2)}</span></div>
-          <div className="flex justify-between font-semibold pt-1 border-t border-border/40"><span className="text-foreground">You receive</span><span className="text-gradient-gold">{net.toFixed(2)} {selected.coin}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Gross</span><span className="text-money">${numericAmount.toFixed(2)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Fee ({selected.fee})</span><span className="text-crimson">−${fee.toFixed(2)}</span></div>
+          <div className="flex justify-between font-semibold pt-1 border-t border-border/40"><span className="text-foreground">You receive</span><span className="text-money">${net.toFixed(2)} {selected.coin}</span></div>
         </div>
 
-        <Button onClick={submit} className="w-full gap-2">
+        <Button onClick={submit} className="w-full gap-2 bg-money hover:bg-money/90 text-white">
           <selected.icon className="h-4 w-4" />
           Send to {selected.name}
         </Button>

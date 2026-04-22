@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { TIERS } from "@/lib/mockData";
 import { TierIcon } from "@/components/TierIcon";
-import { UsdcIcon } from "@/components/icons/UsdcIcon";
 import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -54,9 +53,8 @@ export default function Tiers() {
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tiers & Sponsors</h1>
-          <p className="text-sm text-muted-foreground">
-            17 tiers ranked by societal importance. Switch to Sponsor Live Bidding to see auction activity.
-          </p>
+          <p className="text-sm text-muted-foreground">Tiers Ranked by Systemic Importance.</p>
+          <p className="text-sm text-muted-foreground">Switch to Sponsor Live Bidding to see auction activity.</p>
         </div>
 
         <Tabs value={view} onValueChange={(v) => setParams(v === "sponsors" ? { view: "sponsors" } : {})}>
@@ -72,7 +70,7 @@ export default function Tiers() {
                 <ArrowUpRight className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <div className="text-sm text-muted-foreground">
                   <strong className="text-foreground">Redistribution Model:</strong> a portion of ad revenue from lower tiers flows upward.
-                  Tier 17 browsing indirectly funds Tier 1 breakthroughs.
+                  Casual browsing indirectly funds top-priority breakthroughs.
                 </div>
               </div>
             </Card>
@@ -82,30 +80,31 @@ export default function Tiers() {
                 <Activity className="h-4 w-4 text-primary" />
                 <p className="text-sm font-semibold text-foreground">Seasonal Spectrum Tracker</p>
               </div>
-              <div className="tier-spectrum w-full h-3 rounded-full mb-2" />
-              <div className="flex justify-between text-[10px] text-muted-foreground px-1">
-                <span>Tier 1</span><span>Tier 17</span>
-              </div>
+              <div className="tier-spectrum w-full h-3 rounded-full" />
             </Card>
 
             {/* Silver-framed top-3 high-priority tiers with Biochemistry banner */}
             <div className="silver-frame rounded-2xl overflow-hidden">
-              <a
-                href="https://pubs.acs.org/journal/bichaw"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="silver-banner block px-4 py-3 hover:opacity-90 transition-opacity"
-                aria-label="Visit ACS Biochemistry Journal"
-              >
+              <div className="silver-banner px-4 py-3 relative">
                 <img
                   src={biochemTitle}
-                  alt="ACS Biochemistry Journal"
+                  alt="Priority Research"
                   className="h-10 sm:h-12 w-auto mx-auto object-contain"
                 />
-                <p className="text-[10px] text-center mt-1 tracking-wider uppercase" style={{ color: "#758A9C" }}>
-                  Top Priority Research · ACS Biochemistry
+                <p className="text-center mt-1 text-xs tracking-wider uppercase font-medium" style={{ color: "#758A9C" }}>
+                  Priority Research
                 </p>
-              </a>
+                <a
+                  href="https://pubs.acs.org/journal/bichaw"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute bottom-1.5 right-2 text-[10px] tracking-wide hover:underline"
+                  style={{ color: "#758A9C" }}
+                  aria-label="Visit ACS journal"
+                >
+                  ⟩ ACS
+                </a>
+              </div>
               <div className="p-3 space-y-3">
                 {orderedTiers.filter((t) => t.id <= 3).map((tier) => {
                   const barWidth = (tier.multiplier / maxMultiplier) * 100;
@@ -125,11 +124,10 @@ export default function Tiers() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
                                 <div className="min-w-0">
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                    Tier {tier.id}
-                                    {tier.locked && <Lock className="h-3 w-3" />}
-                                  </span>
-                                  <h3 className={`text-sm font-semibold text-foreground ${isOpen ? "" : "truncate"}`}>{tier.name}</h3>
+                                  <h3 className={`text-sm font-semibold text-foreground flex items-center gap-1 ${isOpen ? "" : "truncate"}`}>
+                                    {tier.name}
+                                    {tier.locked && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                  </h3>
                                 </div>
                                 <div className="text-right shrink-0 ml-2 flex items-center gap-2">
                                   <div>
@@ -144,7 +142,7 @@ export default function Tiers() {
                               </div>
                               <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>{tier.researchers.toLocaleString()} researchers</span>
-                                <span className="text-gold font-medium inline-flex items-center gap-1">Avg <UsdcIcon size={10} />{tier.avgEarning.toFixed(2)}/day</span>
+                                <span className="text-money font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
                               </div>
                             </div>
                           </div>
@@ -185,11 +183,10 @@ export default function Tiers() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <div className="min-w-0">
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                  Tier {tier.id}
-                                  {tier.locked && <Lock className="h-3 w-3" />}
-                                </span>
-                                <h3 className={`text-sm font-semibold text-foreground ${isOpen ? "" : "truncate"}`}>{tier.name}</h3>
+                                <h3 className={`text-sm font-semibold text-foreground flex items-center gap-1 ${isOpen ? "" : "truncate"}`}>
+                                  {tier.name}
+                                  {tier.locked && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                </h3>
                               </div>
                               <div className="text-right shrink-0 ml-2 flex items-center gap-2">
                                 <div>
@@ -204,7 +201,7 @@ export default function Tiers() {
                             </div>
                             <div className="flex justify-between text-xs text-muted-foreground">
                               <span>{tier.researchers.toLocaleString()} researchers</span>
-                              <span className="text-gold font-medium inline-flex items-center gap-1">Avg <UsdcIcon size={10} />{tier.avgEarning.toFixed(2)}/day</span>
+                              <span className="text-money font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
                             </div>
                           </div>
                         </div>
@@ -248,12 +245,11 @@ export default function Tiers() {
                         <div className="flex items-center gap-3 min-w-0">
                           <span style={{ color: tier.color }}><TierIcon tierId={tier.id} size={26} /></span>
                           <div className="min-w-0">
-                            <p className="text-xs text-muted-foreground">Tier {tier.id}</p>
                             <p className="text-sm font-semibold text-foreground truncate">{tier.name}</p>
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-base font-bold text-gradient-gold inline-flex items-center gap-1"><UsdcIcon size={13} />{stats.topBid.toFixed(2)}</p>
+                          <p className="text-base font-bold text-money">${stats.topBid.toFixed(2)}</p>
                           <p className="text-[10px] text-muted-foreground">top bid / impression</p>
                         </div>
                       </div>
@@ -310,8 +306,8 @@ function BidDialog({ tier, topBid }: { tier: typeof TIERS[number]; topBid: numbe
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="text-xs text-muted-foreground inline-flex items-center gap-1 flex-wrap">
-            Sponsors out-bidding the current top bid (<UsdcIcon size={10} />{topBid.toFixed(2)}) lock the tier slot for the next session.
+          <p className="text-xs text-muted-foreground">
+            Sponsors out-bidding the current top bid (${topBid.toFixed(2)}) lock the tier slot for the next session.
           </p>
           <label className="text-xs text-muted-foreground">Sub-interest</label>
           <select
@@ -321,11 +317,11 @@ function BidDialog({ tier, topBid }: { tier: typeof TIERS[number]; topBid: numbe
           >
             {tier.subcategories.map((s) => <option key={s}>{s}</option>)}
           </select>
-          <label className="text-xs text-muted-foreground inline-flex items-center gap-1">Bid (<UsdcIcon size={10} /> / impression)</label>
+          <label className="text-xs text-muted-foreground">Bid ($ / impression)</label>
           <Input type="number" step="0.01" value={bid} onChange={(e) => setBid(e.target.value)} className="bg-secondary/50" />
         </div>
         <DialogFooter>
-          <Button onClick={() => toast({ title: "Bid placed (mock)", description: `${bid} USDC on ${sub} · Tier ${tier.id}` })}>
+          <Button onClick={() => toast({ title: "Bid placed (mock)", description: `$${bid} on ${sub} · ${tier.name}` })}>
             Confirm Bid
           </Button>
         </DialogFooter>

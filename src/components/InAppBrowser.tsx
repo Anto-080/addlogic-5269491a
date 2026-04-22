@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Cookie, ShieldCheck, AlertTriangle, Hand } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { AdBanner } from "@/components/AdBanner";
+import { isNative, openInOperaWebView } from "@/lib/operaWebView";
 
 type Props = {
   url: string;
@@ -42,12 +43,23 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
     };
   }, []);
 
+  // On native Android: hand off to Opera WebView and close this overlay.
+  useEffect(() => {
+    if (!isNative()) return;
+    let cancelled = false;
+    (async () => {
+      const handed = await openInOperaWebView(url);
+      if (handed && !cancelled) onClose();
+    })();
+    return () => { cancelled = true; };
+  }, [url, onClose]);
+
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Header strip */}
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border bg-card">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs text-muted-foreground shrink-0">{engineName}</span>
+          <span className="text-xs text-primary shrink-0 font-semibold">Opera WebView</span>
           <span className="text-xs text-foreground/70 truncate font-mono">{url}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -83,7 +95,7 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
             src={url}
             onLoad={() => setLoaded(true)}
             className="w-full h-full rounded-lg border border-border bg-white"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            sandbox="allow-scripts allow-forms allow-popups"
             title="In-app search"
           />
         ) : (

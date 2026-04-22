@@ -2,49 +2,31 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Globe, ExternalLink } from "lucide-react";
-
-type Browser = {
-  id: string;
-  name: string;
-  emoji: string;
-  // {q} placeholder for the URL-encoded query
-  searchUrl: string;
-  blurb: string;
-};
-
-const BROWSERS: Browser[] = [
-  { id: "google",  name: "Google",  emoji: "🔎", searchUrl: "https://www.google.com/search?q={q}",                 blurb: "Largest index, fastest results" },
-  { id: "ecosia",  name: "Ecosia",  emoji: "🌳", searchUrl: "https://www.ecosia.org/search?q={q}",                 blurb: "Plants trees with ad revenue" },
-  { id: "brave",   name: "Brave",   emoji: "🦁", searchUrl: "https://search.brave.com/search?q={q}",               blurb: "Independent index, privacy-first" },
-  { id: "opera",   name: "Opera",   emoji: "🅾️", searchUrl: "https://www.opera.com/search?q={q}",                  blurb: "Built-in VPN & crypto wallet" },
-];
+import { Globe, ExternalLink, ShieldCheck } from "lucide-react";
+import { isNative, openInOperaWebView } from "@/lib/operaWebView";
 
 type BrowserPickerProps = {
   onSearch?: (args: { url: string; engineName: string }) => void;
 };
 
-export function BrowserPicker({ onSearch }: BrowserPickerProps = {}) {
-  const [selected, setSelected] = useState<string>("ecosia");
-  const [query, setQuery] = useState("");
-  const [customUrl, setCustomUrl] = useState("");
+const OPERA_SEARCH = "https://www.opera.com/search?q={q}";
 
-  const launch = () => {
+export function BrowserPicker({ onSearch }: BrowserPickerProps = {}) {
+  const [query, setQuery] = useState("");
+
+  const launch = async () => {
     const q = encodeURIComponent(query.trim());
     if (!q) return;
-    let url = "";
-    let engineName = "Custom";
-    if (selected === "custom") {
-      const tmpl = customUrl.trim();
-      if (!tmpl) return;
-      url = tmpl.includes("{q}") ? tmpl.replace("{q}", q) : `${tmpl}${tmpl.includes("?") ? "&" : "?"}q=${q}`;
-    } else {
-      const browser = BROWSERS.find((b) => b.id === selected);
-      if (!browser) return;
-      url = browser.searchUrl.replace("{q}", q);
-      engineName = browser.name;
+    const url = OPERA_SEARCH.replace("{q}", q);
+
+    // On a real Android Capacitor build, hand off to Opera WebView immediately.
+    if (isNative()) {
+      const handed = await openInOperaWebView(url);
+      if (handed) return;
     }
-    if (onSearch) onSearch({ url, engineName });
+
+    // Web preview: render through hardened in-app iframe.
+    if (onSearch) onSearch({ url, engineName: "Opera WebView" });
     else window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -53,52 +35,29 @@ export function BrowserPicker({ onSearch }: BrowserPickerProps = {}) {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Globe className="h-5 w-5 text-primary" />
-          External Browser Search
+          Powered by Opera WebView
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">
-          Pick a search engine, type a query, and we'll open the results in a new tab. Earn full XP whether you stay in-app or roam the wider web.
+          On Android, your search is routed through Opera's hardened WebView — multiple layers of anti-fraud, anti-tracking
+          and malicious-redirect protection keep scammers from siphoning research funds. In the web preview the same
+          query opens through an in-app sandboxed view.
         </p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          {BROWSERS.map((b) => (
-            <button
-              key={b.id}
-              onClick={() => setSelected(b.id)}
-              className={`p-3 rounded-lg border text-left transition-colors ${
-                selected === b.id
-                  ? "border-primary bg-primary/10"
-                  : "border-border/50 bg-secondary/30 hover:bg-secondary/50"
-              }`}
-            >
-              <div className="text-xl mb-1">{b.emoji}</div>
-              <p className="text-xs font-semibold text-foreground">{b.name}</p>
-              <p className="text-[10px] text-muted-foreground leading-tight">{b.blurb}</p>
-            </button>
-          ))}
-          <button
-            onClick={() => setSelected("custom")}
-            className={`p-3 rounded-lg border text-left transition-colors ${
-              selected === "custom"
-                ? "border-primary bg-primary/10"
-                : "border-border/50 bg-secondary/30 hover:bg-secondary/50"
-            }`}
-          >
-            <div className="text-xl mb-1">⚙️</div>
-            <p className="text-xs font-semibold text-foreground">Custom</p>
-            <p className="text-[10px] text-muted-foreground leading-tight">Your own search URL</p>
-          </button>
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
+          <div className="h-9 w-9 rounded-md bg-primary/15 flex items-center justify-center text-primary font-bold">
+            O
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-foreground">Opera WebView</p>
+            <p className="text-[10px] text-muted-foreground leading-tight inline-flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3 text-primary" />
+              Anti-tracker · anti-malware · crypto wallet aware
+            </p>
+          </div>
+          <span className="text-[10px] uppercase tracking-wider text-primary font-medium">Default</span>
         </div>
-
-        {selected === "custom" && (
-          <Input
-            placeholder="https://example.com/search?q={q}"
-            value={customUrl}
-            onChange={(e) => setCustomUrl(e.target.value)}
-            className="bg-secondary/50 text-xs"
-          />
-        )}
 
         <div className="flex gap-2">
           <Input
