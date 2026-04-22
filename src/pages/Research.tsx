@@ -2,12 +2,13 @@ import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { TIERS, MOCK_ARTICLES } from "@/lib/mockData";
-import { Star, Play, X, Search, Clock, DollarSign, Video } from "lucide-react";
+import { TIERS, MOCK_ARTICLES, MOCK_USER } from "@/lib/mockData";
+import { Star, Play, X, Clock, DollarSign, Video, Linkedin } from "lucide-react";
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { InAppBrowser } from "@/components/InAppBrowser";
 import { TierIcon } from "@/components/TierIcon";
+import { useSettings } from "@/contexts/SettingsContext";
+import workInProgressImg from "@/assets/work-in-progress.png";
 
 function StarRating({ onRate }: { onRate: (n: number) => void }) {
   const [hover, setHover] = useState(0);
