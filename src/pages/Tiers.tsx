@@ -70,7 +70,7 @@ export default function Tiers() {
                 <ArrowUpRight className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <div className="text-sm text-muted-foreground">
                   <strong className="text-foreground">Redistribution Model:</strong> a portion of ad revenue from lower tiers flows upward.
-                  Tier 17 browsing indirectly funds Tier 1 breakthroughs.
+                  Casual browsing indirectly funds top-priority breakthroughs.
                 </div>
               </div>
             </Card>
@@ -80,30 +80,31 @@ export default function Tiers() {
                 <Activity className="h-4 w-4 text-primary" />
                 <p className="text-sm font-semibold text-foreground">Seasonal Spectrum Tracker</p>
               </div>
-              <div className="tier-spectrum w-full h-3 rounded-full mb-2" />
-              <div className="flex justify-between text-[10px] text-muted-foreground px-1">
-                <span>Tier 1</span><span>Tier 17</span>
-              </div>
+              <div className="tier-spectrum w-full h-3 rounded-full" />
             </Card>
 
             {/* Silver-framed top-3 high-priority tiers with Biochemistry banner */}
             <div className="silver-frame rounded-2xl overflow-hidden">
-              <a
-                href="https://pubs.acs.org/journal/bichaw"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="silver-banner block px-4 py-3 hover:opacity-90 transition-opacity"
-                aria-label="Visit ACS Biochemistry Journal"
-              >
+              <div className="silver-banner px-4 py-3 relative">
                 <img
                   src={biochemTitle}
-                  alt="ACS Biochemistry Journal"
+                  alt="Priority Research"
                   className="h-10 sm:h-12 w-auto mx-auto object-contain"
                 />
-                <p className="text-[10px] text-center mt-1 tracking-wider uppercase" style={{ color: "#758A9C" }}>
-                  Top Priority Research · ACS Biochemistry
+                <p className="text-center mt-1 text-xs tracking-wider uppercase font-medium" style={{ color: "#758A9C" }}>
+                  Priority Research
                 </p>
-              </a>
+                <a
+                  href="https://pubs.acs.org/journal/bichaw"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute bottom-1.5 right-2 text-[10px] tracking-wide hover:underline"
+                  style={{ color: "#758A9C" }}
+                  aria-label="Visit ACS journal"
+                >
+                  ⟩ ACS
+                </a>
+              </div>
               <div className="p-3 space-y-3">
                 {orderedTiers.filter((t) => t.id <= 3).map((tier) => {
                   const barWidth = (tier.multiplier / maxMultiplier) * 100;
