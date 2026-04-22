@@ -92,3 +92,8 @@ export const MOCK_OFFERS = [
   { id: 7, merchant: "ScreenStream+",     tierId: 9,  title: "3 months premium subscription",        originalPrice: 45.00,  salePrice: 27.00,  discount: 40, cpaPayout: 2.40 },
   { id: 8, merchant: "GreenFin Advisors", tierId: 5,  title: "Sustainable portfolio review",         originalPrice: 250.00, salePrice: 175.00, discount: 30, cpaPayout: 12.00 },
 ];
+
+// Single source of truth for the current user's level (gate evaluation)
+export const MOCK_USER = {
+  level: MOCK_EARNINGS.level, // 23 — below the L25 / L35 / L50 / L100 gates
+};
