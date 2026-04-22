@@ -162,5 +162,12 @@
   .silver-banner {
     border-bottom: 1.5px solid #758A9C;
     background: linear-gradient(90deg, hsl(210 20% 8%), hsl(210 25% 12%), hsl(210 20% 8%));
+    position: relative;
   }
+
+  /* Money color — every numeric value, earnings bar, money button */
+  .text-money { color: #9A7246; }
+  .bg-money { background-color: #9A7246; }
+  .bg-money:hover { background-color: #8a6539; }
+  .fill-money { fill: #9A7246; }
 }
