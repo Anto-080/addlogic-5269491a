@@ -306,8 +306,8 @@ function BidDialog({ tier, topBid }: { tier: typeof TIERS[number]; topBid: numbe
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="text-xs text-muted-foreground inline-flex items-center gap-1 flex-wrap">
-            Sponsors out-bidding the current top bid (<UsdcIcon size={10} />{topBid.toFixed(2)}) lock the tier slot for the next session.
+          <p className="text-xs text-muted-foreground">
+            Sponsors out-bidding the current top bid (${topBid.toFixed(2)}) lock the tier slot for the next session.
           </p>
           <label className="text-xs text-muted-foreground">Sub-interest</label>
           <select
@@ -317,11 +317,11 @@ function BidDialog({ tier, topBid }: { tier: typeof TIERS[number]; topBid: numbe
           >
             {tier.subcategories.map((s) => <option key={s}>{s}</option>)}
           </select>
-          <label className="text-xs text-muted-foreground inline-flex items-center gap-1">Bid (<UsdcIcon size={10} /> / impression)</label>
+          <label className="text-xs text-muted-foreground">Bid ($ / impression)</label>
           <Input type="number" step="0.01" value={bid} onChange={(e) => setBid(e.target.value)} className="bg-secondary/50" />
         </div>
         <DialogFooter>
-          <Button onClick={() => toast({ title: "Bid placed (mock)", description: `${bid} USDC on ${sub} · Tier ${tier.id}` })}>
+          <Button onClick={() => toast({ title: "Bid placed (mock)", description: `$${bid} on ${sub} · ${tier.name}` })}>
             Confirm Bid
           </Button>
         </DialogFooter>
