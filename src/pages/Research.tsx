@@ -9,6 +9,7 @@ import { InAppBrowser } from "@/components/InAppBrowser";
 import { TierIcon } from "@/components/TierIcon";
 import { useSettings } from "@/contexts/SettingsContext";
 import workInProgressImg from "@/assets/work-in-progress.png";
+import { useMemo } from "react";
 
 function StarRating({ onRate }: { onRate: (n: number) => void }) {
   const [hover, setHover] = useState(0);
