@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { TrendingUp, Shield, Users, ChevronDown } from "lucide-react";
 import workInProgressImg from "@/assets/work-in-progress.png";
 import circularSeal from "@/assets/circular-economy-seal.jpg";
+import infinityLoop from "@/assets/infinity-loop.jpg";
 import { MOCK_USER } from "@/lib/mockData";
 
 const CIRCULAR_UNLOCK = 100;
@@ -42,6 +43,14 @@ export default function Investments() {
               <div className="h-3 rounded-full" style={{ width: `${investPct}%`, backgroundColor: "#004627" }} />
             </div>
             <p className="text-xs text-muted-foreground">{userLevel} / {INVESTMENT_UNLOCK} — {investPct.toFixed(0)}% to unlock</p>
+            {userLevel >= INVESTMENT_UNLOCK && (
+              <img
+                src={infinityLoop}
+                alt="Investment phase unlocked — infinite loop"
+                className="mx-auto mt-4 rounded-lg w-full max-w-sm object-contain"
+                loading="lazy"
+              />
+            )}
           </CardContent>
         </Card>
 
@@ -64,13 +73,13 @@ export default function Investments() {
         {/* Phase 4 — ∞ Circular Economy Foundation (Level 100) — collapsible */}
         <Card
           className="border-border/50 overflow-hidden transition-colors"
-          style={circularUnlocked ? { backgroundColor: "#d1defb" } : undefined}
+          style={circularUnlocked ? { backgroundColor: "#D1DEFB" } : undefined}
         >
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center justify-between">
               <span className="flex items-center gap-2 text-foreground">
                 <ChevronDown className={`h-4 w-4 transition-transform ${circularUnlocked ? "rotate-0" : "-rotate-90"}`} style={{ color: circularUnlocked ? "#0E2A47" : undefined }} />
-                <span style={circularUnlocked ? { color: "#0E2A47" } : undefined}>∞ Circular Economy Foundation</span>
+                <span style={circularUnlocked ? { color: "#0E2A47" } : undefined}>∞ Circular Economy</span>
               </span>
               <span
                 className="text-[11px] font-semibold px-2 py-1 rounded-full"
@@ -116,7 +125,7 @@ export default function Investments() {
 
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold" style={{ color: "#0E2A47" }}>
-                  Direct Companies ↔ Most-Experienced Users Loop
+                  Foundational Cooperative Loop — For Tailored Groundbreaking Ideas
                 </h3>
                 <p className="text-xs leading-relaxed" style={{ color: "#0E2A47" }}>
                   Direct interactions between Companies and Most Experienced Users will be not only promoted but
