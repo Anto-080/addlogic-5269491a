@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TIERS, MOCK_ARTICLES, MOCK_USER } from "@/lib/mockData";
-import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink } from "lucide-react";
+import { TIERS, MOCK_ARTICLES, MOCK_EARNINGS } from "@/lib/mockData";
+import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink, Zap } from "lucide-react";
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { InAppBrowser } from "@/components/InAppBrowser";
 import { TierIcon } from "@/components/TierIcon";
 import { useSettings } from "@/contexts/SettingsContext";
-import { WipTapeBanner } from "@/components/WipTapeBanner";
-import { useMemo } from "react";
+
+const XP_PER_LEVEL = 1_000_000;
+const SEARCH_GATE_LEVEL = 25;
+const TOP_TIER_GATE = 35;
+const IDLE_LIMIT_MS = 5 * 60 * 1000;
 
 function StarRating({ onRate }: { onRate: (n: number) => void }) {
   const [hover, setHover] = useState(0);
@@ -22,7 +25,10 @@ function StarRating({ onRate }: { onRate: (n: number) => void }) {
           className={`h-5 w-5 cursor-pointer transition-colors ${n <= (hover || rating) ? "text-gold fill-gold" : "text-muted-foreground"}`}
           onMouseEnter={() => setHover(n)}
           onMouseLeave={() => setHover(0)}
-          onClick={() => { setRating(n); onRate(n); }}
+          onClick={() => {
+            setRating(n);
+            onRate(n);
+          }}
         />
       ))}
     </div>
@@ -45,7 +51,14 @@ function InterstitialAd({ onClose }: { onClose: () => void }) {
   const [ratingShown, setRatingShown] = useState(false);
 
   useState(() => {
-    const i = setInterval(() => setCountdown((c) => { if (c <= 1) { clearInterval(i); setRatingShown(true); } return c - 1; }), 1000);
+    const i = setInterval(() =>
+      setCountdown((c) => {
+        if (c <= 1) {
+          clearInterval(i);
+          setRatingShown(true);
+        }
+        return c - 1;
+      }), 1000);
   });
 
   return (
@@ -85,11 +98,56 @@ export default function Research() {
   const [browser, setBrowser] = useState<{ url: string; engineName: string } | null>(null);
   const [showSponsoredVideos, setShowSponsoredVideos] = useState(false);
   const { topInterestTiers } = useSettings();
-  const userLevel = MOCK_USER.level;
-  const TOP_TIER_GATE = 35;
-  const primaryTierId = selectedTier ?? 4;
 
-  // Sort feed: prioritize the tiers extracted from real device signals.
+  const selectedTierData = TIERS.find((t) => t.id === (selectedTier ?? 4)) ?? TIERS[3];
+  const [researchLevel, setResearchLevel] = useState(MOCK_EARNINGS.level);
+  const [researchXp, setResearchXp] = useState(Math.round((MOCK_EARNINGS.xp / MOCK_EARNINGS.xpToNext) * XP_PER_LEVEL));
+  const [liveMultiplier, setLiveMultiplier] = useState(selectedTierData.multiplier);
+  const [lastActiveAt, setLastActiveAt] = useState(Date.now());
+  const lastActiveRef = useRef(Date.now());
+  const primaryTierId = selectedTier ?? 4;
+  const userLevel = researchLevel;
+
+  useEffect(() => {
+    setLiveMultiplier(selectedTierData.multiplier);
+  }, [selectedTierData.multiplier]);
+
+  useEffect(() => {
+    const markActive = () => {
+      const now = Date.now();
+      lastActiveRef.current = now;
+      setLastActiveAt(now);
+    };
+
+    const events: Array<keyof WindowEventMap> = ["pointerdown", "pointermove", "keydown", "scroll", "touchstart"];
+    events.forEach((eventName) => window.addEventListener(eventName, markActive, { passive: true }));
+    document.addEventListener("visibilitychange", markActive);
+
+    const interval = window.setInterval(() => {
+      const idle = Date.now() - lastActiveRef.current > IDLE_LIMIT_MS;
+      if (idle || document.hidden) return;
+
+      setResearchXp((prev) => {
+        const next = prev + liveMultiplier;
+        if (next >= XP_PER_LEVEL) {
+          setResearchLevel((level) => level + 1);
+          return next - XP_PER_LEVEL;
+        }
+        return next;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(interval);
+      events.forEach((eventName) => window.removeEventListener(eventName, markActive));
+      document.removeEventListener("visibilitychange", markActive);
+    };
+  }, [liveMultiplier]);
+
+  const roomIdle = Date.now() - lastActiveAt > IDLE_LIMIT_MS;
+  const xpPercent = Math.min(100, (researchXp / XP_PER_LEVEL) * 100);
+  const multPercent = ((liveMultiplier - 0.5) / (10 - 0.5)) * 100;
+
   const filteredArticles = useMemo(() => {
     let list = MOCK_ARTICLES.filter((a) => !selectedTier || a.tier === selectedTier);
     if (topInterestTiers.length) {
@@ -105,8 +163,10 @@ export default function Research() {
   }, [selectedTier, topInterestTiers]);
 
   const handleReadArticle = (earnings: number, tier: number) => {
-    if (tier <= 3 && userLevel < TOP_TIER_GATE) return; // gated
+    if (tier <= 3 && userLevel < TOP_TIER_GATE) return;
     setSessionEarnings((s) => s + earnings);
+    lastActiveRef.current = Date.now();
+    setLastActiveAt(lastActiveRef.current);
     setArticleCount((c) => {
       const next = c + 1;
       if (next % 5 === 0) setShowInterstitial(true);
@@ -115,7 +175,9 @@ export default function Research() {
   };
 
   const handleWatchVideo = () => {
-    setSessionEarnings((s) => s + 2.50);
+    setSessionEarnings((s) => s + 2.5);
+    lastActiveRef.current = Date.now();
+    setLastActiveAt(lastActiveRef.current);
   };
 
   return (
@@ -126,7 +188,6 @@ export default function Research() {
           <p className="text-sm text-muted-foreground">Browse via Opera WebView, earn from your curiosity.</p>
         </div>
 
-        {/* Sponsored videos shortcut */}
         <button
           onClick={() => setShowSponsoredVideos((v) => !v)}
           className="w-full flex items-center justify-between px-3 py-2 rounded-md bg-secondary/40 hover:bg-secondary/60 border border-border/40 text-xs"
@@ -154,30 +215,52 @@ export default function Research() {
           </div>
         )}
 
-        {/* Browser Picker — Opera WebView (gated until L25) */}
         <BrowserPicker onSearch={(args) => setBrowser(args)} userLevel={userLevel} />
 
-        {/* Top-tier gating banner (L<35) */}
-        {userLevel < TOP_TIER_GATE && (
-          <Card className="border-border/60">
-            <CardContent className="p-4 space-y-3">
-              <WipTapeBanner />
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">Top-tier research locked</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    For Accredited Scientists: <strong>Connect through LinkedIn for Early Access</strong>. Unlocks at Level {TOP_TIER_GATE}.
-                  </p>
-                  <Button size="sm" className="mt-2 gap-2 bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white">
-                    <ExternalLink className="h-3 w-3" /> Connect via LinkedIn
-                  </Button>
-                </div>
+        <Card className="bg-card border-border/60 glow-amber">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  {userLevel < TOP_TIER_GATE ? "Work in Progress unlock at level 35. Connect with LinkedIn" : "Research Room active"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {userLevel < SEARCH_GATE_LEVEL
+                    ? `Opera WebView remains blocked until Level ${SEARCH_GATE_LEVEL}.`
+                    : "Opera WebView unlocked."} XP advances only while you stay active in the Research Room and pauses after 5 minutes idle.
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              {userLevel < TOP_TIER_GATE && (
+                <Button size="sm" variant="secondary" className="gap-2 shrink-0">
+                  <ExternalLink className="h-3 w-3" /> Connect with LinkedIn
+                </Button>
+              )}
+            </div>
 
-        {/* Tier Filter */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[11px]">
+                <span className="text-muted-foreground inline-flex items-center gap-1">
+                  <Zap className="h-3 w-3 text-money" /> Experience Level {userLevel}
+                </span>
+                <span className="text-foreground/80 font-medium">{Math.floor(researchXp).toLocaleString()} / {XP_PER_LEVEL.toLocaleString()} XP</span>
+              </div>
+              <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary/60">
+                <div className="xp-fluid h-full transition-[width] duration-700 ease-out" style={{ width: `${xpPercent}%` }} />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex justify-between text-[11px]">
+                <span className="text-muted-foreground">Crimson Multiplier</span>
+                <span className="text-crimson font-semibold">x{liveMultiplier.toFixed(2)} {roomIdle ? "· paused" : "· live"}</span>
+              </div>
+              <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary/40">
+                <div className="multiplier-fluid h-full transition-[width] duration-700 ease-out" style={{ width: `${Math.max(0, multPercent)}%` }} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           <Button variant={selectedTier === null ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(null)}>All</Button>
           {TIERS.map((t) => (
@@ -188,13 +271,11 @@ export default function Research() {
           ))}
         </div>
 
-        {/* Top Banner Ads */}
         <div className="grid grid-cols-2 gap-2">
           <BannerAd position="top" />
           <BannerAd position="top" />
         </div>
 
-        {/* Rewarded Video */}
         {selectedTier && (
           <Card className="bg-card border-primary/30 glow-amber">
             <CardContent className="p-4 flex items-center justify-between">
@@ -209,7 +290,6 @@ export default function Research() {
           </Card>
         )}
 
-        {/* Articles Feed */}
         <div className="space-y-3">
           {filteredArticles.map((article) => {
             const tier = TIERS.find((t) => t.id === article.tier);
@@ -242,13 +322,11 @@ export default function Research() {
           })}
         </div>
 
-        {/* Bottom Banner Ads */}
         <div className="grid grid-cols-2 gap-2">
           <BannerAd position="bottom" />
           <BannerAd position="bottom" />
         </div>
 
-        {/* Sticky Session Tracker */}
         <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur border-t border-border px-4 py-3 z-40">
           <div className="max-w-5xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -263,12 +341,11 @@ export default function Research() {
             </div>
             <div className="text-right">
               <p className="text-[10px] text-muted-foreground">Active Multiplier</p>
-              <p className="text-sm font-bold text-crimson">x9.5</p>
+              <p className="text-sm font-bold text-crimson">x{liveMultiplier.toFixed(2)}</p>
             </div>
           </div>
         </div>
 
-        {/* Spacer for sticky bar */}
         <div className="h-20" />
       </div>
 
