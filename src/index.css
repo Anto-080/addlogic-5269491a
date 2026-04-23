@@ -56,7 +56,8 @@
     --money-hover: 31 42% 38%;
     --emerald-eternal: 150 100% 14%;
     --cookie-dough: 31 38% 44%;
-    --circular-economy: 221 84% 90%;
+    --cookie-chip: 221 78% 61%;
+    --circular-economy: 221.43 84% 90.2%;
     --circular-economy-foreground: 210 67% 17%;
   }
 }
@@ -186,6 +187,7 @@
   .bg-money { background-color: hsl(var(--money)); }
   .bg-money:hover { background-color: hsl(var(--money-hover)); }
   .fill-money { fill: hsl(var(--money)); }
+  .fill-cookie-chip { fill: hsl(var(--cookie-chip)); }
 
   /* Eternal Emerald — used for analytics toggles & gating chrome */
   .text-emerald-eternal { color: hsl(var(--emerald-eternal)); }
@@ -223,6 +225,10 @@
   .bg-circular-economy > *,
   .bg-circular-economy .bg-card,
   .bg-circular-economy .bg-card\/50,
+  .bg-circular-economy .bg-secondary,
+  .bg-circular-economy .bg-secondary\/30,
+  .bg-circular-economy .bg-secondary\/40,
+  .bg-circular-economy .bg-secondary\/50,
   .bg-circular-economy [data-slot="card-header"],
   .bg-circular-economy [data-slot="card-content"] {
     background-color: transparent !important;
