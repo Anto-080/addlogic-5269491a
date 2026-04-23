@@ -251,6 +251,10 @@ export default function Research() {
                 <div className="multiplier-fluid h-full transition-[width] duration-700 ease-out" style={{ width: `${Math.max(0, multPercent)}%` }} />
               </div>
             </div>
+
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time, one second at a time, while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second by its multiplicative factor based on your selected tier.
+            </p>
           </CardContent>
         </Card>
 
