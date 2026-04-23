@@ -72,8 +72,7 @@ export default function Investments() {
 
         {/* Phase 4 — ∞ Circular Economy Foundation (Level 100) — collapsible */}
         <Card
-          className="border-border/50 overflow-hidden transition-colors"
-          style={circularUnlocked ? { backgroundColor: "#D1DEFB" } : undefined}
+          className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "bg-circular-economy" : ""}`}
         >
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center justify-between">

@@ -190,3 +190,17 @@
     background-color: #004627 !important;
   }
 }
+
+@layer utilities {
+  /* ∞ Circular Economy (Level 100) — locked background across all states */
+  .bg-circular-economy,
+  .bg-circular-economy:hover,
+  .bg-circular-economy:focus,
+  .bg-circular-economy:active,
+  .bg-circular-economy:disabled,
+  .bg-circular-economy[data-state="open"],
+  .bg-circular-economy[data-state="closed"],
+  .bg-circular-economy[aria-disabled="true"] {
+    background-color: rgba(209, 222, 251, 1) !important;
+  }
+}
