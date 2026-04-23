@@ -138,7 +138,7 @@ function SubmitIdeaForm({ onSubmit }: { onSubmit: (i: Idea) => void }) {
   return (
     <Card className="border" style={{ borderColor: "#0E2A47", background: "rgba(255,255,255,0.6)" }}>
       <CardContent className="p-4 space-y-3">
-        <h3 className="text-sm font-semibold" style={{ color: "#0E2A47" }}>Submit [Prior Art - Copyright Protected]</h3>
+        <h3 className="text-sm font-semibold" style={{ color: "#0E2A47" }}>Submit New Ideas</h3>
 
         <div className="space-y-1.5">
           <label className="text-xs" style={{ color: "#0E2A47" }}>Interest Tier</label>
@@ -213,7 +213,7 @@ function SubmitIdeaForm({ onSubmit }: { onSubmit: (i: Idea) => void }) {
           )}
         </div>
 
-        <Button onClick={submit} className="w-full bg-money hover:bg-money text-white">Submit [Prior Art - Copyright Protected]</Button>
+        <Button onClick={submit} className="w-full bg-money hover:bg-money text-white">Submit New Ideas</Button>
       </CardContent>
     </Card>
   );
