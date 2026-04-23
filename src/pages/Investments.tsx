@@ -20,7 +20,7 @@ export default function Investments() {
   const investPct = Math.min(100, (userLevel / INVESTMENT_UNLOCK) * 100);
   const circularCardStyle = circularUnlocked
     ? {
-        backgroundColor: "hsl(var(--circular-economy))",
+        background: "hsl(var(--circular-economy))",
         color: "hsl(var(--circular-economy-foreground))",
       }
     : undefined;
@@ -81,6 +81,7 @@ export default function Investments() {
         <Card
           className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "bg-circular-economy text-circular-economy-foreground" : "bg-card"}`}
           style={circularCardStyle}
+          data-circular-card={circularUnlocked ? "true" : undefined}
         >
           <CardHeader className={`pb-3 ${circularUnlocked ? "bg-transparent" : ""}`} style={circularCardStyle}>
             <CardTitle className="text-base flex items-center justify-between">
