@@ -28,54 +28,43 @@ export function RoundVault({ size = 24, className, style }: Props) {
       style={style}
       aria-hidden
     >
-      {/* LEFT hinge bracket — square, vertically aligned with the door center (y=32) */}
-      <rect x="2" y="22" width="6" height="20" rx="1.2" />
-      <line x1="5" y1="27" x2="5" y2="27.01" />
-      <line x1="5" y1="37" x2="5" y2="37.01" />
+      <circle cx="26" cy="32" r="24" strokeWidth="3.2" />
+      <circle cx="26" cy="32" r="19.3" strokeWidth="2.8" />
+      <circle cx="26" cy="32" r="11.6" strokeWidth="2.8" />
+      <circle cx="26" cy="32" r="6.1" strokeWidth="2.8" />
 
-      {/* RIGHT latch bolt — square block + protruding bolt */}
-      <rect x="50" y="28" width="6" height="8" rx="1" />
-      <line x1="56" y1="32" x2="60" y2="32" strokeWidth="3.5" />
+      {[
+        [26, 12],
+        [11, 21],
+        [11, 43],
+        [26, 52],
+      ].map(([cx, cy], i) => (
+        <g key={i}>
+          <circle cx={cx} cy={cy} r="2.45" />
+          <circle cx={cx} cy={cy} r="0.8" fill="currentColor" stroke="none" />
+        </g>
+      ))}
 
-      {/* Outer thick door ring */}
-      <circle cx="28" cy="32" r="22" strokeWidth="3.6" />
-
-      {/* Inner recessed plate */}
-      <circle cx="28" cy="32" r="17" strokeWidth="1.8" fill="currentColor" fillOpacity="0.08" />
-
-      {/* 8 perimeter rivets (filled dots on the outer ring) */}
-      {Array.from({ length: 8 }).map((_, i) => {
-        const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
-        const cx = 28 + Math.cos(a) * 22;
-        const cy = 32 + Math.sin(a) * 22;
-        return <circle key={i} cx={cx} cy={cy} r="1.6" fill="currentColor" stroke="none" />;
+      {Array.from({ length: 4 }).map((_, i) => {
+        const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+        const x1 = 26 + Math.cos(a) * 3.6;
+        const y1 = 32 + Math.sin(a) * 3.6;
+        const x2 = 26 + Math.cos(a) * 8.2;
+        const y2 = 32 + Math.sin(a) * 8.2;
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="2.8" />;
       })}
 
-      {/* Central 5-spoke turning handle */}
-      {Array.from({ length: 5 }).map((_, i) => {
-        const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
-        const x1 = 28 + Math.cos(a) * 3.2;
-        const y1 = 32 + Math.sin(a) * 3.2;
-        const x2 = 28 + Math.cos(a) * 11;
-        const y2 = 32 + Math.sin(a) * 11;
-        return (
-          <line
-            key={i}
-            x1={x1}
-            y1={y1}
-            x2={x2}
-            y2={y2}
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          />
-        );
-      })}
-      {/* Round hub */}
-      <circle cx="28" cy="32" r="3.2" fill="currentColor" stroke="none" />
+      <circle cx="26" cy="32" r="2.55" fill="currentColor" stroke="none" />
 
-      {/* Keyhole below the hub */}
-      <circle cx="28" cy="42.5" r="1.4" fill="currentColor" stroke="none" />
-      <path d="M28 43.6 L28 46" strokeWidth="1.6" />
+      <path d="M42 17h12c4.1 0 7 2.9 7 7v4.5" strokeWidth="3.2" />
+      <path d="M42 47h12c4.1 0 7-2.9 7-7v-4.5" strokeWidth="3.2" />
+      <path d="M42 17c-2.8 0-5.1 2.3-5.1 5.1s2.3 5.1 5.1 5.1" strokeWidth="3.2" />
+      <path d="M42 47c-2.8 0-5.1-2.3-5.1-5.1s2.3-5.1 5.1-5.1" strokeWidth="3.2" />
+      <path d="M42 27.2h4.2c2.5 0 4.5 2 4.5 4.5v0.6c0 2.5-2 4.5-4.5 4.5H42" strokeWidth="3.2" />
+      <circle cx="56.5" cy="21.8" r="2.45" />
+      <circle cx="56.5" cy="42.2" r="2.45" />
+      <circle cx="56.5" cy="21.8" r="0.8" fill="currentColor" stroke="none" />
+      <circle cx="56.5" cy="42.2" r="0.8" fill="currentColor" stroke="none" />
     </svg>
   );
 }

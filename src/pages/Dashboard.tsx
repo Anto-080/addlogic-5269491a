@@ -116,14 +116,14 @@ export default function Dashboard() {
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 flex-1">
                 <div className="shrink-0 mt-0.5">
-                  <svg viewBox="0 0 32 32" width="36" height="36" aria-label="Cookie">
-                    <circle cx="16" cy="16" r="13" fill={cookieAutoAccept ? "#004627" : "hsl(var(--secondary))"} stroke="hsl(var(--border))" strokeWidth="1.5" />
-                    <circle cx="11" cy="12" r="1.6" fill="#9A7246" opacity={cookieAutoAccept ? 1 : 0.4} />
-                    <circle cx="20" cy="11" r="1.2" fill="#9A7246" opacity={cookieAutoAccept ? 1 : 0.4} />
-                    <circle cx="22" cy="18" r="1.6" fill="#9A7246" opacity={cookieAutoAccept ? 1 : 0.4} />
-                    <circle cx="13" cy="20" r="1.3" fill="#9A7246" opacity={cookieAutoAccept ? 1 : 0.4} />
-                    <circle cx="18" cy="22" r="1.1" fill="#9A7246" opacity={cookieAutoAccept ? 1 : 0.4} />
-                  </svg>
+                    <svg viewBox="0 0 32 32" width="36" height="36" aria-label="Cookie">
+                      <circle cx="16" cy="16" r="13" fill="hsl(var(--cookie-dough))" stroke="hsl(var(--border))" strokeWidth="1.5" opacity={cookieAutoAccept ? 1 : 0.72} />
+                      <circle cx="11" cy="12" r="1.6" fill="hsl(var(--emerald-eternal))" opacity={cookieAutoAccept ? 1 : 0.36} />
+                      <circle cx="20" cy="11" r="1.2" fill="hsl(var(--emerald-eternal))" opacity={cookieAutoAccept ? 1 : 0.36} />
+                      <circle cx="22" cy="18" r="1.6" fill="hsl(var(--emerald-eternal))" opacity={cookieAutoAccept ? 1 : 0.36} />
+                      <circle cx="13" cy="20" r="1.3" fill="hsl(var(--emerald-eternal))" opacity={cookieAutoAccept ? 1 : 0.36} />
+                      <circle cx="18" cy="22" r="1.1" fill="hsl(var(--emerald-eternal))" opacity={cookieAutoAccept ? 1 : 0.36} />
+                    </svg>
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-foreground">Cookie Auto-Accept &amp; Profile Sync</p>
