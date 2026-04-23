@@ -213,6 +213,7 @@
   .bg-circular-economy[aria-disabled="true"],
   .bg-circular-economy.bg-card,
   .bg-circular-economy.hover\:bg-card:hover,
+  [data-circular-card="true"],
   .bg-circular-economy[data-slot="card"] {
     background-color: hsl(var(--circular-economy)) !important;
     background-image: none !important;
@@ -229,8 +230,6 @@
   .bg-circular-economy .bg-secondary\/30,
   .bg-circular-economy .bg-secondary\/40,
   .bg-circular-economy .bg-secondary\/50,
-.bg-circular-economy[data-circular-card="true"],
-[data-circular-card="true"],
 [data-circular-card="true"] > *,
   .bg-circular-economy [data-slot="card-header"],
   .bg-circular-economy [data-slot="card-content"] {
