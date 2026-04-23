@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { TIERS, MOCK_USER, MOCK_EARNINGS } from "@/lib/mockData";
 import { TierIcon } from "@/components/TierIcon";
-import { ChevronDown, Search, Infinity, Facebook, Linkedin, X } from "lucide-react";
+import { ChevronDown, Search, Infinity, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type Idea = {
@@ -253,8 +253,8 @@ function IdeaRow({ idea }: { idea: Idea }) {
         )}
         <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: "#0E2A47" }}>
           <div className="flex items-center gap-2 text-[11px]">
-            <Facebook className="h-3.5 w-3.5" />
-            <Linkedin className="h-3.5 w-3.5" />
+            <span className="font-bold">f</span>
+            <span className="font-bold">in</span>
           </div>
           <span className="text-[11px] font-semibold">{idea.username} · Lv {idea.level}</span>
         </div>
