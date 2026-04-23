@@ -73,19 +73,19 @@ export default function Investments() {
 
         {/* Phase 4 — ∞ Circular Economy (Level 100) — collapsible */}
         <Card
-          className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "bg-circular-economy" : "bg-card"}`}
+          className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "bg-circular-economy text-circular-economy-foreground" : "bg-card"}`}
         >
-          <CardHeader className="pb-3">
+          <CardHeader className={`pb-3 ${circularUnlocked ? "bg-transparent" : ""}`}>
             <CardTitle className="text-base flex items-center justify-between">
               <span className="flex items-center gap-2 text-foreground">
-                <ChevronDown className={`h-4 w-4 transition-transform ${circularUnlocked ? "rotate-0" : "-rotate-90"}`} style={{ color: circularUnlocked ? "#0E2A47" : undefined }} />
-                <span style={circularUnlocked ? { color: "#0E2A47" } : undefined}>∞ Circular Economy</span>
+                 <ChevronDown className={`h-4 w-4 transition-transform ${circularUnlocked ? "rotate-0" : "-rotate-90"}`} style={{ color: circularUnlocked ? "hsl(var(--circular-economy-foreground))" : undefined }} />
+                 <span style={circularUnlocked ? { color: "hsl(var(--circular-economy-foreground))" } : undefined}>∞ Circular Economy</span>
               </span>
               <span
                 className="text-[11px] font-semibold px-2 py-1 rounded-full"
                 style={
                   circularUnlocked
-                    ? { backgroundColor: "#0E2A47", color: "#d1defb" }
+                    ? { backgroundColor: "hsl(var(--circular-economy-foreground))", color: "hsl(var(--circular-economy))" }
                     : { backgroundColor: "hsl(var(--secondary))", color: "hsl(var(--muted-foreground))" }
                 }
               >
@@ -97,7 +97,7 @@ export default function Investments() {
           {!circularUnlocked ? (
             <CardContent className="space-y-4">
               <p className="text-xs text-muted-foreground">
-                Currently {userLevel} / {CIRCULAR_UNLOCK} ({circularPct.toFixed(0)}%). The ∞ Circular Economy Foundation
+                 Currently {userLevel} / {CIRCULAR_UNLOCK} ({circularPct.toFixed(0)}%). The ∞ Circular Economy
                 activates when the user reaches Level {CIRCULAR_UNLOCK}.
               </p>
               <div className="flex items-center justify-between text-xs px-1">
@@ -106,7 +106,7 @@ export default function Investments() {
               </div>
             </CardContent>
           ) : (
-            <CardContent className="space-y-5" style={{ color: "#0E2A47" }}>
+            <CardContent className="space-y-5 bg-transparent" style={{ color: "hsl(var(--circular-economy-foreground))" }}>
               {/* Round circular-economy seal — uploaded reference */}
               <div className="flex justify-center">
                 <img
@@ -124,10 +124,10 @@ export default function Investments() {
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-sm font-semibold" style={{ color: "#0E2A47" }}>
+                <h3 className="text-sm font-semibold" style={{ color: "hsl(var(--circular-economy-foreground))" }}>
                   Foundational Cooperative Loop — For Tailored Groundbreaking Ideas
                 </h3>
-                <p className="text-xs leading-relaxed" style={{ color: "#0E2A47" }}>
+                <p className="text-xs leading-relaxed" style={{ color: "hsl(var(--circular-economy-foreground))" }}>
                   Direct interactions between Companies and Most Experienced Users will be not only promoted but
                   facilitated. Users' ideas will be prompted as new concepts to already established industrial
                   complexes; the best ideas will be not only chosen but retributed and offered a working position
@@ -140,8 +140,8 @@ export default function Investments() {
 
               <IdeasLibrary />
 
-              <div className="flex items-center justify-between text-xs px-1 pt-2 border-t" style={{ borderColor: "#0E2A47" }}>
-                <span style={{ color: "#0E2A47" }}>Dev: Simulate Level 100</span>
+              <div className="flex items-center justify-between text-xs px-1 pt-2 border-t" style={{ borderColor: "hsl(var(--circular-economy-foreground))" }}>
+                <span style={{ color: "hsl(var(--circular-economy-foreground))" }}>Dev: Simulate Level 100</span>
                 <Switch checked={simulateL100} onCheckedChange={setSimulateL100} data-emerald="true" />
               </div>
             </CardContent>

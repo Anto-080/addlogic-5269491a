@@ -149,7 +149,7 @@ function SubmitIdeaForm({ onSubmit }: { onSubmit: (i: Idea) => void }) {
             style={{ borderColor: "#0E2A47", color: "#0E2A47" }}
           >
             {TIERS.map((t) => (
-              <option key={t.id} value={t.id}>Tier {t.id} · {t.name}</option>
+              <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
         </div>
@@ -374,7 +374,7 @@ function CompaniesPanel({
               style={{ borderColor: "#0E2A47", color: "#0E2A47" }}
             >
               {TIERS.map((t) => (
-                <option key={t.id} value={t.id}>T{t.id} · {t.name}</option>
+                <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
           </div>
