@@ -229,6 +229,9 @@
   .bg-circular-economy .bg-secondary\/30,
   .bg-circular-economy .bg-secondary\/40,
   .bg-circular-economy .bg-secondary\/50,
+.bg-circular-economy[data-circular-card="true"],
+[data-circular-card="true"],
+[data-circular-card="true"] > *,
   .bg-circular-economy [data-slot="card-header"],
   .bg-circular-economy [data-slot="card-content"] {
     background-color: transparent !important;
