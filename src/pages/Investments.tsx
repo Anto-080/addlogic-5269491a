@@ -76,20 +76,19 @@ export default function Investments() {
         {/* Phase 4 — ∞ Circular Economy (Level 100) — collapsible */}
         <Card
           className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "" : "bg-card"}`}
-          style={circularCardStyle}
           data-circular-card={circularUnlocked ? "true" : undefined}
         >
-          <CardHeader className={`pb-3 ${circularUnlocked ? "bg-transparent" : ""}`} style={circularCardStyle}>
+          <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center justify-between">
-              <span className="flex items-center gap-2 text-foreground">
-                 <ChevronDown className={`h-4 w-4 transition-transform ${circularUnlocked ? "rotate-0" : "-rotate-90"}`} style={{ color: circularUnlocked ? "hsl(var(--circular-economy-foreground))" : undefined }} />
-                 <span style={circularUnlocked ? { color: "hsl(var(--circular-economy-foreground))" } : undefined}>∞ Circular Economy</span>
+              <span className="flex items-center gap-2">
+                 <ChevronDown className={`h-4 w-4 transition-transform ${circularUnlocked ? "rotate-0" : "-rotate-90"}`} />
+                 <span>∞ Circular Economy</span>
               </span>
               <span
                 className="text-[11px] font-semibold px-2 py-1 rounded-full"
                 style={
                   circularUnlocked
-                    ? { backgroundColor: "hsl(var(--circular-economy-foreground))", color: "hsl(var(--circular-economy))" }
+                    ? { backgroundColor: "#ffffff", color: "rgb(40, 53, 76)" }
                     : { backgroundColor: "hsl(var(--secondary))", color: "hsl(var(--muted-foreground))" }
                 }
               >
@@ -110,7 +109,7 @@ export default function Investments() {
               </div>
             </CardContent>
           ) : (
-            <CardContent className="space-y-5 bg-transparent" style={circularCardStyle}>
+            <CardContent className="space-y-5">
               {/* Round circular-economy seal — uploaded reference */}
               <div className="flex justify-center">
                 <img
