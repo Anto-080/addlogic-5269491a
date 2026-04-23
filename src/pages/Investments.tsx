@@ -7,6 +7,7 @@ import workInProgressImg from "@/assets/work-in-progress.png";
 import circularSeal from "@/assets/circular-economy-seal.jpg";
 import infinityLoop from "@/assets/infinity-loop.jpg";
 import { MOCK_USER } from "@/lib/mockData";
+import { IdeasLibrary } from "@/components/IdeasLibrary";
 
 const CIRCULAR_UNLOCK = 100;
 const INVESTMENT_UNLOCK = 50;
@@ -70,9 +71,9 @@ export default function Investments() {
           ))}
         </div>
 
-        {/* Phase 4 — ∞ Circular Economy Foundation (Level 100) — collapsible */}
+        {/* Phase 4 — ∞ Circular Economy (Level 100) — collapsible */}
         <Card
-          className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "bg-circular-economy" : ""}`}
+          className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "bg-circular-economy" : "bg-card"}`}
         >
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center justify-between">
@@ -136,6 +137,8 @@ export default function Investments() {
                   companies.
                 </p>
               </div>
+
+              <IdeasLibrary />
 
               <div className="flex items-center justify-between text-xs px-1 pt-2 border-t" style={{ borderColor: "#0E2A47" }}>
                 <span style={{ color: "#0E2A47" }}>Dev: Simulate Level 100</span>

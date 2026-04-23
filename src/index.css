@@ -202,5 +202,12 @@
   .bg-circular-economy[data-state="closed"],
   .bg-circular-economy[aria-disabled="true"] {
     background-color: rgba(209, 222, 251, 1) !important;
+    background-image: none !important;
+  }
+  /* Force inner shadcn Card sections to be transparent so the locked color shows through */
+  .bg-circular-economy > *,
+  .bg-circular-economy [data-slot="card-header"],
+  .bg-circular-economy [data-slot="card-content"] {
+    background-color: transparent !important;
   }
 }

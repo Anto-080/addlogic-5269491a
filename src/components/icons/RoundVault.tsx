@@ -1,13 +1,17 @@
 type Props = { size?: number; className?: string; style?: React.CSSProperties };
 
 /**
- * Faithful round bank-vault door redrawn from the user's reference:
- * - Circular outer ring with a subtle inner ring
- * - 6 perimeter bolts evenly distributed
- * - Right-side rectangular hinge/locking bracket (square loop, not curvy)
- * - Central spoked dial with hub
+ * Faithful round bank-vault door, redrawn to match the user's reference.
  *
- * Strokes use currentColor so the caller controls the gold (#B0903D).
+ * Layout (64x64 viewBox, vault centered around x=28 to leave room for the
+ * right-side latch arm):
+ *  - Thick outer ring (gold via currentColor)
+ *  - 8 perimeter rivets evenly distributed around the ring
+ *  - Inner recessed circle (subtle fill so it reads as a recessed plate)
+ *  - 5-spoke central turning handle with round hub and rounded spoke ends
+ *  - Square hinge bracket on the LEFT, vertically centered with the door
+ *  - Latch bolt on the right
+ *  - Small keyhole below the handle hub
  */
 export function RoundVault({ size = 24, className, style }: Props) {
   return (
@@ -17,42 +21,61 @@ export function RoundVault({ size = 24, className, style }: Props) {
       height={size}
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.6"
+      strokeWidth="3"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       style={style}
       aria-hidden
     >
-      {/* Outer door ring */}
-      <circle cx="28" cy="32" r="22" />
-      {/* Inner ring (thin gap, like the reference) */}
-      <circle cx="28" cy="32" r="19" strokeWidth="1.6" />
+      {/* LEFT hinge bracket — square, vertically aligned with the door center (y=32) */}
+      <rect x="2" y="22" width="6" height="20" rx="1.2" />
+      <line x1="5" y1="27" x2="5" y2="27.01" />
+      <line x1="5" y1="37" x2="5" y2="37.01" />
 
-      {/* Right-side rectangular hinge / locking bracket */}
-      <path d="M46 18 h10 a2 2 0 0 1 2 2 v10 a2 2 0 0 1 -2 2 h-4 a2 2 0 0 0 -2 2 v4 a2 2 0 0 0 2 2 h4 a2 2 0 0 1 2 2 v10 a2 2 0 0 1 -2 2 h-10" />
+      {/* RIGHT latch bolt — square block + protruding bolt */}
+      <rect x="50" y="28" width="6" height="8" rx="1" />
+      <line x1="56" y1="32" x2="60" y2="32" strokeWidth="3.5" />
 
-      {/* Six perimeter bolts (open rings, like the reference) */}
-      <circle cx="28" cy="14" r="2" />
-      <circle cx="42" cy="20" r="2" />
-      <circle cx="42" cy="44" r="2" />
-      <circle cx="28" cy="50" r="2" />
-      <circle cx="14" cy="44" r="2" />
-      <circle cx="14" cy="20" r="2" />
+      {/* Outer thick door ring */}
+      <circle cx="28" cy="32" r="22" strokeWidth="3.6" />
 
-      {/* Central dial — outer ring */}
-      <circle cx="28" cy="32" r="8.5" />
-      {/* 8 spokes */}
-      <line x1="28" y1="25.5" x2="28" y2="28.5" />
-      <line x1="28" y1="35.5" x2="28" y2="38.5" />
-      <line x1="21.5" y1="32" x2="24.5" y2="32" />
-      <line x1="31.5" y1="32" x2="34.5" y2="32" />
-      <line x1="23.4" y1="27.4" x2="25.5" y2="29.5" />
-      <line x1="30.5" y1="34.5" x2="32.6" y2="36.6" />
-      <line x1="32.6" y1="27.4" x2="30.5" y2="29.5" />
-      <line x1="25.5" y1="34.5" x2="23.4" y2="36.6" />
-      {/* Hub */}
-      <circle cx="28" cy="32" r="2.4" fill="currentColor" />
+      {/* Inner recessed plate */}
+      <circle cx="28" cy="32" r="17" strokeWidth="1.8" fill="currentColor" fillOpacity="0.08" />
+
+      {/* 8 perimeter rivets (filled dots on the outer ring) */}
+      {Array.from({ length: 8 }).map((_, i) => {
+        const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
+        const cx = 28 + Math.cos(a) * 22;
+        const cy = 32 + Math.sin(a) * 22;
+        return <circle key={i} cx={cx} cy={cy} r="1.6" fill="currentColor" stroke="none" />;
+      })}
+
+      {/* Central 5-spoke turning handle */}
+      {Array.from({ length: 5 }).map((_, i) => {
+        const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+        const x1 = 28 + Math.cos(a) * 3.2;
+        const y1 = 32 + Math.sin(a) * 3.2;
+        const x2 = 28 + Math.cos(a) * 11;
+        const y2 = 32 + Math.sin(a) * 11;
+        return (
+          <line
+            key={i}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            strokeWidth="2.4"
+            strokeLinecap="round"
+          />
+        );
+      })}
+      {/* Round hub */}
+      <circle cx="28" cy="32" r="3.2" fill="currentColor" stroke="none" />
+
+      {/* Keyhole below the hub */}
+      <circle cx="28" cy="42.5" r="1.4" fill="currentColor" stroke="none" />
+      <path d="M28 43.6 L28 46" strokeWidth="1.6" />
     </svg>
   );
 }
