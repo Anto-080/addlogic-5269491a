@@ -57,8 +57,9 @@
     --emerald-eternal: 150 100% 14%;
     --cookie-dough: 31 38% 44%;
     --cookie-chip: 221 78% 61%;
-    --circular-economy: 221.43 84% 90.2%;
-    --circular-economy-foreground: 210 67% 17%;
+    /* Sampled directly from the uploaded reference image: rgb(40,53,76) / #28354C */
+    --circular-economy: 218 31% 23%;
+    --circular-economy-foreground: 0 0% 100%;
   }
 }
 
@@ -201,31 +202,12 @@
 }
 
 @layer utilities {
-  /* ∞ Circular Economy (Level 100) — RGBA(209,222,251,1) locked across every state.
-     Targets the data-attribute on the Card so it beats Tailwind's bg-card. */
-  [data-circular-card="true"],
-  [data-circular-card="true"]:hover,
-  [data-circular-card="true"]:focus,
-  [data-circular-card="true"]:active,
-  [data-circular-card="true"][data-state="open"],
-  [data-circular-card="true"][data-state="closed"] {
-    background-color: rgba(209, 222, 251, 1) !important;
+  /* ∞ Circular Economy (Level 100) — single source of truth.
+     Color sampled from the uploaded reference image: rgb(40, 53, 76).
+     No layered overrides — just this one rule. */
+  [data-circular-card="true"] {
+    background-color: rgb(40, 53, 76) !important;
     background-image: none !important;
-    color: hsl(var(--circular-economy-foreground)) !important;
-  }
-  /* Force every descendant surface (header / content / inner cards / secondary
-     wells) to inherit the same RGBA so no green/dark patch leaks through. */
-  [data-circular-card="true"] *,
-  [data-circular-card="true"] [data-slot="card-header"],
-  [data-circular-card="true"] [data-slot="card-content"],
-  [data-circular-card="true"] [data-slot="card-title"] {
-    background-color: transparent !important;
-    background-image: none !important;
-  }
-  [data-circular-card="true"] .bg-card,
-  [data-circular-card="true"] .bg-secondary,
-  [data-circular-card="true"] [class*="bg-secondary/"],
-  [data-circular-card="true"] [class*="bg-card/"] {
-    background-color: rgba(209, 222, 251, 0.6) !important;
+    color: #ffffff !important;
   }
 }
