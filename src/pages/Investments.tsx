@@ -18,6 +18,12 @@ export default function Investments() {
   const circularUnlocked = userLevel >= CIRCULAR_UNLOCK || simulateL100;
   const circularPct = Math.min(100, (userLevel / CIRCULAR_UNLOCK) * 100);
   const investPct = Math.min(100, (userLevel / INVESTMENT_UNLOCK) * 100);
+  const circularCardStyle = circularUnlocked
+    ? {
+        backgroundColor: "hsl(var(--circular-economy))",
+        color: "hsl(var(--circular-economy-foreground))",
+      }
+    : undefined;
 
   return (
     <AppLayout>
@@ -74,8 +80,9 @@ export default function Investments() {
         {/* Phase 4 — ∞ Circular Economy (Level 100) — collapsible */}
         <Card
           className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "bg-circular-economy text-circular-economy-foreground" : "bg-card"}`}
+          style={circularCardStyle}
         >
-          <CardHeader className={`pb-3 ${circularUnlocked ? "bg-transparent" : ""}`}>
+          <CardHeader className={`pb-3 ${circularUnlocked ? "bg-transparent" : ""}`} style={circularCardStyle}>
             <CardTitle className="text-base flex items-center justify-between">
               <span className="flex items-center gap-2 text-foreground">
                  <ChevronDown className={`h-4 w-4 transition-transform ${circularUnlocked ? "rotate-0" : "-rotate-90"}`} style={{ color: circularUnlocked ? "hsl(var(--circular-economy-foreground))" : undefined }} />
@@ -106,7 +113,7 @@ export default function Investments() {
               </div>
             </CardContent>
           ) : (
-            <CardContent className="space-y-5 bg-transparent" style={{ color: "hsl(var(--circular-economy-foreground))" }}>
+            <CardContent className="space-y-5 bg-transparent" style={circularCardStyle}>
               {/* Round circular-economy seal — uploaded reference */}
               <div className="flex justify-center">
                 <img

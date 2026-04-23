@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Zap, Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
@@ -24,21 +24,10 @@ function AnimatedCounter({ target }: { target: number }) {
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
-  const [liveXp, setLiveXp] = useState(MOCK_EARNINGS.xp);
-  const [liveMultiplier, setLiveMultiplier] = useState(MOCK_EARNINGS.currentMultiplier);
+  const [liveXp] = useState(Math.round((MOCK_EARNINGS.xp / MOCK_EARNINGS.xpToNext) * 1_000_000));
+  const [liveMultiplier] = useState(MOCK_EARNINGS.currentMultiplier);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLiveXp((v) => Math.min(v + Math.random() * 3, MOCK_EARNINGS.xpToNext));
-      setLiveMultiplier((v) => {
-        const jitter = (Math.random() - 0.5) * 0.1;
-        return Math.max(0.5, Math.min(10, v + jitter));
-      });
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const xpPercent = (liveXp / MOCK_EARNINGS.xpToNext) * 100;
+  const xpPercent = (liveXp / 1_000_000) * 100;
   const multPercent = ((liveMultiplier - 0.5) / (10 - 0.5)) * 100;
   const primaryTier = TIERS[3];
 
@@ -85,7 +74,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{Math.floor(liveXp).toLocaleString()} / {MOCK_EARNINGS.xpToNext.toLocaleString()} XP</span>
+               <span className="text-muted-foreground">{Math.floor(liveXp).toLocaleString()} / 1,000,000 XP</span>
               <span className="text-foreground/80 font-medium">{xpPercent.toFixed(1)}%</span>
             </div>
             <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary/60">

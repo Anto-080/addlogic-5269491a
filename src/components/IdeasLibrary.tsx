@@ -75,7 +75,7 @@ export function IdeasLibrary() {
           <TabsContent value="researchers" className="space-y-4 mt-4">
             <SubmitIdeaForm onSubmit={(i) => setIdeas((prev) => [i, ...prev])} />
             <p className="text-[11px] italic text-center" style={{ color: "#0E2A47" }}>
-              *Yours Ideas will be Protected by Copyright Laws ©
+              Yours Ideas will be Protected by Prior Art Rights &amp; Copyright Laws ©. Best/Most Useful Ideas will be Granted a Full Patent Coverage with Minor Percentage Compartecipation from Our Side.
             </p>
             <IdeaList ideas={ideas} />
           </TabsContent>
@@ -138,7 +138,7 @@ function SubmitIdeaForm({ onSubmit }: { onSubmit: (i: Idea) => void }) {
   return (
     <Card className="border" style={{ borderColor: "#0E2A47", background: "rgba(255,255,255,0.6)" }}>
       <CardContent className="p-4 space-y-3">
-        <h3 className="text-sm font-semibold" style={{ color: "#0E2A47" }}>Submit Idea</h3>
+        <h3 className="text-sm font-semibold" style={{ color: "#0E2A47" }}>Submit [Prior Art - Copyright Protected]</h3>
 
         <div className="space-y-1.5">
           <label className="text-xs" style={{ color: "#0E2A47" }}>Interest Tier</label>
@@ -213,7 +213,7 @@ function SubmitIdeaForm({ onSubmit }: { onSubmit: (i: Idea) => void }) {
           )}
         </div>
 
-        <Button onClick={submit} className="w-full bg-money hover:bg-money text-white">Submit Idea (Free — Copyright protected)</Button>
+        <Button onClick={submit} className="w-full bg-money hover:bg-money text-white">Submit [Prior Art - Copyright Protected]</Button>
       </CardContent>
     </Card>
   );
