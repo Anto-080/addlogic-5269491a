@@ -18,13 +18,8 @@ export default function Investments() {
   const circularUnlocked = userLevel >= CIRCULAR_UNLOCK || simulateL100;
   const circularPct = Math.min(100, (userLevel / CIRCULAR_UNLOCK) * 100);
   const investPct = Math.min(100, (userLevel / INVESTMENT_UNLOCK) * 100);
-  const circularCardStyle: React.CSSProperties | undefined = circularUnlocked
-    ? {
-        backgroundColor: "rgba(209, 222, 251, 1)",
-        backgroundImage: "none",
-        color: "hsl(var(--circular-economy-foreground))",
-      }
-    : undefined;
+  // No inline color overrides — the single rule in index.css ([data-circular-card])
+  // applies the exact RGB sampled from the uploaded reference image.
 
   return (
     <AppLayout>
