@@ -219,23 +219,16 @@ export default function Research() {
 
         <Card className="bg-card border-border/60 glow-amber">
           <CardContent className="p-4 space-y-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0 flex-1">
-                 <p className="text-sm font-semibold text-foreground">
-                   {userLevel < TOP_TIER_GATE ? "Work in Progress unlock at level 35. Connect with LinkedIn" : "Research Room active"}
-                 </p>
-                 <p className="text-xs text-muted-foreground mt-1">
-                   {userLevel < SEARCH_GATE_LEVEL
-                     ? `Opera WebView remains blocked until Level ${SEARCH_GATE_LEVEL}.`
-                     : "Opera WebView unlocked."} XP advances in real time while you are actively researching.
-                 </p>
-              </div>
-              {userLevel < TOP_TIER_GATE && (
+            {userLevel < TOP_TIER_GATE && (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Connect with LinkedIn — <span className="text-foreground font-medium">For Biochemical Researchers Only</span>
+                </p>
                 <Button size="sm" variant="secondary" className="gap-2 self-start shrink-0">
                   <ExternalLink className="h-3 w-3" /> Connect with LinkedIn
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="space-y-1">
               <div className="flex justify-between text-[11px]">

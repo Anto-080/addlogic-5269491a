@@ -18,9 +18,10 @@ export default function Investments() {
   const circularUnlocked = userLevel >= CIRCULAR_UNLOCK || simulateL100;
   const circularPct = Math.min(100, (userLevel / CIRCULAR_UNLOCK) * 100);
   const investPct = Math.min(100, (userLevel / INVESTMENT_UNLOCK) * 100);
-  const circularCardStyle = circularUnlocked
+  const circularCardStyle: React.CSSProperties | undefined = circularUnlocked
     ? {
-        background: "hsl(var(--circular-economy))",
+        backgroundColor: "rgba(209, 222, 251, 1)",
+        backgroundImage: "none",
         color: "hsl(var(--circular-economy-foreground))",
       }
     : undefined;
@@ -79,7 +80,7 @@ export default function Investments() {
 
         {/* Phase 4 — ∞ Circular Economy (Level 100) — collapsible */}
         <Card
-          className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "bg-circular-economy text-circular-economy-foreground" : "bg-card"}`}
+          className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "" : "bg-card"}`}
           style={circularCardStyle}
           data-circular-card={circularUnlocked ? "true" : undefined}
         >

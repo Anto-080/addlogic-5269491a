@@ -201,39 +201,31 @@
 }
 
 @layer utilities {
-  /* ∞ Circular Economy (Level 100) — locked background across all states */
-  .bg-circular-economy,
-  .bg-circular-economy:hover,
-  .bg-circular-economy:focus,
-  .bg-circular-economy:active,
-  .bg-circular-economy:disabled,
-  .bg-circular-economy:focus-visible,
-  .bg-circular-economy[data-state="open"],
-  .bg-circular-economy[data-state="closed"],
-  .bg-circular-economy[aria-disabled="true"],
-  .bg-circular-economy.bg-card,
-  .bg-circular-economy.hover\:bg-card:hover,
+  /* ∞ Circular Economy (Level 100) — RGBA(209,222,251,1) locked across every state.
+     Targets the data-attribute on the Card so it beats Tailwind's bg-card. */
   [data-circular-card="true"],
-  .bg-circular-economy[data-slot="card"] {
-    background-color: hsl(var(--circular-economy)) !important;
+  [data-circular-card="true"]:hover,
+  [data-circular-card="true"]:focus,
+  [data-circular-card="true"]:active,
+  [data-circular-card="true"][data-state="open"],
+  [data-circular-card="true"][data-state="closed"] {
+    background-color: rgba(209, 222, 251, 1) !important;
     background-image: none !important;
     color: hsl(var(--circular-economy-foreground)) !important;
   }
-  .bg-circular-economy::before,
-  .bg-circular-economy::after {
-    background: transparent !important;
-  }
-  .bg-circular-economy > *,
-  .bg-circular-economy .bg-card,
-  .bg-circular-economy .bg-card\/50,
-  .bg-circular-economy .bg-secondary,
-  .bg-circular-economy .bg-secondary\/30,
-  .bg-circular-economy .bg-secondary\/40,
-  .bg-circular-economy .bg-secondary\/50,
-[data-circular-card="true"] > *,
-  .bg-circular-economy [data-slot="card-header"],
-  .bg-circular-economy [data-slot="card-content"] {
+  /* Force every descendant surface (header / content / inner cards / secondary
+     wells) to inherit the same RGBA so no green/dark patch leaks through. */
+  [data-circular-card="true"] *,
+  [data-circular-card="true"] [data-slot="card-header"],
+  [data-circular-card="true"] [data-slot="card-content"],
+  [data-circular-card="true"] [data-slot="card-title"] {
     background-color: transparent !important;
     background-image: none !important;
+  }
+  [data-circular-card="true"] .bg-card,
+  [data-circular-card="true"] .bg-secondary,
+  [data-circular-card="true"] [class*="bg-secondary/"],
+  [data-circular-card="true"] [class*="bg-card/"] {
+    background-color: rgba(209, 222, 251, 0.6) !important;
   }
 }
