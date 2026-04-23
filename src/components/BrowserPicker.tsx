@@ -43,7 +43,7 @@ export function BrowserPicker({ onSearch, userLevel = 0 }: BrowserPickerProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">
-          On Android, your search is routed through Opera's hardened WebView — multiple layers of anti-fraud, anti-tracking
+          On Android, your search is routed through Opera's hardened WebView — multiple layers of anti-fraud
           and malicious-redirect protection keep scammers from siphoning research funds. In the web preview the same
           query opens through an in-app sandboxed view.
         </p>
@@ -54,7 +54,7 @@ export function BrowserPicker({ onSearch, userLevel = 0 }: BrowserPickerProps) {
             <p className="text-xs font-semibold text-foreground">Opera WebView</p>
             <p className="text-[10px] text-muted-foreground leading-tight inline-flex items-center gap-1">
               <ShieldCheck className="h-3 w-3 text-money" />
-              Anti-tracker · anti-malware · crypto wallet aware
+              Anti-fraud · anti-malware · crypto wallet aware
             </p>
           </div>
           <span className="text-[10px] uppercase tracking-wider text-money font-medium">Default</span>

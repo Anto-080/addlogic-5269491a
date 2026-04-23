@@ -51,6 +51,13 @@
     --sidebar-accent-foreground: 140 20% 90%;
     --sidebar-border: 150 15% 12%;
     --sidebar-ring: 38 92% 50%;
+
+    --money: 31 38% 44%;
+    --money-hover: 31 42% 38%;
+    --emerald-eternal: 150 100% 14%;
+    --cookie-dough: 31 38% 44%;
+    --circular-economy: 221 84% 90%;
+    --circular-economy-foreground: 210 67% 17%;
   }
 }
 
@@ -84,7 +91,7 @@
   /* Switch tint override — money color */
   [data-state="checked"].peer\\:bg-primary,
   button[role="switch"][data-state="checked"] {
-    background-color: #9A7246 !important;
+    background-color: hsl(var(--money)) !important;
   }
 
   /* Organic / fluid Strong Amber XP fill (#A87E00) — animated gradient sheen */
@@ -175,19 +182,19 @@
   }
 
   /* Money color — every numeric value, earnings bar, money button */
-  .text-money { color: #9A7246; }
-  .bg-money { background-color: #9A7246; }
-  .bg-money:hover { background-color: #8a6539; }
-  .fill-money { fill: #9A7246; }
+  .text-money { color: hsl(var(--money)); }
+  .bg-money { background-color: hsl(var(--money)); }
+  .bg-money:hover { background-color: hsl(var(--money-hover)); }
+  .fill-money { fill: hsl(var(--money)); }
 
   /* Eternal Emerald — used for analytics toggles & gating chrome */
-  .text-emerald-eternal { color: #004627; }
-  .bg-emerald-eternal { background-color: #004627; }
-  .border-emerald-eternal { border-color: #004627; }
+  .text-emerald-eternal { color: hsl(var(--emerald-eternal)); }
+  .bg-emerald-eternal { background-color: hsl(var(--emerald-eternal)); }
+  .border-emerald-eternal { border-color: hsl(var(--emerald-eternal)); }
 
   /* Switch tint override: emerald for analytics toggles (cookies / GPS / dev sims) */
   button[role="switch"][data-emerald="true"][data-state="checked"] {
-    background-color: #004627 !important;
+    background-color: hsl(var(--emerald-eternal)) !important;
   }
 }
 
@@ -198,16 +205,27 @@
   .bg-circular-economy:focus,
   .bg-circular-economy:active,
   .bg-circular-economy:disabled,
+  .bg-circular-economy:focus-visible,
   .bg-circular-economy[data-state="open"],
   .bg-circular-economy[data-state="closed"],
-  .bg-circular-economy[aria-disabled="true"] {
-    background-color: rgba(209, 222, 251, 1) !important;
+  .bg-circular-economy[aria-disabled="true"],
+  .bg-circular-economy.bg-card,
+  .bg-circular-economy.hover\:bg-card:hover,
+  .bg-circular-economy[data-slot="card"] {
+    background-color: hsl(var(--circular-economy)) !important;
     background-image: none !important;
+    color: hsl(var(--circular-economy-foreground)) !important;
   }
-  /* Force inner shadcn Card sections to be transparent so the locked color shows through */
+  .bg-circular-economy::before,
+  .bg-circular-economy::after {
+    background: transparent !important;
+  }
   .bg-circular-economy > *,
+  .bg-circular-economy .bg-card,
+  .bg-circular-economy .bg-card\/50,
   .bg-circular-economy [data-slot="card-header"],
   .bg-circular-economy [data-slot="card-content"] {
     background-color: transparent !important;
+    background-image: none !important;
   }
 }

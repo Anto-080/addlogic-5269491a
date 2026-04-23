@@ -131,7 +131,7 @@ function PlaceOfferForm() {
             className="w-full bg-secondary/50 rounded-md px-3 py-2 text-sm border border-border"
           >
             {TIERS.map((t) => (
-              <option key={t.id} value={t.id}>Tier {t.id} · {t.name}</option>
+              <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
         </div>
