@@ -1,7 +1,8 @@
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MOCK_EARNINGS, MOCK_WEEKLY_EARNINGS, TIERS } from "@/lib/mockData";
+import { TIERS } from "@/lib/mockData";
+import { useUserStats, useWeeklyEarnings } from "@/hooks/useAppData";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { ArrowUpRight, Wallet, ShieldCheck, TrendingUp } from "lucide-react";
 import { RoundVault } from "@/components/icons/RoundVault";
@@ -11,14 +12,43 @@ import { NavLink } from "react-router-dom";
 
 const VAULT_GOLD = "#B0903D";
 
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 export default function Earnings() {
-  const tierEarnings = TIERS.slice(0, 6).map((t) => ({
-    tierId: t.id,
-    color: t.color,
-    tier: t.name,
-    earned: Math.random() * 200 + 50,
-    redistribution: Math.random() * 40,
-  }));
+  const { data: stats } = useUserStats();
+  const { data: weekly = [] } = useWeeklyEarnings();
+
+  const earningsToday = stats?.earnings_today ?? 0;
+  const earningsWeek = stats?.earnings_week ?? 0;
+  const earningsAllTime = stats?.earnings_all_time ?? 0;
+  const streak = stats?.active_streak ?? 0;
+
+  // Pad weekly chart with zeros for missing days so the bar chart always has 7 entries
+  const weekChart = (() => {
+    const map = new Map(weekly.map((w) => [w.day, w.amount]));
+    const out: { day: string; amount: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      out.push({ day: DAY_LABELS[d.getDay()], amount: map.get(key) ?? 0 });
+    }
+    return out;
+  })();
+
+  // Live redistribution split: derive proportionally from a user's all-time earnings
+  // across their top tiers. With no real per-tier ledger yet, approximate using the
+  // public tier multipliers so percentages stay deterministic.
+  const tierEarnings = TIERS.slice(0, 6).map((t) => {
+    const share = (earningsAllTime * t.multiplier) / TIERS.slice(0, 6).reduce((s, x) => s + x.multiplier, 0);
+    return {
+      tierId: t.id,
+      color: t.color,
+      tier: t.name,
+      earned: share,
+      redistribution: share * 0.18,
+    };
+  });
 
   return (
     <AppLayout>
