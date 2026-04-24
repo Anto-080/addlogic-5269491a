@@ -1,34 +1,69 @@
-import { useSettings, XP_PER_LEVEL } from "@/contexts/SettingsContext";
+import { useEffect, useRef, useState } from "react";
 import { Zap } from "lucide-react";
+import {
+  XP_PER_LEVEL,
+  getXpSnapshot,
+  addXpForSeconds,
+  setMultiplier,
+  consentBonus,
+  useSettings,
+} from "@/contexts/SettingsContext";
 
 /**
- * Shared Experience + Multiplier display — identical numbers on every page
- * because all values are read from SettingsContext.
+ * Self-contained Experience + Crimson Multiplier display.
  *
- *   ┌─────────────────────────────── Experience Bar (amber, clean) ──┐
- *   │■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■░░░░░░░░░░░░░░░░░░░░░░│
- *   └─────────────────────────────────────────────────────────────────┘
- *   ┌─────── Crimson Multiplier Bar (with black x10 cap marker) ─────┐
- *   │██████████████████████████████████████████│←black marker        │
- *   └─────────────────────────────────────────────────────────────────┘
- *
- * The black marker lives on the *Crimson Multiplier bar*. While the
- * multiplier is ≤ 10, the marker sits at the right edge (the cap). Once
- * boosters push the multiplier above 10× (e.g. x12, x14, x15), the marker
- * slides left so the crimson fill visibly extends past it — exactly like
- * Lovable's token bar shows usage above the limit.
+ * - Reads/writes XP to the module-level store (NOT React context), so
+ *   toggles elsewhere never re-render when XP ticks.
+ * - When mounted, ticks XP locally once per second so progress is visible
+ *   live on whatever page the user happens to be on (Dashboard or
+ *   Research). When unmounted, no work happens.
+ * - The crimson bar's black marker shows the x10 cap; if the multiplier
+ *   surpasses 10×, the marker slides left and crimson fill extends past it.
  */
-export function ExperienceBar({ compact = false }: { compact?: boolean }) {
-  const { liveXp, level, activeMultiplier } = useSettings();
-  const xpPercent = Math.min(100, (liveXp / XP_PER_LEVEL) * 100);
+export function ExperienceBar({
+  baseMultiplier,
+  earning = false,
+  compact = false,
+}: {
+  /** Tier multiplier from the current page (Research selects one; Dashboard uses primary tier). */
+  baseMultiplier?: number;
+  /** Whether to actively tick XP. Dashboard passes false; Research passes true. */
+  earning?: boolean;
+  compact?: boolean;
+}) {
+  const { cookieAutoAccept, gpsPrecision } = useSettings();
+  const snap = getXpSnapshot();
+  const initialBase = baseMultiplier ?? snap.multiplier;
+  const activeMultiplier = initialBase + consentBonus(cookieAutoAccept, gpsPrecision);
 
-  // Crimson bar scaling: 0..cap fills 0..100% of the marker zone. Above the
-  // cap, the bar visually extends further but never overflows the container.
+  // Sync new multiplier into the persisted store whenever inputs change.
+  useEffect(() => {
+    setMultiplier(activeMultiplier);
+  }, [activeMultiplier]);
+
+  // Local display state — refreshed by interval; never affects other components.
+  const [, force] = useState(0);
+  const lastTickRef = useRef(Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      const dt = (now - lastTickRef.current) / 1000;
+      lastTickRef.current = now;
+      if (earning && !document.hidden && dt < 60) {
+        addXpForSeconds(dt);
+      }
+      force((n) => n + 1);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [earning]);
+
+  const live = getXpSnapshot();
+  const xpPercent = Math.min(100, (live.xp / XP_PER_LEVEL) * 100);
+
   const cap = 10;
-  const overshootRatio = Math.max(0, activeMultiplier - cap) / cap; // 0 when ≤cap
-  // Marker slides left as overshoot grows (down to 50% at 2× the cap).
+  const overshootRatio = Math.max(0, activeMultiplier - cap) / cap;
   const markerPercent = Math.max(50, 100 - overshootRatio * 50);
-  // Crimson fill: at cap → reaches markerPercent. Above cap → extends past it.
   const fillPercent = Math.min(
     100,
     activeMultiplier <= cap
@@ -40,14 +75,13 @@ export function ExperienceBar({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className="space-y-2">
-      {/* === Experience Bar (amber) === */}
       <div className="space-y-1">
         <div className="flex justify-between text-[11px]">
           <span className="text-muted-foreground inline-flex items-center gap-1">
-            <Zap className="h-3 w-3 text-money" /> Experience Level {level}
+            <Zap className="h-3 w-3 text-money" /> Experience Level {live.level}
           </span>
           <span className="text-foreground/80 font-medium">
-            {Math.floor(liveXp).toLocaleString()} / {XP_PER_LEVEL.toLocaleString()} XP
+            {Math.floor(live.xp).toLocaleString()} / {XP_PER_LEVEL.toLocaleString()} XP
           </span>
         </div>
         <div className={`relative w-full overflow-hidden rounded-full bg-secondary/60 ${barH}`}>
@@ -58,7 +92,6 @@ export function ExperienceBar({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
 
-      {/* === Crimson Multiplier Bar (with x10 black marker) === */}
       <div className="space-y-1">
         <div className="flex justify-between text-[11px]">
           <span className="text-muted-foreground">Crimson Multiplier</span>
@@ -76,7 +109,6 @@ export function ExperienceBar({ compact = false }: { compact?: boolean }) {
             className="multiplier-fluid h-full transition-[width] duration-700 ease-out"
             style={{ width: `${fillPercent}%` }}
           />
-          {/* Black x10 cap marker — sits on the crimson bar, slides left when surpassed */}
           <div
             className="absolute top-0 bottom-0 w-[3px] bg-black/90 pointer-events-none"
             style={{ left: `calc(${markerPercent}% - 1.5px)` }}
