@@ -49,16 +49,19 @@ function InterstitialAd({ onClose }: { onClose: () => void }) {
   const [countdown, setCountdown] = useState(5);
   const [ratingShown, setRatingShown] = useState(false);
 
-  useState(() => {
-    const i = setInterval(() =>
+  useEffect(() => {
+    const i = setInterval(() => {
       setCountdown((c) => {
         if (c <= 1) {
           clearInterval(i);
           setRatingShown(true);
+          return 0;
         }
         return c - 1;
-      }), 1000);
-  });
+      });
+    }, 1000);
+    return () => clearInterval(i);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 bg-background/95 flex items-center justify-center p-4">
