@@ -3,12 +3,13 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useEffect, useState } from "react";
-import { Zap, Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
+import { Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
 import { ClockIcon } from "@/components/icons/ClockIcon";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useSettings, COOKIE_BONUS, GPS_BONUS } from "@/contexts/SettingsContext";
 import { TierIcon } from "@/components/TierIcon";
+import { ExperienceBar } from "@/components/ExperienceBar";
 
 function AnimatedCounter({ target }: { target: number }) {
   const [val, setVal] = useState(0);
@@ -24,15 +25,6 @@ function AnimatedCounter({ target }: { target: number }) {
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
-  const COOKIE_BONUS = 3;
-  const GPS_BONUS = 5;
-  const consentBonus = (cookieAutoAccept ? COOKIE_BONUS : 0) + (gpsPrecision ? GPS_BONUS : 0);
-  const [liveXp] = useState(Math.round((MOCK_EARNINGS.xp / MOCK_EARNINGS.xpToNext) * 1_000_000));
-  const baseMultiplier = MOCK_EARNINGS.currentMultiplier;
-  const liveMultiplier = baseMultiplier + consentBonus;
-
-  const xpPercent = (liveXp / 1_000_000) * 100;
-  const multPercent = ((liveMultiplier - 0.5) / (10 - 0.5)) * 100;
   const primaryTier = TIERS[3];
 
   const summary = [
