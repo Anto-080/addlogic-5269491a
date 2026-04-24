@@ -1,5 +1,11 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { deriveInterestTiers, recordSearch } from "@/lib/userInterestProfiler";
+import { MOCK_EARNINGS } from "@/lib/mockData";
+
+export const XP_PER_LEVEL = 1_000_000;
+export const COOKIE_BONUS = 2;
+export const GPS_BONUS = 5;
+export const TIER_LINGER_MS = 60 * 1000;
 
 type DeviceProfile = {
   userAgent: string;
@@ -24,6 +30,17 @@ type SettingsState = {
   deviceProfile: DeviceProfile | null;
   /** Top tier IDs derived from device signals once both toggles are ON. */
   topInterestTiers: number[];
+  /** Live XP shared across all pages (0..XP_PER_LEVEL). */
+  liveXp: number;
+  level: number;
+  /** Multiplier from selected research tier (lingers TIER_LINGER_MS after change). */
+  tierMultiplier: number;
+  /** Total active multiplier including consent bonuses. */
+  activeMultiplier: number;
+  /** Set the active research tier multiplier (e.g. when user picks a tier in Research). */
+  setActiveTierMultiplier: (m: number) => void;
+  /** Whether the Research Room is currently engaging XP earning. */
+  setResearchActive: (active: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsState | undefined>(undefined);
