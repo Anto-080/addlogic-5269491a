@@ -16,6 +16,7 @@ import Investments from "./pages/Investments";
 import Settings from "./pages/Settings";
 import Offers from "./pages/Offers";
 import VaultDiff from "./pages/VaultDiff";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
