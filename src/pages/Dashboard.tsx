@@ -127,6 +127,9 @@ export default function Dashboard() {
                     inside the in-app Opera WebView. Powers ad-hoc, retributed advertising tailored to what you actually
                     care about — required for the rewards engine to function.
                   </p>
+                  <p className="text-[11px] mt-2 font-semibold" style={{ color: "hsl(348 83% 60%)" }}>
+                    Baseline multiplier: x{COOKIE_BONUS} {cookieAutoAccept ? "· active" : "· inactive"}
+                  </p>
                 </div>
               </div>
               <Switch checked={cookieAutoAccept} onCheckedChange={setCookieAutoAccept} data-emerald="true" />
