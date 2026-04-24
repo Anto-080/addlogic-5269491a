@@ -6,14 +6,15 @@ import { TrendingUp, Shield, Users, ChevronDown } from "lucide-react";
 import workInProgressImg from "@/assets/work-in-progress.png";
 import circularSeal from "@/assets/circular-economy-seal.jpg";
 import infinityLoop from "@/assets/infinity-loop.jpg";
-import { MOCK_USER } from "@/lib/mockData";
+import { useUserStats } from "@/hooks/useAppData";
 import { IdeasLibrary } from "@/components/IdeasLibrary";
 
 const CIRCULAR_UNLOCK = 100;
 const INVESTMENT_UNLOCK = 50;
 
 export default function Investments() {
-  const userLevel = MOCK_USER.level;
+  const { data: stats } = useUserStats();
+  const userLevel = stats?.level ?? 1;
   const [simulateL100, setSimulateL100] = useState(false);
   const circularUnlocked = userLevel >= CIRCULAR_UNLOCK || simulateL100;
   const circularPct = Math.min(100, (userLevel / CIRCULAR_UNLOCK) * 100);

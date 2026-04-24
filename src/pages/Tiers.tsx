@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
-import { TIERS, MOCK_USER } from "@/lib/mockData";
+import { TIERS } from "@/lib/mockData";
+import { useUserStats } from "@/hooks/useAppData";
 import { TierIcon } from "@/components/TierIcon";
 import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -33,7 +34,8 @@ export default function Tiers() {
   const [seasonalShuffle, setSeasonalShuffle] = useState(0);
   const [params, setParams] = useSearchParams();
   const view = params.get("view") === "sponsors" ? "sponsors" : "tiers";
-  const userLevel = MOCK_USER.level;
+  const { data: stats } = useUserStats();
+  const userLevel = stats?.level ?? 1;
   const topTierLocked = userLevel < TOP_TIER_GATE;
 
   useEffect(() => {
