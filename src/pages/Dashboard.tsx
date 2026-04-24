@@ -24,8 +24,12 @@ function AnimatedCounter({ target }: { target: number }) {
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
+  const COOKIE_BONUS = 3;
+  const GPS_BONUS = 5;
+  const consentBonus = (cookieAutoAccept ? COOKIE_BONUS : 0) + (gpsPrecision ? GPS_BONUS : 0);
   const [liveXp] = useState(Math.round((MOCK_EARNINGS.xp / MOCK_EARNINGS.xpToNext) * 1_000_000));
-  const [liveMultiplier] = useState(MOCK_EARNINGS.currentMultiplier);
+  const baseMultiplier = MOCK_EARNINGS.currentMultiplier;
+  const liveMultiplier = baseMultiplier + consentBonus;
 
   const xpPercent = (liveXp / 1_000_000) * 100;
   const multPercent = ((liveMultiplier - 0.5) / (10 - 0.5)) * 100;
@@ -123,6 +127,9 @@ export default function Dashboard() {
                     inside the in-app Opera WebView. Powers ad-hoc, retributed advertising tailored to what you actually
                     care about — required for the rewards engine to function.
                   </p>
+                  <p className="text-[11px] mt-2 font-semibold" style={{ color: "hsl(348 83% 60%)" }}>
+                    Baseline multiplier: x{COOKIE_BONUS} {cookieAutoAccept ? "· active" : "· inactive"}
+                  </p>
                 </div>
               </div>
               <Switch checked={cookieAutoAccept} onCheckedChange={setCookieAutoAccept} data-emerald="true" />
@@ -145,6 +152,9 @@ export default function Dashboard() {
                     <strong className="text-foreground/90"> handset model, OS, screen, locale, daily active-usage
                     pattern, network type</strong>. Combined with the cookie sync above, it produces a non-PII profile
                     used to match you to higher-paying regional ads and the Regional Coupons feed below.
+                  </p>
+                  <p className="text-[11px] mt-2 font-semibold" style={{ color: "hsl(348 83% 60%)" }}>
+                    Baseline multiplier: x{GPS_BONUS} {gpsPrecision ? "· active" : "· inactive"}
                   </p>
                 </div>
               </div>
