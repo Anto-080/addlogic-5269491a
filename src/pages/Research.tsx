@@ -2,17 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TIERS, MOCK_ARTICLES, MOCK_EARNINGS } from "@/lib/mockData";
-import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink, Zap } from "lucide-react";
+import { TIERS, MOCK_ARTICLES } from "@/lib/mockData";
+import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink } from "lucide-react";
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { InAppBrowser } from "@/components/InAppBrowser";
 import { TierIcon } from "@/components/TierIcon";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useSettings, XP_PER_LEVEL } from "@/contexts/SettingsContext";
+import { ExperienceBar } from "@/components/ExperienceBar";
 
-const XP_PER_LEVEL = 1_000_000;
 const SEARCH_GATE_LEVEL = 25;
 const TOP_TIER_GATE = 35;
-const IDLE_LIMIT_MS = 5 * 60 * 1000;
 
 function StarRating({ onRate }: { onRate: (n: number) => void }) {
   const [hover, setHover] = useState(0);
@@ -97,56 +96,22 @@ export default function Research() {
   const [articleCount, setArticleCount] = useState(0);
   const [browser, setBrowser] = useState<{ url: string; engineName: string } | null>(null);
   const [showSponsoredVideos, setShowSponsoredVideos] = useState(false);
-  const { topInterestTiers } = useSettings();
+  const { topInterestTiers, level, activeMultiplier, setActiveTierMultiplier, setResearchActive } = useSettings();
 
   const selectedTierData = TIERS.find((t) => t.id === (selectedTier ?? 4)) ?? TIERS[3];
-  const [researchLevel, setResearchLevel] = useState(MOCK_EARNINGS.level);
-  const [researchXp, setResearchXp] = useState(Math.round((MOCK_EARNINGS.xp / MOCK_EARNINGS.xpToNext) * XP_PER_LEVEL));
-  const [liveMultiplier, setLiveMultiplier] = useState(selectedTierData.multiplier);
-  const [lastActiveAt, setLastActiveAt] = useState(Date.now());
-  const lastActiveRef = useRef(Date.now());
   const primaryTierId = selectedTier ?? 4;
-  const userLevel = researchLevel;
+  const userLevel = level;
 
+  // Sync the selected tier's multiplier to the global context.
   useEffect(() => {
-    setLiveMultiplier(selectedTierData.multiplier);
-  }, [selectedTierData.multiplier]);
+    setActiveTierMultiplier(selectedTierData.multiplier);
+  }, [selectedTierData.multiplier, setActiveTierMultiplier]);
 
+  // Mark Research Room as active while mounted; stops counting on unmount.
   useEffect(() => {
-    const markActive = () => {
-      const now = Date.now();
-      lastActiveRef.current = now;
-      setLastActiveAt(now);
-    };
-
-    const events: Array<keyof WindowEventMap> = ["pointerdown", "pointermove", "keydown", "scroll", "touchstart"];
-    events.forEach((eventName) => window.addEventListener(eventName, markActive, { passive: true }));
-    document.addEventListener("visibilitychange", markActive);
-
-    const interval = window.setInterval(() => {
-      const idle = Date.now() - lastActiveRef.current > IDLE_LIMIT_MS;
-      if (idle || document.hidden) return;
-
-      setResearchXp((prev) => {
-        const next = prev + liveMultiplier;
-        if (next >= XP_PER_LEVEL) {
-          setResearchLevel((level) => level + 1);
-          return next - XP_PER_LEVEL;
-        }
-        return next;
-      });
-    }, 1000);
-
-    return () => {
-      window.clearInterval(interval);
-      events.forEach((eventName) => window.removeEventListener(eventName, markActive));
-      document.removeEventListener("visibilitychange", markActive);
-    };
-  }, [liveMultiplier]);
-
-  const roomIdle = Date.now() - lastActiveAt > IDLE_LIMIT_MS;
-  const xpPercent = Math.min(100, (researchXp / XP_PER_LEVEL) * 100);
-  const multPercent = ((liveMultiplier - 0.5) / (10 - 0.5)) * 100;
+    setResearchActive(true);
+    return () => setResearchActive(false);
+  }, [setResearchActive]);
 
   const filteredArticles = useMemo(() => {
     let list = MOCK_ARTICLES.filter((a) => !selectedTier || a.tier === selectedTier);
@@ -165,8 +130,6 @@ export default function Research() {
   const handleReadArticle = (earnings: number, tier: number) => {
     if (tier <= 3 && userLevel < TOP_TIER_GATE) return;
     setSessionEarnings((s) => s + earnings);
-    lastActiveRef.current = Date.now();
-    setLastActiveAt(lastActiveRef.current);
     setArticleCount((c) => {
       const next = c + 1;
       if (next % 5 === 0) setShowInterstitial(true);
@@ -176,8 +139,6 @@ export default function Research() {
 
   const handleWatchVideo = () => {
     setSessionEarnings((s) => s + 2.5);
-    lastActiveRef.current = Date.now();
-    setLastActiveAt(lastActiveRef.current);
   };
 
   return (
