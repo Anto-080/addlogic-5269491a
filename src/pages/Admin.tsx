@@ -81,6 +81,35 @@ export default function Admin() {
     }
   };
 
+  const addTier = async () => {
+    if (!tiers) return;
+    const nextId = (tiers.reduce((m, t) => Math.max(m, t.id), 0) || 0) + 1;
+    const nextOrder = sorted.length;
+    try {
+      await createTier.mutateAsync({
+        id: nextId,
+        name: `New tier ${nextId}`,
+        icon: String(nextId),
+        multiplier: 1,
+        color: "hsl(150 60% 45%)",
+        display_order: nextOrder,
+      });
+      toast.success(`Tier #${nextId} created`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to create tier");
+    }
+  };
+
+  const removeTier = async (id: number) => {
+    if (!confirm("Delete this tier? This cannot be undone.")) return;
+    try {
+      await deleteTier.mutateAsync(id);
+      toast.success("Tier deleted");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to delete tier");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -94,9 +123,14 @@ export default function Admin() {
               <p className="text-sm text-muted-foreground">Edit names, multipliers, colors, and ordering. Changes go live for all users.</p>
             </div>
           </div>
-          <Button onClick={saveAll} disabled={updateTier.isPending}>
-            <Save className="h-4 w-4 mr-2" /> Save all
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={addTier} disabled={createTier.isPending}>
+              <Plus className="h-4 w-4 mr-2" /> Add tier
+            </Button>
+            <Button onClick={saveAll} disabled={updateTier.isPending}>
+              <Save className="h-4 w-4 mr-2" /> Save all
+            </Button>
+          </div>
         </header>
 
         {isLoading && <p className="text-muted-foreground">Loading tiers…</p>}
@@ -107,7 +141,9 @@ export default function Admin() {
             return (
               <Card key={t.id} className="p-4 space-y-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{t.icon}</span>
+                  <span style={{ color: d.color ?? t.color }}>
+                    <TierIcon tierId={t.id} size={28} />
+                  </span>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground">Name</label>
@@ -151,7 +187,12 @@ export default function Admin() {
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">Rank #{i + 1} · {t.subcategories.length} subcategories</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Rank #{i + 1} · ID {t.id} · {t.subcategories.length} subcategories</p>
+                  <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => removeTier(t.id)} disabled={deleteTier.isPending}>
+                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                  </Button>
+                </div>
               </Card>
             );
           })}
