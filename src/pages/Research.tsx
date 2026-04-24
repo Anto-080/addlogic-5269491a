@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TIERS, MOCK_ARTICLES } from "@/lib/mockData";
+import { TIERS } from "@/lib/mockData";
+import { useArticles, useUserStats } from "@/hooks/useAppData";
 import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink } from "lucide-react";
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { InAppBrowser } from "@/components/InAppBrowser";
 import { TierIcon } from "@/components/TierIcon";
-import { useSettings, XP_PER_LEVEL, getXpSnapshot, consentBonus } from "@/contexts/SettingsContext";
+import { useSettings, XP_PER_LEVEL, consentBonus } from "@/contexts/SettingsContext";
 import { ExperienceBar } from "@/components/ExperienceBar";
 
 const SEARCH_GATE_LEVEL = 25;

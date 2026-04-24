@@ -1,7 +1,24 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { TIERS as FALLBACK_TIERS } from "@/lib/mockData";
+
+/* Mutation: patch the current user's stats row. */
+export function useUpdateUserStats() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (patch: Partial<{ xp: number; level: number; current_multiplier: number; earnings_today: number; earnings_week: number; earnings_all_time: number; active_streak: number; }>) => {
+      if (!user) return null;
+      const { error } = await supabase.from("user_stats").update(patch).eq("user_id", user.id);
+      if (error) throw error;
+      return patch;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user_stats", user?.id] });
+    },
+  });
+}
 
 /* =====================================================================
  * Public catalog hooks — pull live data from Supabase.
