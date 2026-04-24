@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { MOCK_EARNINGS } from "@/lib/mockData";
+import { useUserStats } from "@/hooks/useAppData";
 import { Search, Layers, LayoutDashboard } from "lucide-react";
 import { RoundVault } from "@/components/icons/RoundVault";
 import { NavLink, useLocation } from "react-router-dom";
@@ -16,7 +16,9 @@ const QUICK_LINKS = [
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { data: stats } = useUserStats();
   const location = useLocation();
+  const vaultBalance = stats?.earnings_all_time ?? 0;
 
   return (
     <SidebarProvider>
@@ -61,7 +63,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 title="Vault"
               >
                 <RoundVault size={16} style={{ color: "#B0903D" }} />
-                <span className="text-xs sm:text-sm font-semibold text-money">${MOCK_EARNINGS.allTime.toFixed(2)}</span>
+                <span className="text-xs sm:text-sm font-semibold text-money">${vaultBalance.toFixed(2)}</span>
               </NavLink>
 
               <NavLink

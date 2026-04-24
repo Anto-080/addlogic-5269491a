@@ -14,7 +14,296 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      articles: {
+        Row: {
+          created_at: string
+          dual_use_warning: boolean
+          earnings: number
+          id: string
+          is_daily_desk: boolean
+          read_time: string | null
+          source: string
+          tier_id: number
+          title: string
+          warning_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          dual_use_warning?: boolean
+          earnings?: number
+          id?: string
+          is_daily_desk?: boolean
+          read_time?: string | null
+          source: string
+          tier_id: number
+          title: string
+          warning_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          dual_use_warning?: boolean
+          earnings?: number
+          id?: string
+          is_daily_desk?: boolean
+          read_time?: string | null
+          source?: string
+          tier_id?: number
+          title?: string
+          warning_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      milestones: {
+        Row: {
+          earned: number
+          id: string
+          occurred_at: string
+          tier_id: number | null
+          title: string
+          user_id: string
+          xp_gained: number
+        }
+        Insert: {
+          earned?: number
+          id?: string
+          occurred_at?: string
+          tier_id?: number | null
+          title: string
+          user_id: string
+          xp_gained?: number
+        }
+        Update: {
+          earned?: number
+          id?: string
+          occurred_at?: string
+          tier_id?: number | null
+          title?: string
+          user_id?: string
+          xp_gained?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offers: {
+        Row: {
+          cpa_payout: number
+          created_at: string
+          discount: number
+          id: string
+          merchant: string
+          original_price: number
+          sale_price: number
+          tier_id: number
+          title: string
+        }
+        Insert: {
+          cpa_payout?: number
+          created_at?: string
+          discount?: number
+          id?: string
+          merchant: string
+          original_price: number
+          sale_price: number
+          tier_id: number
+          title: string
+        }
+        Update: {
+          cpa_payout?: number
+          created_at?: string
+          discount?: number
+          id?: string
+          merchant?: string
+          original_price?: number
+          sale_price?: number
+          tier_id?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sponsors: {
+        Row: {
+          bid_amount: number
+          company: string
+          ctr: string | null
+          id: string
+          impressions: string | null
+          rating: number
+          tier_id: number
+        }
+        Insert: {
+          bid_amount: number
+          company: string
+          ctr?: string | null
+          id?: string
+          impressions?: string | null
+          rating?: number
+          tier_id: number
+        }
+        Update: {
+          bid_amount?: number
+          company?: string
+          ctr?: string | null
+          id?: string
+          impressions?: string | null
+          rating?: number
+          tier_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsors_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tiers: {
+        Row: {
+          avg_earning: number
+          color: string
+          display_order: number
+          icon: string
+          id: number
+          locked: boolean
+          multiplier: number
+          name: string
+          researchers: number
+          subcategories: string[]
+        }
+        Insert: {
+          avg_earning?: number
+          color: string
+          display_order?: number
+          icon: string
+          id: number
+          locked?: boolean
+          multiplier: number
+          name: string
+          researchers?: number
+          subcategories?: string[]
+        }
+        Update: {
+          avg_earning?: number
+          color?: string
+          display_order?: number
+          icon?: string
+          id?: number
+          locked?: boolean
+          multiplier?: number
+          name?: string
+          researchers?: number
+          subcategories?: string[]
+        }
+        Relationships: []
+      }
+      user_stats: {
+        Row: {
+          active_streak: number
+          current_multiplier: number
+          earnings_all_time: number
+          earnings_today: number
+          earnings_week: number
+          level: number
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          active_streak?: number
+          current_multiplier?: number
+          earnings_all_time?: number
+          earnings_today?: number
+          earnings_week?: number
+          level?: number
+          updated_at?: string
+          user_id: string
+          xp?: number
+        }
+        Update: {
+          active_streak?: number
+          current_multiplier?: number
+          earnings_all_time?: number
+          earnings_today?: number
+          earnings_week?: number
+          level?: number
+          updated_at?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
+      weekly_earnings: {
+        Row: {
+          amount: number
+          day: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          day: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          day?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

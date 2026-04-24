@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TIERS, MOCK_OFFERS } from "@/lib/mockData";
+import { TIERS } from "@/lib/mockData";
+import { useOffers } from "@/hooks/useAppData";
 import { TierIcon } from "@/components/TierIcon";
 import { UsdcIcon } from "@/components/icons/UsdcIcon";
 import { Tag, Sparkles, Lock } from "lucide-react";
@@ -12,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function Offers() {
   const [view, setView] = useState<"browse" | "place">("browse");
+  const { data: offers = [] } = useOffers();
 
   return (
     <AppLayout>
@@ -43,8 +45,11 @@ export default function Offers() {
             </Card>
 
             <div className="space-y-3">
-              {MOCK_OFFERS.map((o) => {
-                const tier = TIERS.find((t) => t.id === o.tierId)!;
+              {offers.length === 0 && (
+                <p className="text-xs text-muted-foreground italic px-1">Loading offers…</p>
+              )}
+              {offers.map((o) => {
+                const tier = TIERS.find((t) => t.id === o.tier_id)!;
                 return (
                   <Card key={o.id} className="bg-card border-border/50" style={{ borderLeft: `3px solid ${tier.color}` }}>
                     <CardContent className="p-4 space-y-3">
@@ -66,14 +71,14 @@ export default function Offers() {
                       <div className="flex items-center justify-between gap-3 text-xs">
                         <div className="flex items-center gap-1.5">
                           <span className="text-muted-foreground line-through inline-flex items-center gap-1">
-                            <UsdcIcon size={11} /> {o.originalPrice.toFixed(2)}
+                            <UsdcIcon size={11} /> {o.original_price.toFixed(2)}
                           </span>
                           <span className="text-gradient-gold font-bold inline-flex items-center gap-1">
-                            <UsdcIcon size={12} /> {o.salePrice.toFixed(2)}
+                            <UsdcIcon size={12} /> {o.sale_price.toFixed(2)}
                           </span>
                         </div>
                         <span className="text-[10px] text-primary inline-flex items-center gap-1">
-                          CPA payout <UsdcIcon size={10} /> {o.cpaPayout.toFixed(2)}
+                          CPA payout <UsdcIcon size={10} /> {o.cpa_payout.toFixed(2)}
                         </span>
                       </div>
 
@@ -81,7 +86,7 @@ export default function Offers() {
                         size="sm"
                         variant="secondary"
                         className="w-full"
-                        onClick={() => toast({ title: "Offer claimed (mock)", description: `${o.merchant} — checkout link sent.` })}
+                        onClick={() => toast({ title: "Offer claimed", description: `${o.merchant} — checkout link sent.` })}
                       >
                         Claim Offer
                       </Button>
