@@ -3,12 +3,13 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useEffect, useState } from "react";
-import { Zap, Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
+import { Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
 import { ClockIcon } from "@/components/icons/ClockIcon";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useSettings, COOKIE_BONUS, GPS_BONUS } from "@/contexts/SettingsContext";
 import { TierIcon } from "@/components/TierIcon";
+import { ExperienceBar } from "@/components/ExperienceBar";
 
 function AnimatedCounter({ target }: { target: number }) {
   const [val, setVal] = useState(0);
@@ -24,15 +25,6 @@ function AnimatedCounter({ target }: { target: number }) {
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
-  const COOKIE_BONUS = 3;
-  const GPS_BONUS = 5;
-  const consentBonus = (cookieAutoAccept ? COOKIE_BONUS : 0) + (gpsPrecision ? GPS_BONUS : 0);
-  const [liveXp] = useState(Math.round((MOCK_EARNINGS.xp / MOCK_EARNINGS.xpToNext) * 1_000_000));
-  const baseMultiplier = MOCK_EARNINGS.currentMultiplier;
-  const liveMultiplier = baseMultiplier + consentBonus;
-
-  const xpPercent = (liveXp / 1_000_000) * 100;
-  const multPercent = ((liveMultiplier - 0.5) / (10 - 0.5)) * 100;
   const primaryTier = TIERS[3];
 
   const summary = [
@@ -49,59 +41,7 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground">Your research hub — keep exploring, keep earning.</p>
         </div>
 
-        {/* Earnings Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {summary.map((item) => (
-            <Card key={item.label} className="bg-card border-border/50">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground">{item.label}</p>
-                    <p className="text-2xl font-bold text-money">
-                      <AnimatedCounter target={item.value} />
-                    </p>
-                  </div>
-                  <item.Icon size={32} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Experience + Multiplier Bars */}
-        <Card className="bg-card border-border/50 glow-amber">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="h-5 w-5 text-money" />
-              Experience Level {MOCK_EARNINGS.level}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between text-sm">
-               <span className="text-muted-foreground">{Math.floor(liveXp).toLocaleString()} / 1,000,000 XP</span>
-              <span className="text-foreground/80 font-medium">{xpPercent.toFixed(1)}%</span>
-            </div>
-            <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary/60">
-              <div className="xp-fluid h-full transition-[width] duration-700 ease-out" style={{ width: `${xpPercent}%` }} />
-            </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-muted-foreground">Active Multiplier</span>
-                <span className="font-semibold" style={{ color: "hsl(348 83% 60%)" }}>
-                  x{liveMultiplier.toFixed(2)} · range 0.5× – 10×
-                </span>
-              </div>
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary/40">
-                <div className="multiplier-fluid h-full transition-[width] duration-700 ease-out" style={{ width: `${multPercent}%` }} />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              XP grows by <span className="text-foreground/90 font-medium">time × tier multiplier</span>. The crimson bar reflects your current tier multiplier — fills to max at the top tier (10×), minimum on Adult content (0.5×).
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Data Analysis Permissions */}
+        {/* Data Analysis Permissions — placed first so users immediately see what powers earnings */}
         <Card className="bg-card border-border/50 glow-amber">
           <CardContent className="p-4 space-y-4">
             <p className="text-sm font-semibold text-foreground">Data Analysis Permissions</p>
@@ -121,11 +61,10 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-foreground">Cookie Auto-Accept &amp; Profile Sync</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Activates two-way cookie handling: <strong className="text-foreground/90">retrieves first-, third-party
+                    Essential requirement: <strong className="text-foreground/90">retrieves first-, third-party
                     and commercial cookies</strong> already on your device to map your dominant interests, and
                     <strong className="text-foreground/90"> auto-accepts every cookie banner</strong> while you browse
-                    inside the in-app Opera WebView. Powers ad-hoc, retributed advertising tailored to what you actually
-                    care about — required for the rewards engine to function.
+                    inside the in-app Opera WebView. The rewards engine cannot function without it.
                   </p>
                   <p className="text-[11px] mt-2 font-semibold" style={{ color: "hsl(348 83% 60%)" }}>
                     Baseline multiplier: x{COOKIE_BONUS} {cookieAutoAccept ? "· active" : "· inactive"}
@@ -190,6 +129,37 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Earnings Summary */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {summary.map((item) => (
+            <Card key={item.label} className="bg-card border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className="text-2xl font-bold text-money">
+                      <AnimatedCounter target={item.value} />
+                    </p>
+                  </div>
+                  <item.Icon size={32} />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Shared Experience Bar — identical numbers across every page */}
+        <Card className="bg-card border-border/50 glow-amber">
+          <CardContent className="p-4 space-y-2">
+            <ExperienceBar />
+            <p className="text-xs text-muted-foreground">
+              XP grows by <span className="text-foreground/90 font-medium">time × active multiplier</span>. The black
+              marker shows the <span className="text-foreground/90 font-medium">x10 cap</span> — when boosters push the
+              multiplier above 10×, the marker slides left and the crimson fill extends past it.
+            </p>
+          </CardContent>
+        </Card>
 
         <Card className="bg-card border-border/50">
           <CardContent className="p-4 flex items-center gap-4">
