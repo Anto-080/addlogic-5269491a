@@ -3,13 +3,14 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useEffect, useState } from "react";
-import { Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
+import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
 import { ClockIcon } from "@/components/icons/ClockIcon";
 import { useSettings, COOKIE_BONUS, GPS_BONUS } from "@/contexts/SettingsContext";
 import { TierIcon } from "@/components/TierIcon";
 import { ExperienceBar } from "@/components/ExperienceBar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 function AnimatedCounter({ target }: { target: number }) {
   const [val, setVal] = useState(0);
@@ -25,6 +26,7 @@ function AnimatedCounter({ target }: { target: number }) {
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
+  const [couponsOpen, setCouponsOpen] = useState(false);
   const primaryTier = TIERS[3];
 
   const summary = [
@@ -37,7 +39,7 @@ export default function Dashboard() {
     <AppLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground">AddLogic Dashboard</h1>
           <p className="text-sm text-muted-foreground">Your research hub — keep exploring, keep earning.</p>
         </div>
 
