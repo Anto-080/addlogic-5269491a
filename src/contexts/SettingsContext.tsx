@@ -84,10 +84,28 @@ function installCookieAutoAccepter(): () => void {
     }
   };
 
-  // Run once + observe future DOM changes.
+  // Run once + observe future DOM changes — heavily throttled so the
+  // observer never blocks pointer/touch events on the Dashboard toggles.
   tryAccept();
-  const obs = new MutationObserver(() => tryAccept());
-  obs.observe(document.documentElement, { childList: true, subtree: true });
+  let scheduled = false;
+  let lastRun = 0;
+  const SCAN_INTERVAL_MS = 1500;
+  const schedule = () => {
+    if (scheduled) return;
+    scheduled = true;
+    const wait = Math.max(0, SCAN_INTERVAL_MS - (Date.now() - lastRun));
+    const run = () => {
+      scheduled = false;
+      lastRun = Date.now();
+      try { tryAccept(); } catch { /* ignore */ }
+    };
+    // requestIdleCallback when available — never compete with input handlers.
+    const ric = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    if (ric) ric(run, { timeout: wait + 500 });
+    else window.setTimeout(run, wait);
+  };
+  const obs = new MutationObserver(schedule);
+  obs.observe(document.body, { childList: true, subtree: true });
 
   // Also flag any cross-tab listeners that we already accepted.
   try { localStorage.setItem("rr.cookiesAccepted", "1"); } catch { /* ignore */ }
