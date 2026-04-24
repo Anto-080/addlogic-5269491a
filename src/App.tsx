@@ -16,6 +16,7 @@ import Investments from "./pages/Investments";
 import Settings from "./pages/Settings";
 import Offers from "./pages/Offers";
 import VaultDiff from "./pages/VaultDiff";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/investments" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/offers" element={<ProtectedRoute><Offers /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
               <Route path="/dev/vault-diff" element={<VaultDiff />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
