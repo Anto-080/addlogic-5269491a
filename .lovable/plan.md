@@ -1,68 +1,97 @@
-## Plan: Real Vault SVG fix, Level 100 card visual lock, and Ideas Library
+## Plan
 
-### 1. Vault icon — actually redraw to match the reference
+### 1. Fix login redirect and branding mismatch first
 
-The current `RoundVault.tsx` doesn't visually match the uploaded reference. Rewrite it as a faithful SVG of the reference vault door:
+- Move the app’s public auth screen off `/auth` to a route that does not collide with Lovable-hosted auth behavior, such as `/login`.
+- Add a dedicated post-OAuth handling path/loading state so Google sign-in waits for session restoration before deciding whether to show login or send the user into the app.
+- Keep both email/password and Google sign-in, but make them use one consistent entry flow and one consistent redirect target.
+- Replace the remaining old auth branding so the login surface, page title, and published copy all say **AddLogic**.
+- Update the auth hero styling to match your requested brand treatment: **“Add” in carbon black with gold surround, “Logic” in emerald `#004627**`.
 
-- Outer thick ring (gold `currentColor`, stroke ~8% of viewBox)
-- 8 perimeter rivets evenly spaced on the ring
-- Inner recessed circle (slightly darker via `fill-opacity`)
-- Central 5-spoke turning handle with a round hub and rounded spoke ends
-- Square-ish hinge bracket on the left Aligned/Leveled with the Vault Door's Circle, latch bolt on the right
-- Small keyhole below the handle hub
-- Single `currentColor` so the parent `style={{ color: "#B0903D" }}` keeps the gold tint
+### 2. Remove the new lag and make navigation fluid again
 
-I'll verify alignment using the existing `/dev/vault-diff` overlay route before declaring done (will set blend mode to "difference" mentally against `vault-reference.png`).
+- Strip out the background behaviors that now keep re-rendering or running timers unnecessarily.
+- Fix the leaked/incorrect timer logic in Research, remove the constant tier reshuffle behavior in Tiers (place Travel & Tourism  above Real Estate), and trim expensive global observers tied to cookie auto-accept.
+- Keep the app responsive by reducing always-on work in layouts/pages and limiting live updates to the components that truly need them.
+- Clean up the current dialog/accessibility errors that are polluting runtime behavior.
+- Verify that Dashboard toggles, page switches, and Research interactions feel as fast as they did before today’s regressions.
 
-### 2. Level 100 card — force the `#D1DEFB` background to actually render
+### 3. Replace the remaining fake experience and mock-driven logic with real backend data
 
-The `.bg-circular-economy` utility exists in `index.css` but the card markup in `Investments.tsx` still mixes Tailwind `bg-card` and inline color overrides that win the cascade. Fix:
+- Make `user_stats` the source of truth for **XP, level, earnings, multiplier, streak**, instead of local mock/localStorage-only experience state.
+- Rework the experience bar so it displays persisted user data and updates from real research activity rather than mock seed values.
+- Replace remaining `mockData` usage across the app with live queries for tiers, research content, offers, sponsor data, and user progress.
+- Wire Research reading actions to real backend writes so milestones, weekly earnings, and XP progression actually change over time.
+- Remove the last visible “production-looking but fake” sections or clearly re-scope them if they still need backend tables.
 
-- Remove `bg-card` from the Card when unlocked; rely solely on `.bg-circular-economy`
-- Strengthen the utility to also cover `[data-state]` and child `CardHeader`/`CardContent` which inherit no bg but visually bleed when a parent class loses
-- Confirm the unlocked `CardHeader` and `CardContent` have transparent backgrounds so the `#D1DEFB` shows through
-- Keep text color `#0E2A47` for contrast (already set)
+### 4. Add real admin access with secure feature locking
 
-### 3. Ideas Library — new collapsible attachment under the Level 100 card
+- Create a proper admin role system using a separate roles table.
+- Seed your current account as the first admin so you can immediately access admin controls.
+- Add backend-managed feature flags / lock states so **admin** can lock or unlock features independently of normal user progression.
+- Build an admin-only management screen to control:
+  - feature availability
+  - tier locks
+  - key app sections that should be enabled/disabled for users
+- Update user-facing pages so they respect admin locks from the backend instead of relying only on local level checks or mock booleans.
 
-Add a new `<Collapsible>` block immediately under the ∞ Circular Economy card content (still inside the unlocked branch). Header: "Ideas Library" with a chevron. Inside, a two-tab slider (`Tabs` from shadcn) with two sides:
+### 5. Correct the Opera and Facebook integration story
 
-#### Side A — Researchers: "Submit Idea" With a  Underneath banner Citing : "*Yours Ideas will be Protected by Copyright Laws ©"*
+- Separate what works on Lovable web hosting from what only works in a native mobile shell.
+- Keep a clean browser fallback for web, and stop pretending the Lovable server can fully test native Opera WebView behavior when it cannot.
+- Refactor the Opera code so web preview uses a supported browser flow, while native-only hooks stay isolated for future mobile packaging.
+- For **Facebook Audience Network / Live advertising bid SDK**: do a proper feasibility pass and only add a real integration boundary if it is supported in this stack. If it is not supported for this web app, I will remove the misleading fake path instead of shipping broken SDK code.
 
-A form styled like `Offers.tsx`'s "Place Offer":
+## Technical details
 
-- **Tier** — `Select` of all Updated tiers (icon + name) from `mockData and/or Tiers Section`
-- **Idea Name** — `Input` (max 80)
-- **Core Concepts** — `Textarea` (max 600)
-- **Functionality /Sector Improvement**s — `Textarea` (max 400)
-- **Keywords** — `Input` parsed into `#hashtag` chips on Enter/comma
-- Submit button (gold). On submit: prepend to local list (in-memory `useState`; mock for now, will move to Supabase when the user asks).
+### Frontend files to update
 
-Below the form, a list of submitted ideas. Each row:
+- `src/App.tsx`
+- `src/pages/Auth.tsx`
+- `src/hooks/useAuth.tsx`
+- `src/contexts/SettingsContext.tsx`
+- `src/components/ExperienceBar.tsx`
+- `src/hooks/useAppData.ts`
+- `src/pages/Dashboard.tsx`
+- `src/pages/Research.tsx`
+- `src/pages/Tiers.tsx`
+- `src/pages/Earnings.tsx`
+- `src/pages/Offers.tsx`
+- `src/pages/Investments.tsx`
+- `src/components/IdeasLibrary.tsx`
+- `src/components/InAppBrowser.tsx`
+- `src/components/BrowserPicker.tsx`
+- `src/components/AppLayout.tsx`
+- `src/components/AppSidebar.tsx`
+- dialog-related UI files that are triggering current runtime warnings
 
-- Tier icon + Idea name (clickable header)
-- Collapsed by default; expanding reveals Core Concepts, Functionality, Keywords
-- Footer line: Meta / LinkedIn glyphs (linking to the user's connected profile when present via `socialOAuth` storage), plus username and `Lv {level}` rank from `MOCK_USER`
+### Backend changes
 
-#### Side B — Companies: Search & ∞InfiniTag
+- Add secure admin roles:
+  - `app_role` enum
+  - `user_roles` table
+  - `has_role()` security definer function
+- Add admin-managed feature configuration tables for locks/toggles
+- Add any missing content/progression tables needed to remove the remaining mock logic
+- Keep RLS on all private/admin data
+- Do not store roles on `profiles`
 
-- Search `Input` at top to filter ideas by name/keyword/tier
-- Horizontal scroll row of the Updated Tier icons as filter chips
-- Mini form: single `Input` to submit an `∞InfiniTag` (auto-prepends `∞`, strips spaces) + Tier `Select` + "Purchase Tags" button (gold, mock — opens a toast "Tag purchased — 10$/Week" or "1 Token/1% Interest" for now; real Stripe wiring deferred until the user asks)
-- Below: a noticeboard grid of submitted `∞InfiniTags` as cards showing the tag, tier icon, and timestamp. Seeded with the six examples from the brief (`∞RainyDayMorningHappines` / Food, `∞QuantumProcessorLiquidCooling` / Technology, `∞PlotTwistNoirMovie` / Entertainment, `∞SustainablePermaculturalProjectAfrica` / Ecology & Natural Biomes, `∞PetricoreBodyShampoo` / Personal Care, `∞ConfortabelImpermeableTravellingBodywear` / Clothes & Accessory)
+### Key implementation rules
 
-State is local `useState` for now; the data shape is structured so it can move to Supabase tables (`ideas`, `infinitags`) in a later turn without UI rework.
+- Google auth stays on Lovable Cloud’s managed flow
+- Roles will be server-validated, never client-only
+- Experience/progression will persist in the backend, not only in localStorage
+- Web preview and published app behavior will be aligned so auth and branding are consistent
+- Unsupported SDKs will not be faked as “working”
 
-### 4. Files touched
+## Expected outcome
 
-- `src/components/icons/RoundVault.tsx` — full SVG rewrite to match reference
-- `src/index.css` — strengthen `.bg-circular-economy` selector specificity
-- `src/pages/Investments.tsx` — drop `bg-card` on unlocked card; mount new `<IdeasLibrary />`
-- `src/components/IdeasLibrary.tsx` — **new**, contains the Tabs, both forms, lists, noticeboard
-- (uses existing `Tabs`, `Collapsible`, `Select`, `Input`, `Textarea`, `Button`, `Card` shadcn primitives — no new deps)
+After this pass:
 
-### Notes
-
-- "Purchase Tags" is a UI stub in this turn (toast only). Real Stripe checkout for InfiniTag credits is a follow-up: enable Lovable Cloud Stripe → create a "InfiniTag credit" product → wire button to checkout session. Tell me when to proceed and I'll run that flow.
-- Ideas and InfiniTags are in-memory until you confirm the schema; nothing persists across reloads yet.
-- Meta/LinkedIn footer on each idea reads from existing `localStorage` keys written by `socialOAuth.ts`; if a user hasn't connected, only username + level show.
+- Google and email login should enter the app reliably
+- the login page will show **AddLogic**, not the old name
+- navigation should feel fluid again
+- the experience bar will use real persisted progress
+- admin will be able to lock/unlock features safely
+- Opera behavior will be honest and stable for web
+- Facebook SDK work will either be integrated correctly or explicitly isolated if the platform does not support it

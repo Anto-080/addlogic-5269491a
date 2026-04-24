@@ -10,7 +10,7 @@ import { TIERS } from "@/lib/mockData";
 import { useUserStats } from "@/hooks/useAppData";
 import { TierIcon } from "@/components/TierIcon";
 import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye, ExternalLink } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import biochemTitle from "@/assets/biochemistry-title.png";
@@ -31,29 +31,26 @@ function bidStats(id: number, multiplier: number) {
 export default function Tiers() {
   const maxMultiplier = TIERS[0].multiplier;
   const [expanded, setExpanded] = useState<number | null>(null);
-  const [seasonalShuffle, setSeasonalShuffle] = useState(0);
   const [params, setParams] = useSearchParams();
   const view = params.get("view") === "sponsors" ? "sponsors" : "tiers";
   const { data: stats } = useUserStats();
   const userLevel = stats?.level ?? 1;
   const topTierLocked = userLevel < TOP_TIER_GATE;
 
-  useEffect(() => {
-    const t = setInterval(() => setSeasonalShuffle((s) => s + 1), 6000);
-    return () => clearInterval(t);
-  }, []);
-
+  // Stable order: top three priority tiers, then the rest by multiplier.
+  // Travel & Tourism (id 18) is pinned just above Real Estate (id 11) per spec.
   const orderedTiers = useMemo(() => {
     const top = TIERS.filter((t) => t.id <= 4);
-    const bottom = TIERS.filter((t) => t.id >= 14);
-    const mid = TIERS.filter((t) => t.id > 4 && t.id < 14);
-    const scored = mid.map((t, i) => ({
-      t,
-      score: t.multiplier + Math.sin(seasonalShuffle * 0.7 + i) * 0.4,
-    }));
-    scored.sort((a, b) => b.score - a.score);
-    return [...top, ...scored.map((s) => s.t), ...bottom];
-  }, [seasonalShuffle]);
+    const rest = TIERS.filter((t) => t.id > 4 && t.id !== 18 && t.id !== 11);
+    rest.sort((a, b) => b.multiplier - a.multiplier);
+    const realEstate = TIERS.find((t) => t.id === 11);
+    const travel = TIERS.find((t) => t.id === 18);
+    const tail: typeof TIERS = [];
+    if (travel) tail.push(travel);
+    if (realEstate) tail.push(realEstate);
+    return [...top, ...rest, ...tail];
+  }, []);
+
 
   return (
     <AppLayout>

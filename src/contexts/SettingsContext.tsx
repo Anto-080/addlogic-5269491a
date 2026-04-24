@@ -34,52 +34,22 @@ const KEY_COOKIE = "rr.cookieAutoAccept";
 const KEY_GPS = "rr.gpsPrecision";
 
 /**
- * Cookie banner auto-accepter — heavily throttled so it never blocks
- * pointer/touch events on the Dashboard toggles.
+ * Lightweight cookie auto-accept marker.
+ * The previous implementation installed a MutationObserver on document.body
+ * that scanned every DOM mutation for "Accept" buttons. That made the entire
+ * app re-scan on every render, causing the Parkinson-like lag the user
+ * reported. We now only persist the user's preference; real cookie banner
+ * handling happens inside the InAppBrowser iframe.
  */
 function installCookieAutoAccepter(): () => void {
-  const ACCEPT_PATTERNS = [
-    /^accept all/i, /^accept$/i, /^allow all/i, /^agree$/i, /^i agree/i,
-    /^got it/i, /^ok$/i, /^consenti tutti/i, /^accetta tutti/i,
-    /^tout accepter/i, /^alle akzeptieren/i, /^aceptar todo/i,
-  ];
-  const COOKIE_KEYWORDS = /(cookie|consent|gdpr|privacy)/i;
-
-  const tryAccept = () => {
-    const candidates = document.querySelectorAll<HTMLElement>(
-      'button, a[role="button"], input[type="button"], [data-accept]'
-    );
-    for (const el of Array.from(candidates)) {
-      const text = (el.innerText || el.getAttribute("aria-label") || "").trim();
-      if (!text || text.length > 40) continue;
-      if (!ACCEPT_PATTERNS.some((re) => re.test(text))) continue;
-      let host: HTMLElement | null = el;
-      let scoped = false;
-      for (let i = 0; i < 6 && host; i++) {
-        const id = (host.id || "") + " " + (host.className || "");
-        if (COOKIE_KEYWORDS.test(id)) { scoped = true; break; }
-        host = host.parentElement;
-      }
-      if (!scoped) continue;
-      try { el.click(); return; } catch { /* ignore */ }
-    }
+  try {
+    localStorage.setItem("rr.cookiesAccepted", "1");
+  } catch {
+    /* ignore */
+  }
+  return () => {
+    /* nothing to dispose */
   };
-
-  tryAccept();
-  let scheduled = false;
-  const schedule = () => {
-    if (scheduled) return;
-    scheduled = true;
-    const ric = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
-    const run = () => { scheduled = false; try { tryAccept(); } catch { /* ignore */ } };
-    if (ric) ric(run, { timeout: 2000 });
-    else window.setTimeout(run, 2000);
-  };
-  const obs = new MutationObserver(schedule);
-  obs.observe(document.body, { childList: true, subtree: true });
-
-  try { localStorage.setItem("rr.cookiesAccepted", "1"); } catch { /* ignore */ }
-  return () => obs.disconnect();
 }
 
 function snapshotDeviceProfile(): DeviceProfile {
