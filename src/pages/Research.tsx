@@ -191,30 +191,10 @@ export default function Research() {
               </div>
             )}
 
-            <div className="space-y-1">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-muted-foreground inline-flex items-center gap-1">
-                  <Zap className="h-3 w-3 text-money" /> Experience Level {userLevel}
-                </span>
-                <span className="text-foreground/80 font-medium">{Math.floor(researchXp).toLocaleString()} / {XP_PER_LEVEL.toLocaleString()} XP</span>
-              </div>
-              <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary/60">
-                <div className="xp-fluid h-full transition-[width] duration-700 ease-out" style={{ width: `${xpPercent}%` }} />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-muted-foreground">Crimson Multiplier</span>
-                <span className="text-crimson font-semibold">x{liveMultiplier.toFixed(2)} {roomIdle ? "· paused" : "· live"}</span>
-              </div>
-              <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary/40">
-                <div className="multiplier-fluid h-full transition-[width] duration-700 ease-out" style={{ width: `${Math.max(0, multPercent)}%` }} />
-              </div>
-            </div>
+            <ExperienceBar />
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time, one second at a time, while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second by its multiplicative factor based on your selected tier.
+              Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time, one second at a time, while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second by its multiplicative factor based on your selected tier — and lingers for 1 minute after you switch tiers.
             </p>
           </CardContent>
         </Card>
@@ -298,7 +278,7 @@ export default function Research() {
             </div>
             <div className="text-right">
               <p className="text-[10px] text-muted-foreground">Active Multiplier</p>
-              <p className="text-sm font-bold text-crimson">x{liveMultiplier.toFixed(2)}</p>
+              <p className="text-sm font-bold text-crimson">x{activeMultiplier.toFixed(2)}</p>
             </div>
           </div>
         </div>
