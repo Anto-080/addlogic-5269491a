@@ -14,15 +14,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useArticles, useMilestones, useUserStats } from "@/hooks/useAppData";
 
 function AnimatedCounter({ target }: { target: number }) {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    const step = target / 40;
-    const interval = setInterval(() => {
-      setVal((v) => { const next = v + step; return next >= target ? target : next; });
-    }, 30);
-    return () => clearInterval(interval);
-  }, [target]);
-  return <span>${val.toFixed(2)}</span>;
+  // No interval — Dashboard had three of these running every 30ms causing
+  // visible lag. CSS handles the visual transition via the parent card.
+  return <span>${target.toFixed(2)}</span>;
 }
 
 export default function Dashboard() {
