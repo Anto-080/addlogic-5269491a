@@ -153,6 +153,9 @@ export default function Dashboard() {
                     pattern, network type</strong>. Combined with the cookie sync above, it produces a non-PII profile
                     used to match you to higher-paying regional ads and the Regional Coupons feed below.
                   </p>
+                  <p className="text-[11px] mt-2 font-semibold" style={{ color: "hsl(348 83% 60%)" }}>
+                    Baseline multiplier: x{GPS_BONUS} {gpsPrecision ? "· active" : "· inactive"}
+                  </p>
                 </div>
               </div>
               <Switch checked={gpsPrecision} onCheckedChange={setGpsPrecision} data-emerald="true" />
