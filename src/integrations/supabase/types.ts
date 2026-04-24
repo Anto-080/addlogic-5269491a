@@ -25,6 +25,7 @@ export type Database = {
           source: string
           tier_id: number
           title: string
+          url: string | null
           warning_text: string | null
         }
         Insert: {
@@ -37,6 +38,7 @@ export type Database = {
           source: string
           tier_id: number
           title: string
+          url?: string | null
           warning_text?: string | null
         }
         Update: {
@@ -49,6 +51,7 @@ export type Database = {
           source?: string
           tier_id?: number
           title?: string
+          url?: string | null
           warning_text?: string | null
         }
         Relationships: [
