@@ -45,3 +45,42 @@ export function useUpdateTier() {
     },
   });
 }
+
+export function useCreateTier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (row: {
+      id: number;
+      name: string;
+      icon: string;
+      multiplier: number;
+      color: string;
+      display_order: number;
+      locked?: boolean;
+      researchers?: number;
+      avg_earning?: number;
+      subcategories?: string[];
+    }) => {
+      const { error } = await supabase.from("tiers").insert({
+        ...row,
+        locked: row.locked ?? false,
+        researchers: row.researchers ?? 0,
+        avg_earning: row.avg_earning ?? 0,
+        subcategories: row.subcategories ?? [],
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tiers"] }),
+  });
+}
+
+export function useDeleteTier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await supabase.from("tiers").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tiers"] }),
+  });
+}
