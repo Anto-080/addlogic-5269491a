@@ -24,8 +24,12 @@ function AnimatedCounter({ target }: { target: number }) {
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
+  const COOKIE_BONUS = 3;
+  const GPS_BONUS = 5;
+  const consentBonus = (cookieAutoAccept ? COOKIE_BONUS : 0) + (gpsPrecision ? GPS_BONUS : 0);
   const [liveXp] = useState(Math.round((MOCK_EARNINGS.xp / MOCK_EARNINGS.xpToNext) * 1_000_000));
-  const [liveMultiplier] = useState(MOCK_EARNINGS.currentMultiplier);
+  const baseMultiplier = MOCK_EARNINGS.currentMultiplier;
+  const liveMultiplier = baseMultiplier + consentBonus;
 
   const xpPercent = (liveXp / 1_000_000) * 100;
   const multPercent = ((liveMultiplier - 0.5) / (10 - 0.5)) * 100;
