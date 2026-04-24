@@ -261,9 +261,8 @@ export default function Research() {
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           <Button variant={selectedTier === null ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(null)}>All</Button>
           {TIERS.map((t) => (
-            <Button key={t.id} variant={selectedTier === t.id ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(t.id)} className="shrink-0 gap-1" style={selectedTier === t.id ? undefined : { color: t.color }}>
+            <Button key={t.id} variant={selectedTier === t.id ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(t.id)} className="shrink-0 gap-1" style={selectedTier === t.id ? undefined : { color: t.color }} aria-label={t.name}>
               <TierIcon tierId={t.id} size={14} />
-              <span className="text-xs">{t.id}</span>
             </Button>
           ))}
         </div>
