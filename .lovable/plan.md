@@ -1,97 +1,63 @@
+## What's actually wrong
+
+I navigated to your published site and confirmed the root cause of most of your frustration:
+
+- `https://addlogic.lovable.app/` still serves the **old build** — "ResearchRewards" title, old `/auth` route, no AddLogic branding.
+- `https://addlogic.lovable.app/login` returns **404** — the new route exists in code but has never been pushed live.
+
+Every recent fix (AddLogic branding, `/login`, Google OAuth redirect, lag reductions, real Supabase data) is sitting in the preview build only. The live domain has not been re-published since those edits. **Clicking Publish → Update is required to push them live** — code edits alone do not redeploy the published domain.
+
+On top of that, two real code issues remain that cause the lag and the "still mock" XP bar:
+
+1. `ExperienceBar` runs a 1-second `setInterval` *plus* a `setState` re-render every tick on every page that mounts it (Dashboard + Research). On Dashboard it's pointless because `earning={false}` — it still re-renders the whole bar every second and competes with the Switch toggles you reported as laggy.
+2. XP / level / multiplier still come from `localStorage` seeded with `MOCK_EARNINGS` — never from the `user_stats` row that already exists in the database. So the Experience bar genuinely is mock.
+3. `Research.tsx` still imports `MOCK_ARTICLES` and reads `getXpSnapshot().level` instead of the DB level.
+4. `Tiers.tsx` pins Tourism+Real Estate to the **bottom of the list** instead of placing them inside the blue band where their colors belong.
+
+---
+
 ## Plan
 
-### 1. Fix login redirect and branding mismatch first
+### 1. Re-publish the live domain (you do this, one click)
+After I land the code fixes below, open Publish → **Update**. Without that step `addlogic.lovable.app` will keep showing the old "ResearchRewards" screen and `/login` will keep 404'ing — no code change can fix that for you.
 
-- Move the app’s public auth screen off `/auth` to a route that does not collide with Lovable-hosted auth behavior, such as `/login`.
-- Add a dedicated post-OAuth handling path/loading state so Google sign-in waits for session restoration before deciding whether to show login or send the user into the app.
-- Keep both email/password and Google sign-in, but make them use one consistent entry flow and one consistent redirect target.
-- Replace the remaining old auth branding so the login surface, page title, and published copy all say **AddLogic**.
-- Update the auth hero styling to match your requested brand treatment: **“Add” in carbon black with gold surround, “Logic” in emerald `#004627**`.
+### 2. Stop the Dashboard lag
+- In `ExperienceBar.tsx`: only run the 1s ticker when `earning === true`. On Dashboard the bar will render once and stay still; toggles will respond instantly.
+- Remove the `force` re-render path entirely on the dashboard side; subscribe to a tiny module-level event emitter so only the Research-room copy updates.
+- Drop the `AnimatedCounter` 30 ms interval on Dashboard summary cards (3 of them × 40 ticks = 120 renders on every mount); replace with a single CSS transition.
 
-### 2. Remove the new lag and make navigation fluid again
+### 3. Make XP / Multiplier truly live (kill the mock)
+- Move XP, level, and `current_multiplier` reads/writes to the existing `user_stats` Supabase row via `useUserStats` + a small `updateUserStats` mutation.
+- Keep a 1s in-memory accumulator while Research is open; flush to the DB every ~15s and on unmount. No `localStorage` mock fallback — show "—" until the row loads.
+- Delete `MOCK_EARNINGS` consumption from `SettingsContext.tsx`.
 
-- Strip out the background behaviors that now keep re-rendering or running timers unnecessarily.
-- Fix the leaked/incorrect timer logic in Research, remove the constant tier reshuffle behavior in Tiers (place Travel & Tourism  above Real Estate), and trim expensive global observers tied to cookie auto-accept.
-- Keep the app responsive by reducing always-on work in layouts/pages and limiting live updates to the components that truly need them.
-- Clean up the current dialog/accessibility errors that are polluting runtime behavior.
-- Verify that Dashboard toggles, page switches, and Research interactions feel as fast as they did before today’s regressions.
+### 4. Replace remaining mock imports
+- `Research.tsx`: swap `MOCK_ARTICLES` → `useArticles()`, swap `getXpSnapshot().level` → `useUserStats().level`.
+- `IdeasLibrary.tsx` + `Tiers.tsx` still pull `TIERS` from `mockData.ts` — switch to `useTiers()` (already exists), keep `mockData` only as the offline fallback inside that hook.
 
-### 3. Replace the remaining fake experience and mock-driven logic with real backend data
+### 5. Fix tier ordering (chromatic scheme)
+Use the natural multiplier-descending order so the blue band stays contiguous: Tech → Art → Global News → Entertainment → Food → **Tourism & Travel** → **Real Estate** → Personal Shopping → … . Remove the "pin to tail" logic that was shoving Tourism + Real Estate below the locked red bottom tiers.
 
-- Make `user_stats` the source of truth for **XP, level, earnings, multiplier, streak**, instead of local mock/localStorage-only experience state.
-- Rework the experience bar so it displays persisted user data and updates from real research activity rather than mock seed values.
-- Replace remaining `mockData` usage across the app with live queries for tiers, research content, offers, sponsor data, and user progress.
-- Wire Research reading actions to real backend writes so milestones, weekly earnings, and XP progression actually change over time.
-- Remove the last visible “production-looking but fake” sections or clearly re-scope them if they still need backend tables.
+### 6. Cleanup
+- Remove the now-unused `setMultiplier` / `addXpForSeconds` / `getXpSnapshot` exports.
+- Keep the `/auth → /login` redirect so old bookmarks work.
 
-### 4. Add real admin access with secure feature locking
+---
 
-- Create a proper admin role system using a separate roles table.
-- Seed your current account as the first admin so you can immediately access admin controls.
-- Add backend-managed feature flags / lock states so **admin** can lock or unlock features independently of normal user progression.
-- Build an admin-only management screen to control:
-  - feature availability
-  - tier locks
-  - key app sections that should be enabled/disabled for users
-- Update user-facing pages so they respect admin locks from the backend instead of relying only on local level checks or mock booleans.
+## Files I will touch
+- `src/components/ExperienceBar.tsx` — gated ticker, no-op on Dashboard
+- `src/contexts/SettingsContext.tsx` — drop XP store + MOCK_EARNINGS import
+- `src/hooks/useAppData.ts` — add `useUpdateUserStats` mutation
+- `src/pages/Dashboard.tsx` — remove AnimatedCounter interval
+- `src/pages/Research.tsx` — live articles + live level + DB-backed XP flush
+- `src/pages/Tiers.tsx` — restore chromatic order
+- `src/components/IdeasLibrary.tsx` — live tiers
 
-### 5. Correct the Opera and Facebook integration story
+## What will NOT change
+- Auth code, Google OAuth wiring, `/login` route, `/auth` redirect — already correct, the only thing missing is republishing.
+- Database schema — `user_stats` already has `xp`, `level`, `current_multiplier`.
 
-- Separate what works on Lovable web hosting from what only works in a native mobile shell.
-- Keep a clean browser fallback for web, and stop pretending the Lovable server can fully test native Opera WebView behavior when it cannot.
-- Refactor the Opera code so web preview uses a supported browser flow, while native-only hooks stay isolated for future mobile packaging.
-- For **Facebook Audience Network / Live advertising bid SDK**: do a proper feasibility pass and only add a real integration boundary if it is supported in this stack. If it is not supported for this web app, I will remove the misleading fake path instead of shipping broken SDK code.
+## After I finish
+You click **Publish → Update**. Then `addlogic.lovable.app/login` will load the AddLogic page and Google sign-in will land on `/dashboard`. If it still shows ResearchRewards after publishing, that's a stale CDN cache — hard-refresh (Ctrl/Cmd+Shift+R) once.
 
-## Technical details
-
-### Frontend files to update
-
-- `src/App.tsx`
-- `src/pages/Auth.tsx`
-- `src/hooks/useAuth.tsx`
-- `src/contexts/SettingsContext.tsx`
-- `src/components/ExperienceBar.tsx`
-- `src/hooks/useAppData.ts`
-- `src/pages/Dashboard.tsx`
-- `src/pages/Research.tsx`
-- `src/pages/Tiers.tsx`
-- `src/pages/Earnings.tsx`
-- `src/pages/Offers.tsx`
-- `src/pages/Investments.tsx`
-- `src/components/IdeasLibrary.tsx`
-- `src/components/InAppBrowser.tsx`
-- `src/components/BrowserPicker.tsx`
-- `src/components/AppLayout.tsx`
-- `src/components/AppSidebar.tsx`
-- dialog-related UI files that are triggering current runtime warnings
-
-### Backend changes
-
-- Add secure admin roles:
-  - `app_role` enum
-  - `user_roles` table
-  - `has_role()` security definer function
-- Add admin-managed feature configuration tables for locks/toggles
-- Add any missing content/progression tables needed to remove the remaining mock logic
-- Keep RLS on all private/admin data
-- Do not store roles on `profiles`
-
-### Key implementation rules
-
-- Google auth stays on Lovable Cloud’s managed flow
-- Roles will be server-validated, never client-only
-- Experience/progression will persist in the backend, not only in localStorage
-- Web preview and published app behavior will be aligned so auth and branding are consistent
-- Unsupported SDKs will not be faked as “working”
-
-## Expected outcome
-
-After this pass:
-
-- Google and email login should enter the app reliably
-- the login page will show **AddLogic**, not the old name
-- navigation should feel fluid again
-- the experience bar will use real persisted progress
-- admin will be able to lock/unlock features safely
-- Opera behavior will be honest and stable for web
-- Facebook SDK work will either be integrated correctly or explicitly isolated if the platform does not support it
+Approve and I'll execute.
