@@ -197,7 +197,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground mb-3">
-              Curated articles. Topics involving dual-use technologies (CRISPR-Cas9, molecular chirality, receptor chimerism) are marked with safety advisories from accredited sources. ResearchRewards does not sponsor speculative dual-use research.
+              Curated articles. Topics involving dual-use technologies (CRISPR-Cas9, molecular chirality, receptor chimerism) are marked with safety advisories from accredited sources. AddLogic does not sponsor speculative dual-use research.
             </p>
             <div className="space-y-2">
               {DAILY_DESK.map((item) => {
