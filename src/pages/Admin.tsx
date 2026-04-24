@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useTiers } from "@/hooks/useAppData";
-import { useIsAdmin, useUpdateTier, type TierPatch } from "@/hooks/useAdmin";
+import { useIsAdmin, useUpdateTier, useCreateTier, useDeleteTier, type TierPatch } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, ArrowUp, ArrowDown, Save } from "lucide-react";
+import { TierIcon } from "@/components/TierIcon";
+import { ArrowLeft, ArrowUp, ArrowDown, Save, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Draft = Record<number, TierPatch>;
@@ -15,6 +16,8 @@ export default function Admin() {
   const { data: isAdmin, isLoading: roleLoading } = useIsAdmin();
   const { data: tiers, isLoading } = useTiers();
   const updateTier = useUpdateTier();
+  const createTier = useCreateTier();
+  const deleteTier = useDeleteTier();
   const [draft, setDraft] = useState<Draft>({});
 
   // Seed draft from server data
