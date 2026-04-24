@@ -90,10 +90,10 @@ export default function Earnings() {
         {/* Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Today", value: MOCK_EARNINGS.today },
-            { label: "This Week", value: MOCK_EARNINGS.thisWeek },
-            { label: "All Time", value: MOCK_EARNINGS.allTime },
-            { label: "Streak Bonus", value: MOCK_EARNINGS.activeStreak * 0.5 },
+            { label: "Today", value: earningsToday },
+            { label: "This Week", value: earningsWeek },
+            { label: "All Time", value: earningsAllTime },
+            { label: "Streak Bonus", value: streak * 0.5 },
           ].map((item) => (
             <Card key={item.label} className="bg-card border-border/50">
               <CardContent className="p-3 text-center">
@@ -109,7 +109,7 @@ export default function Earnings() {
           <CardHeader><CardTitle className="text-base">Weekly Earnings</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={MOCK_WEEKLY_EARNINGS}>
+              <BarChart data={weekChart}>
                 <XAxis dataKey="day" tick={{ fill: "hsl(150, 10%, 55%)", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "hsl(150, 10%, 55%)", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
                 <Tooltip contentStyle={{ background: "hsl(150, 40%, 6%)", border: "1px solid hsl(150, 15%, 14%)", borderRadius: "8px", color: "hsl(140, 20%, 90%)" }} />
@@ -175,7 +175,7 @@ export default function Earnings() {
             <div className="flex items-center gap-3">
               <RoundVault size={32} style={{ color: VAULT_GOLD }} />
               <div>
-                <p className="text-lg font-bold text-money">${MOCK_EARNINGS.allTime.toFixed(2)}</p>
+                <p className="text-lg font-bold text-money">${earningsAllTime.toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground">Vault balance — available for withdrawal</p>
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function Earnings() {
           </CardContent>
         </Card>
 
-        <StablecoinWithdraw available={MOCK_EARNINGS.allTime} />
+        <StablecoinWithdraw available={earningsAllTime} />
       </div>
     </AppLayout>
   );
