@@ -85,6 +85,7 @@ export type ArticleRow = {
   dual_use_warning: boolean;
   warning_text: string | null;
   is_daily_desk: boolean;
+  url: string | null;
 };
 
 export function useArticles(opts?: { dailyDesk?: boolean }) {

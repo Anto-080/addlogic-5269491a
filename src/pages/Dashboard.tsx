@@ -164,10 +164,10 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Shared Experience Bar — synced via persisted store, not React context */}
+        {/* Shared Experience Bar — base multiplier comes from the user's saved stats. */}
         <Card className="bg-card border-border/50 glow-amber">
           <CardContent className="p-4 space-y-2">
-            <ExperienceBar baseMultiplier={primaryTier.multiplier} />
+            <ExperienceBar baseMultiplier={1} />
             <p className="text-xs text-muted-foreground">
               XP grows by <span className="text-foreground/90 font-medium">time × active multiplier</span> while you research. The black
               marker shows the <span className="text-foreground/90 font-medium">x10 cap</span> — when boosters push the
@@ -204,21 +204,28 @@ export default function Dashboard() {
               )}
               {dailyDesk.map((item) => {
                 const tier = TIERS.find((t) => t.id === item.tier_id);
+                const Inner = (
+                  <div className="flex items-start gap-3">
+                    <span className="shrink-0" style={{ color: tier?.color }}>{tier && <TierIcon tierId={tier.id} size={20} />}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground hover:underline">{item.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{item.source}{item.read_time ? ` · ${item.read_time}` : ""}</p>
+                      {item.dual_use_warning && item.warning_text && (
+                        <div className="mt-2 flex items-start gap-2 p-2 rounded-md border border-destructive/40 bg-destructive/10">
+                          <ShieldAlert className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                          <p className="text-[11px] text-destructive-foreground/90">{item.warning_text}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
                 return (
                   <div key={item.id} className="p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <span className="shrink-0" style={{ color: tier?.color }}>{tier && <TierIcon tierId={tier.id} size={20} />}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground">{item.title}</p>
-                        <p className="text-[11px] text-muted-foreground">{item.source}</p>
-                        {item.dual_use_warning && item.warning_text && (
-                          <div className="mt-2 flex items-start gap-2 p-2 rounded-md border border-destructive/40 bg-destructive/10">
-                            <ShieldAlert className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
-                            <p className="text-[11px] text-destructive-foreground/90">{item.warning_text}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    {item.url ? (
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="block">
+                        {Inner}
+                      </a>
+                    ) : Inner}
                   </div>
                 );
               })}
