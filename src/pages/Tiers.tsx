@@ -10,7 +10,7 @@ import { TIERS } from "@/lib/mockData";
 import { useUserStats } from "@/hooks/useAppData";
 import { TierIcon } from "@/components/TierIcon";
 import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye, ExternalLink } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import biochemTitle from "@/assets/biochemistry-title.png";
