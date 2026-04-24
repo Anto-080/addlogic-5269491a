@@ -5,7 +5,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { TIERS, MOCK_USER, MOCK_EARNINGS } from "@/lib/mockData";
+import { TIERS } from "@/lib/mockData";
+import { useUserStats } from "@/hooks/useAppData";
 import { TierIcon } from "@/components/TierIcon";
 import { ChevronDown, Search, Infinity, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -92,6 +93,8 @@ export function IdeasLibrary() {
 /* ------------------------------- Researchers ------------------------------ */
 
 function SubmitIdeaForm({ onSubmit }: { onSubmit: (i: Idea) => void }) {
+  const { data: stats } = useUserStats();
+  const userLevel = stats?.level ?? 1;
   const [tierId, setTierId] = useState<number>(6);
   const [name, setName] = useState("");
   const [concepts, setConcepts] = useState("");
@@ -125,7 +128,7 @@ function SubmitIdeaForm({ onSubmit }: { onSubmit: (i: Idea) => void }) {
       functionality: functionality.trim(),
       keywords,
       username: "You",
-      level: MOCK_EARNINGS.level,
+      level: userLevel,
       createdAt: new Date().toISOString(),
     });
     setName("");
