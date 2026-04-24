@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink } from "luc
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { InAppBrowser } from "@/components/InAppBrowser";
 import { TierIcon } from "@/components/TierIcon";
-import { useSettings, XP_PER_LEVEL } from "@/contexts/SettingsContext";
+import { useSettings, XP_PER_LEVEL, getXpSnapshot, consentBonus } from "@/contexts/SettingsContext";
 import { ExperienceBar } from "@/components/ExperienceBar";
 
 const SEARCH_GATE_LEVEL = 25;
@@ -96,22 +96,12 @@ export default function Research() {
   const [articleCount, setArticleCount] = useState(0);
   const [browser, setBrowser] = useState<{ url: string; engineName: string } | null>(null);
   const [showSponsoredVideos, setShowSponsoredVideos] = useState(false);
-  const { topInterestTiers, level, activeMultiplier, setActiveTierMultiplier, setResearchActive } = useSettings();
+  const { topInterestTiers, cookieAutoAccept, gpsPrecision } = useSettings();
 
   const selectedTierData = TIERS.find((t) => t.id === (selectedTier ?? 4)) ?? TIERS[3];
   const primaryTierId = selectedTier ?? 4;
-  const userLevel = level;
-
-  // Sync the selected tier's multiplier to the global context.
-  useEffect(() => {
-    setActiveTierMultiplier(selectedTierData.multiplier);
-  }, [selectedTierData.multiplier, setActiveTierMultiplier]);
-
-  // Mark Research Room as active while mounted; stops counting on unmount.
-  useEffect(() => {
-    setResearchActive(true);
-    return () => setResearchActive(false);
-  }, [setResearchActive]);
+  const userLevel = getXpSnapshot().level;
+  const activeMultiplier = selectedTierData.multiplier + consentBonus(cookieAutoAccept, gpsPrecision);
 
   const filteredArticles = useMemo(() => {
     let list = MOCK_ARTICLES.filter((a) => !selectedTier || a.tier === selectedTier);
@@ -145,7 +135,7 @@ export default function Research() {
     <AppLayout>
       <div className="space-y-4 max-w-5xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Research Browser</h1>
+          <h1 className="text-2xl font-bold text-foreground">AddLogic Research</h1>
           <p className="text-sm text-muted-foreground">Browse via Opera WebView, earn from your curiosity.</p>
         </div>
 
@@ -191,10 +181,10 @@ export default function Research() {
               </div>
             )}
 
-            <ExperienceBar />
+            <ExperienceBar baseMultiplier={selectedTierData.multiplier} earning />
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time, one second at a time, while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second by its multiplicative factor based on your selected tier — and lingers for 1 minute after you switch tiers.
+              Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second based on your selected tier and active data permissions.
             </p>
           </CardContent>
         </Card>
