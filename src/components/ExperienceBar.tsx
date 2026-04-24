@@ -1,65 +1,107 @@
 import { useEffect, useRef, useState } from "react";
 import { Zap } from "lucide-react";
-import {
-  XP_PER_LEVEL,
-  getXpSnapshot,
-  addXpForSeconds,
-  setMultiplier,
-  consentBonus,
-  useSettings,
-} from "@/contexts/SettingsContext";
+import { useSettings } from "@/contexts/SettingsContext";
+import { useUserStats, useUpdateUserStats } from "@/hooks/useAppData";
+
+const XP_PER_LEVEL = 1_000_000;
+const COOKIE_BONUS = 2;
+const GPS_BONUS = 5;
+
+function consentBonus(cookies: boolean, gps: boolean) {
+  return (cookies ? COOKIE_BONUS : 0) + (gps ? GPS_BONUS : 0);
+}
 
 /**
- * Self-contained Experience + Crimson Multiplier display.
+ * Experience + Crimson Multiplier — backed by the live `user_stats` row.
  *
- * - Reads/writes XP to the module-level store (NOT React context), so
- *   toggles elsewhere never re-render when XP ticks.
- * - When mounted, ticks XP locally once per second so progress is visible
- *   live on whatever page the user happens to be on (Dashboard or
- *   Research). When unmounted, no work happens.
- * - The crimson bar's black marker shows the x10 cap; if the multiplier
- *   surpasses 10×, the marker slides left and crimson fill extends past it.
+ * - Dashboard mounts it with `earning={false}` → renders ONCE per stats
+ *   refetch. No interval, no per-second re-render. Toggles stay snappy.
+ * - Research mounts it with `earning={true}` → 1s in-memory accumulator,
+ *   flushed to Supabase every 15s and on unmount.
  */
 export function ExperienceBar({
   baseMultiplier,
   earning = false,
   compact = false,
 }: {
-  /** Tier multiplier from the current page (Research selects one; Dashboard uses primary tier). */
   baseMultiplier?: number;
-  /** Whether to actively tick XP. Dashboard passes false; Research passes true. */
   earning?: boolean;
   compact?: boolean;
 }) {
   const { cookieAutoAccept, gpsPrecision } = useSettings();
-  const snap = getXpSnapshot();
-  const initialBase = baseMultiplier ?? snap.multiplier;
-  const activeMultiplier = initialBase + consentBonus(cookieAutoAccept, gpsPrecision);
+  const { data: stats } = useUserStats();
+  const updateStats = useUpdateUserStats();
 
-  // Sync new multiplier into the persisted store whenever inputs change.
-  useEffect(() => {
-    setMultiplier(activeMultiplier);
-  }, [activeMultiplier]);
+  const baseLevel = stats?.level ?? 1;
+  const baseXp = stats?.xp ?? 0;
+  const dbMultiplier = stats?.current_multiplier ?? 1;
 
-  // Local display state — refreshed by interval; never affects other components.
-  const [, force] = useState(0);
+  const activeMultiplier =
+    (baseMultiplier ?? dbMultiplier) + consentBonus(cookieAutoAccept, gpsPrecision);
+
+  // Local accumulator only used when earning=true. No render impact for
+  // dashboard since the effect short-circuits.
+  const accumulatedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
+  const [, force] = useState(0);
 
   useEffect(() => {
-    const id = window.setInterval(() => {
+    if (!earning) return;
+    lastTickRef.current = Date.now();
+    const tick = window.setInterval(() => {
       const now = Date.now();
       const dt = (now - lastTickRef.current) / 1000;
       lastTickRef.current = now;
-      if (earning && !document.hidden && dt < 60) {
-        addXpForSeconds(dt);
+      if (!document.hidden && dt < 60) {
+        accumulatedRef.current += dt * activeMultiplier;
+        force((n) => n + 1);
       }
-      force((n) => n + 1);
     }, 1000);
-    return () => window.clearInterval(id);
-  }, [earning]);
 
-  const live = getXpSnapshot();
-  const xpPercent = Math.min(100, (live.xp / XP_PER_LEVEL) * 100);
+    const flush = window.setInterval(() => {
+      const gained = Math.floor(accumulatedRef.current);
+      if (gained <= 0) return;
+      accumulatedRef.current -= gained;
+      let xp = baseXp + gained;
+      let level = baseLevel;
+      while (xp >= XP_PER_LEVEL) {
+        xp -= XP_PER_LEVEL;
+        level += 1;
+      }
+      updateStats.mutate({ xp, level, current_multiplier: activeMultiplier });
+    }, 15000);
+
+    return () => {
+      window.clearInterval(tick);
+      window.clearInterval(flush);
+      const gained = Math.floor(accumulatedRef.current);
+      if (gained > 0) {
+        accumulatedRef.current = 0;
+        let xp = baseXp + gained;
+        let level = baseLevel;
+        while (xp >= XP_PER_LEVEL) {
+          xp -= XP_PER_LEVEL;
+          level += 1;
+        }
+        updateStats.mutate({ xp, level, current_multiplier: activeMultiplier });
+      }
+    };
+    // Only re-init when earning toggles or the active multiplier changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [earning, activeMultiplier]);
+
+  // When dashboard mounts (earning=false) we still want the multiplier
+  // persisted once per change so other pages see the same value.
+  useEffect(() => {
+    if (earning) return;
+    if (!stats) return;
+    if (Math.abs((stats.current_multiplier ?? 0) - activeMultiplier) < 0.01) return;
+    updateStats.mutate({ current_multiplier: activeMultiplier });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [earning, activeMultiplier, stats?.current_multiplier]);
+
+  const liveXp = baseXp + (earning ? accumulatedRef.current : 0);
+  const xpPercent = Math.min(100, (liveXp / XP_PER_LEVEL) * 100);
 
   const cap = 10;
   const overshootRatio = Math.max(0, activeMultiplier - cap) / cap;
@@ -68,7 +110,7 @@ export function ExperienceBar({
     100,
     activeMultiplier <= cap
       ? (activeMultiplier / cap) * markerPercent
-      : markerPercent + (activeMultiplier - cap) / cap * (100 - markerPercent)
+      : markerPercent + ((activeMultiplier - cap) / cap) * (100 - markerPercent)
   );
 
   const barH = compact ? "h-3" : "h-4";
@@ -78,10 +120,10 @@ export function ExperienceBar({
       <div className="space-y-1">
         <div className="flex justify-between text-[11px]">
           <span className="text-muted-foreground inline-flex items-center gap-1">
-            <Zap className="h-3 w-3 text-money" /> Experience Level {live.level}
+            <Zap className="h-3 w-3 text-money" /> Experience Level {baseLevel}
           </span>
           <span className="text-foreground/80 font-medium">
-            {Math.floor(live.xp).toLocaleString()} / {XP_PER_LEVEL.toLocaleString()} XP
+            {Math.floor(liveXp).toLocaleString()} / {XP_PER_LEVEL.toLocaleString()} XP
           </span>
         </div>
         <div className={`relative w-full overflow-hidden rounded-full bg-secondary/60 ${barH}`}>

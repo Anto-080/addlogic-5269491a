@@ -37,18 +37,16 @@ export default function Tiers() {
   const userLevel = stats?.level ?? 1;
   const topTierLocked = userLevel < TOP_TIER_GATE;
 
-  // Stable order: top three priority tiers, then the rest by multiplier.
-  // Travel & Tourism (id 18) is pinned just above Real Estate (id 11) per spec.
+  // Natural chromatic order: top three priority tiers (purple) first, then
+  // every other tier sorted by multiplier descending. This keeps the blue
+  // band (Tech → Tourism → Real Estate) contiguous and stops Tourism+Real
+  // Estate from being shoved below the locked red bottom tiers.
   const orderedTiers = useMemo(() => {
-    const top = TIERS.filter((t) => t.id <= 4);
-    const rest = TIERS.filter((t) => t.id > 4 && t.id !== 18 && t.id !== 11);
-    rest.sort((a, b) => b.multiplier - a.multiplier);
-    const realEstate = TIERS.find((t) => t.id === 11);
-    const travel = TIERS.find((t) => t.id === 18);
-    const tail: typeof TIERS = [];
-    if (travel) tail.push(travel);
-    if (realEstate) tail.push(realEstate);
-    return [...top, ...rest, ...tail];
+    const top = TIERS.filter((t) => t.id <= 3);
+    const rest = [...TIERS.filter((t) => t.id > 3)].sort(
+      (a, b) => b.multiplier - a.multiplier
+    );
+    return [...top, ...rest];
   }, []);
 
 

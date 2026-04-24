@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { deriveInterestTiers, recordSearch } from "@/lib/userInterestProfiler";
-import { MOCK_EARNINGS } from "@/lib/mockData";
 
 export const XP_PER_LEVEL = 1_000_000;
 export const COOKIE_BONUS = 2;
@@ -32,25 +31,6 @@ const SettingsContext = createContext<SettingsState | undefined>(undefined);
 
 const KEY_COOKIE = "rr.cookieAutoAccept";
 const KEY_GPS = "rr.gpsPrecision";
-
-/**
- * Lightweight cookie auto-accept marker.
- * The previous implementation installed a MutationObserver on document.body
- * that scanned every DOM mutation for "Accept" buttons. That made the entire
- * app re-scan on every render, causing the Parkinson-like lag the user
- * reported. We now only persist the user's preference; real cookie banner
- * handling happens inside the InAppBrowser iframe.
- */
-function installCookieAutoAccepter(): () => void {
-  try {
-    localStorage.setItem("rr.cookiesAccepted", "1");
-  } catch {
-    /* ignore */
-  }
-  return () => {
-    /* nothing to dispose */
-  };
-}
 
 function snapshotDeviceProfile(): DeviceProfile {
   const nav = navigator as Navigator & {
@@ -87,15 +67,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => { localStorage.setItem(KEY_COOKIE, cookieAutoAccept ? "1" : "0"); }, [cookieAutoAccept]);
   useEffect(() => { localStorage.setItem(KEY_GPS, gpsPrecision ? "1" : "0"); }, [gpsPrecision]);
 
-  // Cookie consent → install auto-accepter.
   useEffect(() => {
     if (!cookieAutoAccept) return;
-    const dispose = installCookieAutoAccepter();
+    try { localStorage.setItem("rr.cookiesAccepted", "1"); } catch { /* ignore */ }
     if (document.referrer) recordSearch(document.referrer);
-    return () => dispose();
   }, [cookieAutoAccept]);
 
-  // GPS consent → real position + device-profile snapshot.
   useEffect(() => {
     if (!gpsPrecision) {
       setCoords(null);
@@ -140,68 +117,6 @@ export function useSettings() {
   const ctx = useContext(SettingsContext);
   if (!ctx) throw new Error("useSettings must be used inside SettingsProvider");
   return ctx;
-}
-
-/* =========================================================================
- * Experience / Multiplier — STAND-ALONE module (NOT in React state)
- *
- * The earlier implementation pushed XP into context and ticked it every
- * second, which re-rendered every consumer (toggles included) and made the
- * Dashboard lag like Parkinson. Now XP/level/multiplier are stored in a
- * plain module-level object backed by localStorage, and only the
- * <ExperienceBar /> subscribes to ticks. Toggles never re-render from XP.
- * ========================================================================= */
-
-const XP_KEY = "rr.xp.state.v2";
-
-type XpState = {
-  xp: number;          // 0..XP_PER_LEVEL
-  level: number;
-  multiplier: number;  // current crimson multiplier (tier + bonuses)
-  updatedAt: number;
-};
-
-function loadXp(): XpState {
-  try {
-    const raw = localStorage.getItem(XP_KEY);
-    if (raw) return JSON.parse(raw) as XpState;
-  } catch { /* ignore */ }
-  return {
-    xp: Math.round((MOCK_EARNINGS.xp / MOCK_EARNINGS.xpToNext) * XP_PER_LEVEL),
-    level: MOCK_EARNINGS.level,
-    multiplier: MOCK_EARNINGS.currentMultiplier,
-    updatedAt: Date.now(),
-  };
-}
-
-let xpState: XpState = typeof window !== "undefined" ? loadXp() : {
-  xp: 0, level: MOCK_EARNINGS.level, multiplier: MOCK_EARNINGS.currentMultiplier, updatedAt: Date.now(),
-};
-
-function persistXp() {
-  try { localStorage.setItem(XP_KEY, JSON.stringify(xpState)); } catch { /* ignore */ }
-}
-
-export function getXpSnapshot(): XpState {
-  return xpState;
-}
-
-export function setMultiplier(mult: number) {
-  xpState = { ...xpState, multiplier: mult, updatedAt: Date.now() };
-  persistXp();
-}
-
-/** Add XP for `seconds` of activity at the current multiplier. */
-export function addXpForSeconds(seconds: number) {
-  if (seconds <= 0) return;
-  let xp = xpState.xp + Math.round(seconds * xpState.multiplier);
-  let level = xpState.level;
-  while (xp >= XP_PER_LEVEL) {
-    xp -= XP_PER_LEVEL;
-    level += 1;
-  }
-  xpState = { ...xpState, xp, level, updatedAt: Date.now() };
-  persistXp();
 }
 
 export function consentBonus(cookies: boolean, gps: boolean): number {

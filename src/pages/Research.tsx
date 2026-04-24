@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TIERS, MOCK_ARTICLES } from "@/lib/mockData";
+import { TIERS } from "@/lib/mockData";
+import { useArticles, useUserStats } from "@/hooks/useAppData";
 import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink } from "lucide-react";
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { InAppBrowser } from "@/components/InAppBrowser";
 import { TierIcon } from "@/components/TierIcon";
-import { useSettings, XP_PER_LEVEL, getXpSnapshot, consentBonus } from "@/contexts/SettingsContext";
+import { useSettings, XP_PER_LEVEL, consentBonus } from "@/contexts/SettingsContext";
 import { ExperienceBar } from "@/components/ExperienceBar";
 
 const SEARCH_GATE_LEVEL = 25;
@@ -100,14 +101,25 @@ export default function Research() {
   const [browser, setBrowser] = useState<{ url: string; engineName: string } | null>(null);
   const [showSponsoredVideos, setShowSponsoredVideos] = useState(false);
   const { topInterestTiers, cookieAutoAccept, gpsPrecision } = useSettings();
+  const { data: stats } = useUserStats();
+  const { data: liveArticles = [] } = useArticles();
 
   const selectedTierData = TIERS.find((t) => t.id === (selectedTier ?? 4)) ?? TIERS[3];
   const primaryTierId = selectedTier ?? 4;
-  const userLevel = getXpSnapshot().level;
+  const userLevel = stats?.level ?? 1;
   const activeMultiplier = selectedTierData.multiplier + consentBonus(cookieAutoAccept, gpsPrecision);
 
   const filteredArticles = useMemo(() => {
-    let list = MOCK_ARTICLES.filter((a) => !selectedTier || a.tier === selectedTier);
+    let list = liveArticles
+      .filter((a) => !selectedTier || a.tier_id === selectedTier)
+      .map((a) => ({
+        id: a.id,
+        title: a.title,
+        tier: a.tier_id,
+        source: a.source,
+        readTime: a.read_time ?? "",
+        earnings: a.earnings,
+      }));
     if (topInterestTiers.length) {
       list = [...list].sort((a, b) => {
         const ai = topInterestTiers.indexOf(a.tier);
@@ -118,7 +130,7 @@ export default function Research() {
       });
     }
     return list;
-  }, [selectedTier, topInterestTiers]);
+  }, [selectedTier, topInterestTiers, liveArticles]);
 
   const handleReadArticle = (earnings: number, tier: number) => {
     if (tier <= 3 && userLevel < TOP_TIER_GATE) return;
