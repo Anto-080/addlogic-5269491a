@@ -21,12 +21,11 @@ export function OperaLogo({ size = 24, className }: Props) {
           <stop offset="0%" stopColor="#FF1B2D" />
           <stop offset="100%" stopColor="#C9001F" />
         </radialGradient>
-        <mask id="opera-mask">
-          <rect width="64" height="64" fill="#fff" />
-          <ellipse cx="32" cy="32" rx="11" ry="22" fill="#000" />
-        </mask>
       </defs>
-      <circle cx="32" cy="32" r="30" fill="url(#opera-grad)" mask="url(#opera-mask)" />
+      {/* Outer red disc */}
+      <circle cx="32" cy="32" r="30" fill="url(#opera-grad)" />
+      {/* Inner white ellipse cut-out — drawn directly so masks aren't needed */}
+      <ellipse cx="32" cy="32" rx="11" ry="20" fill="#ffffff" />
     </svg>
   );
 }
