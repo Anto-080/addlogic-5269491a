@@ -131,6 +131,58 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [deviceProfile, setDeviceProfile] = useState<DeviceProfile | null>(null);
   const [topInterestTiers, setTopInterestTiers] = useState<number[]>([]);
 
+  // Shared XP & multiplier state — drives every Experience Bar in the app.
+  const [liveXp, setLiveXp] = useState<number>(() =>
+    Math.round((MOCK_EARNINGS.xp / MOCK_EARNINGS.xpToNext) * XP_PER_LEVEL)
+  );
+  const [level, setLevel] = useState<number>(MOCK_EARNINGS.level);
+  const [tierMultiplier, setTierMultiplier] = useState<number>(MOCK_EARNINGS.currentMultiplier);
+  const tierLingerUntilRef = useRef<number>(0);
+  const researchActiveRef = useRef<boolean>(false);
+  const lastInteractionRef = useRef<number>(Date.now());
+
+  const consentBonus = (cookieAutoAccept ? COOKIE_BONUS : 0) + (gpsPrecision ? GPS_BONUS : 0);
+  // After tier change, the previous multiplier lingers for 1 minute.
+  const effectiveTierMultiplier = tierMultiplier;
+  const activeMultiplier = effectiveTierMultiplier + consentBonus;
+
+  const setActiveTierMultiplier = (m: number) => {
+    setTierMultiplier(m);
+    tierLingerUntilRef.current = Date.now() + TIER_LINGER_MS;
+  };
+  const setResearchActive = (active: boolean) => {
+    researchActiveRef.current = active;
+    lastInteractionRef.current = Date.now();
+  };
+
+  // Global activity tracker (idle pause after 5 minutes).
+  useEffect(() => {
+    const mark = () => { lastInteractionRef.current = Date.now(); };
+    const evts: Array<keyof WindowEventMap> = ["pointerdown", "pointermove", "keydown", "scroll", "touchstart"];
+    evts.forEach((e) => window.addEventListener(e, mark, { passive: true }));
+    return () => evts.forEach((e) => window.removeEventListener(e, mark));
+  }, []);
+
+  // Live XP ticker — runs while Research Room is active and lingers 1 min after tier change.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      const idle = now - lastInteractionRef.current > 5 * 60 * 1000;
+      if (idle || document.hidden) return;
+      const lingering = now < tierLingerUntilRef.current;
+      if (!researchActiveRef.current && !lingering) return;
+      setLiveXp((prev) => {
+        const next = prev + activeMultiplier;
+        if (next >= XP_PER_LEVEL) {
+          setLevel((l) => l + 1);
+          return next - XP_PER_LEVEL;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [activeMultiplier]);
+
   useEffect(() => { localStorage.setItem(KEY_COOKIE, cookieAutoAccept ? "1" : "0"); }, [cookieAutoAccept]);
   useEffect(() => { localStorage.setItem(KEY_GPS, gpsPrecision ? "1" : "0"); }, [gpsPrecision]);
 
@@ -178,6 +230,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         coords,
         deviceProfile,
         topInterestTiers,
+        liveXp,
+        level,
+        tierMultiplier,
+        activeMultiplier,
+        setActiveTierMultiplier,
+        setResearchActive,
       }}
     >
       {children}
