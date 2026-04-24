@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
-import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
+import { TIERS } from "@/lib/mockData";
 import { useEffect, useState } from "react";
 import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
@@ -11,6 +11,7 @@ import { useSettings, COOKIE_BONUS, GPS_BONUS } from "@/contexts/SettingsContext
 import { TierIcon } from "@/components/TierIcon";
 import { ExperienceBar } from "@/components/ExperienceBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useArticles, useMilestones, useUserStats } from "@/hooks/useAppData";
 
 function AnimatedCounter({ target }: { target: number }) {
   const [val, setVal] = useState(0);
@@ -29,10 +30,14 @@ export default function Dashboard() {
   const [couponsOpen, setCouponsOpen] = useState(false);
   const primaryTier = TIERS[3];
 
+  const { data: stats } = useUserStats();
+  const { data: dailyDesk = [] } = useArticles({ dailyDesk: true });
+  const { data: milestones = [] } = useMilestones(5);
+
   const summary = [
-    { label: "Today",     value: MOCK_EARNINGS.today,    Icon: SandglassIcon },
-    { label: "This Week", value: MOCK_EARNINGS.thisWeek, Icon: ClockIcon },
-    { label: "All Time",  value: MOCK_EARNINGS.allTime,  Icon: HexDollar },
+    { label: "Today",     value: stats?.earnings_today ?? 0,    Icon: SandglassIcon },
+    { label: "This Week", value: stats?.earnings_week ?? 0,     Icon: ClockIcon },
+    { label: "All Time",  value: stats?.earnings_all_time ?? 0, Icon: HexDollar },
   ];
 
   return (
@@ -200,8 +205,11 @@ export default function Dashboard() {
               Curated articles. Topics involving dual-use technologies (CRISPR-Cas9, molecular chirality, receptor chimerism) are marked with safety advisories from accredited sources. AddLogic does not sponsor speculative dual-use research.
             </p>
             <div className="space-y-2">
-              {DAILY_DESK.map((item) => {
-                const tier = TIERS.find((t) => t.id === item.tier);
+              {dailyDesk.length === 0 && (
+                <p className="text-xs text-muted-foreground italic">Loading today's desk…</p>
+              )}
+              {dailyDesk.map((item) => {
+                const tier = TIERS.find((t) => t.id === item.tier_id);
                 return (
                   <div key={item.id} className="p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
                     <div className="flex items-start gap-3">
@@ -209,10 +217,10 @@ export default function Dashboard() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground">{item.title}</p>
                         <p className="text-[11px] text-muted-foreground">{item.source}</p>
-                        {item.warning && (
+                        {item.dual_use_warning && item.warning_text && (
                           <div className="mt-2 flex items-start gap-2 p-2 rounded-md border border-destructive/40 bg-destructive/10">
                             <ShieldAlert className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
-                            <p className="text-[11px] text-destructive-foreground/90">{item.warningText}</p>
+                            <p className="text-[11px] text-destructive-foreground/90">{item.warning_text}</p>
                           </div>
                         )}
                       </div>
@@ -233,20 +241,23 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {MOCK_MILESTONES.map((m) => {
-                const tier = TIERS.find((t) => t.id === m.tier);
+              {milestones.length === 0 && (
+                <p className="text-xs text-muted-foreground italic">No milestones yet — start a research session to log your first.</p>
+              )}
+              {milestones.map((m) => {
+                const tier = TIERS.find((t) => t.id === m.tier_id);
                 return (
                   <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
                     <div className="flex items-center gap-3">
                       <span style={{ color: tier?.color }}>{tier && <TierIcon tierId={tier.id} size={22} />}</span>
                       <div>
                         <p className="text-sm font-medium text-foreground">{m.title}</p>
-                        <p className="text-xs text-muted-foreground">{m.date}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(m.occurred_at).toLocaleDateString()}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-money">${m.earned.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">+{m.xpGained} XP</p>
+                      <p className="text-xs text-muted-foreground">+{m.xp_gained} XP</p>
                     </div>
                   </div>
                 );
