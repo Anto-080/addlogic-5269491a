@@ -23,7 +23,7 @@ export function AppSidebar() {
         <div className="p-4 flex items-center gap-3">
           {!collapsed && (
             <div>
-              <h1 className="text-lg font-bold text-gradient-gold">ResearchRewards</h1>
+              <h1 className="text-lg font-bold text-gradient-gold">AddLogic</h1>
               <p className="text-xs text-muted-foreground">Earn while you learn</p>
             </div>
           )}

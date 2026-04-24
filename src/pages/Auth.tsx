@@ -46,7 +46,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "linear-gradient(145deg, hsl(150 100% 3%), hsl(150 40% 6%), hsl(150 100% 3%))" }}>
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-gradient-gold">ResearchRewards</h1>
+          <h1 className="text-3xl font-bold text-gradient-gold">AddLogic</h1>
           <p className="text-muted-foreground text-sm">Earn while you explore what matters</p>
         </div>
 

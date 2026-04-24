@@ -3,13 +3,14 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { MOCK_EARNINGS, MOCK_MILESTONES, TIERS, DAILY_DESK } from "@/lib/mockData";
 import { useEffect, useState } from "react";
-import { Star, ShieldAlert, Newspaper, Tag } from "lucide-react";
+import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
 import { ClockIcon } from "@/components/icons/ClockIcon";
 import { useSettings, COOKIE_BONUS, GPS_BONUS } from "@/contexts/SettingsContext";
 import { TierIcon } from "@/components/TierIcon";
 import { ExperienceBar } from "@/components/ExperienceBar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 function AnimatedCounter({ target }: { target: number }) {
   const [val, setVal] = useState(0);
@@ -25,6 +26,7 @@ function AnimatedCounter({ target }: { target: number }) {
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
+  const [couponsOpen, setCouponsOpen] = useState(false);
   const primaryTier = TIERS[3];
 
   const summary = [
@@ -37,7 +39,7 @@ export default function Dashboard() {
     <AppLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground">AddLogic Dashboard</h1>
           <p className="text-sm text-muted-foreground">Your research hub — keep exploring, keep earning.</p>
         </div>
 
@@ -104,29 +106,43 @@ export default function Dashboard() {
 
         {gpsPrecision && (
           <Card className="bg-card border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Tag className="h-5 w-5 text-money" /> Regional Coupons
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {[
-                  { brand: "GreenLeaf Café", offer: "20% off espresso", dist: "0.4 km" },
-                  { brand: "MetroBooks", offer: "Buy 2 get 1 free — science", dist: "1.1 km" },
-                  { brand: "EcoMart", offer: "$5 off bulk produce", dist: "2.0 km" },
-                  { brand: "FitLab Gym", offer: "First week free trial", dist: "2.6 km" },
-                ].map((c) => (
-                  <div key={c.brand} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{c.brand}</p>
-                      <p className="text-xs text-muted-foreground">{c.offer}</p>
+            <Collapsible open={couponsOpen} onOpenChange={setCouponsOpen}>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between gap-2 p-4 text-left"
+                  aria-expanded={couponsOpen}
+                >
+                  <span className="text-base font-semibold flex items-center gap-2 text-foreground">
+                    <Tag className="h-5 w-5 text-money" /> Regional Coupons
+                    <span className="text-[10px] text-muted-foreground font-normal ml-1">
+                      live feed · tap to {couponsOpen ? "hide" : "open"}
+                    </span>
+                  </span>
+                  {couponsOpen
+                    ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    { brand: "GreenLeaf Café", offer: "20% off espresso", dist: "0.4 km" },
+                    { brand: "MetroBooks", offer: "Buy 2 get 1 free — science", dist: "1.1 km" },
+                    { brand: "EcoMart", offer: "$5 off bulk produce", dist: "2.0 km" },
+                    { brand: "FitLab Gym", offer: "First week free trial", dist: "2.6 km" },
+                  ].map((c) => (
+                    <div key={c.brand} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{c.brand}</p>
+                        <p className="text-xs text-muted-foreground">{c.offer}</p>
+                      </div>
+                      <span className="text-[10px] text-money font-medium">{c.dist}</span>
                     </div>
-                    <span className="text-[10px] text-money font-medium">{c.dist}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </Card>
         )}
 
@@ -149,12 +165,12 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Shared Experience Bar — identical numbers across every page */}
+        {/* Shared Experience Bar — synced via persisted store, not React context */}
         <Card className="bg-card border-border/50 glow-amber">
           <CardContent className="p-4 space-y-2">
-            <ExperienceBar />
+            <ExperienceBar baseMultiplier={primaryTier.multiplier} />
             <p className="text-xs text-muted-foreground">
-              XP grows by <span className="text-foreground/90 font-medium">time × active multiplier</span>. The black
+              XP grows by <span className="text-foreground/90 font-medium">time × active multiplier</span> while you research. The black
               marker shows the <span className="text-foreground/90 font-medium">x10 cap</span> — when boosters push the
               multiplier above 10×, the marker slides left and the crimson fill extends past it.
             </p>
@@ -181,7 +197,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground mb-3">
-              Curated articles. Topics involving dual-use technologies (CRISPR-Cas9, molecular chirality, receptor chimerism) are marked with safety advisories from accredited sources. ResearchRewards does not sponsor speculative dual-use research.
+              Curated articles. Topics involving dual-use technologies (CRISPR-Cas9, molecular chirality, receptor chimerism) are marked with safety advisories from accredited sources. AddLogic does not sponsor speculative dual-use research.
             </p>
             <div className="space-y-2">
               {DAILY_DESK.map((item) => {
