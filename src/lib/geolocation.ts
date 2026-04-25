@@ -81,7 +81,7 @@ export async function persistTelemetry(userId: string, coords: Coords | null, pr
         lat: coords?.lat ?? null,
         lng: coords?.lng ?? null,
         accuracy_m: coords?.accuracy ?? null,
-        profile: profile as unknown as Record<string, unknown>,
+        profile: profile as never,
       },
     ],
     { onConflict: "user_id" }
