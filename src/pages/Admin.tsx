@@ -16,6 +16,8 @@ type Draft = Record<number, TierPatch>;
 export default function Admin() {
   const { data: isAdmin, isLoading: roleLoading } = useIsAdmin();
   const { data: tiers, isLoading } = useTiers();
+  const { data: flags } = useAdminFlags();
+  const updateFlags = useUpdateAdminFlags();
   const updateTier = useUpdateTier();
   const createTier = useCreateTier();
   const deleteTier = useDeleteTier();
