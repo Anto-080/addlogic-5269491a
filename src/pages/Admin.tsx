@@ -136,6 +136,38 @@ export default function Admin() {
           </div>
         </header>
 
+        <Card className="border-primary/30 bg-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-primary" /> My feature overrides
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              These switches affect only your own admin account. Stored server-side with admin-only RLS — regular users
+              cannot read or flip them, fixing the previous Level-100 leak.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <FlagRow
+              label="Bypass Opera in-frame search gate"
+              hint="Enables the in-app Opera WebView search regardless of your level (normally Level 25)."
+              checked={!!flags?.force_opera_search}
+              onChange={(v) => updateFlags.mutate({ force_opera_search: v })}
+            />
+            <FlagRow
+              label="Simulate Level 50 — Investment phase"
+              hint="Preview the Investment Phase unlocks without leveling up."
+              checked={!!flags?.force_investment_l50}
+              onChange={(v) => updateFlags.mutate({ force_investment_l50: v })}
+            />
+            <FlagRow
+              label="Simulate Level 100 — ∞ Circular Economy"
+              hint="Preview the Circular Economy panel without leveling up."
+              checked={!!flags?.force_circular_l100}
+              onChange={(v) => updateFlags.mutate({ force_circular_l100: v })}
+            />
+          </CardContent>
+        </Card>
+
         {isLoading && <p className="text-muted-foreground">Loading tiers…</p>}
 
         <div className="space-y-3">
