@@ -149,6 +149,22 @@ export default function Research() {
     setSessionEarnings((s) => s + 2.5);
   };
 
+  const handleFetchLive = async () => {
+    const ids = selectedTier ? [selectedTier] : (topInterestTiers.length ? topInterestTiers.slice(0, 4) : [4]);
+    try {
+      const articles = await curate.mutateAsync({ tierIds: ids, count: 6 });
+      setLiveNews(articles);
+      if (articles.length === 0) toast.info("No live articles returned. Try again.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to fetch live news");
+    }
+  };
+
+  const handleOpenLive = (a: LiveArticle) => {
+    setBrowser({ url: a.url, engineName: "Opera WebView" });
+  };
+
+
   return (
     <AppLayout>
       <div className="space-y-4 max-w-5xl mx-auto">
