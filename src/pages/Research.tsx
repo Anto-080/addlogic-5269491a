@@ -110,7 +110,13 @@ export default function Research() {
   const selectedTierData = TIERS.find((t) => t.id === (selectedTier ?? 4)) ?? TIERS[3];
   const primaryTierId = selectedTier ?? 4;
   const userLevel = stats?.level ?? 1;
-  const activeMultiplier = selectedTierData.multiplier + consentBonus(cookieAutoAccept, gpsPrecision);
+  // When "All" is selected, fall back to the live persisted multiplier so the
+  // bar reflects ongoing activity instead of getting stuck on a hardcoded base.
+  const baseForBar = selectedTier === null ? undefined : selectedTierData.multiplier;
+  const liveMultiplier = (stats?.current_multiplier ?? 1) + consentBonus(cookieAutoAccept, gpsPrecision);
+  const activeMultiplier = selectedTier === null
+    ? liveMultiplier
+    : selectedTierData.multiplier + consentBonus(cookieAutoAccept, gpsPrecision);
 
   const filteredArticles = useMemo(() => {
     let list = liveArticles
@@ -215,7 +221,7 @@ export default function Research() {
               </div>
             )}
 
-            <ExperienceBar baseMultiplier={selectedTierData.multiplier} earning />
+            <ExperienceBar baseMultiplier={baseForBar} earning />
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second based on your selected tier and active data permissions.

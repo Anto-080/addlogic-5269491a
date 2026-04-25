@@ -1,47 +1,106 @@
-## Goal
+## What you'll get
 
-Add a live news fetcher to the Research page that uses the **Anthropic Claude SDK** (as in your original code) to retrieve real, current articles for the user's tiers of interest.
+1. **Per-admin feature toggles** in the Admin panel (yours only, server-enforced).
+2. **Real GPS activation flow** that prompts for permission on phones and stores non-PII telemetry.
+3. **Fixed Research multiplier bar** (currently stuck because base is hardcoded).
+4. **Fixed Opera logo** (the red blob) and tier/cookie/map/investment icons in the published Live build.
+5. **Tier creation fix** (currently fails silently in Admin).
 
-## Setup
+---
 
-- **New secret required**: `ANTHROPIC_API_KEY` — I'll request it via the secrets prompt before deploying.
-- No new tables, no Express server. The Express logic moves into one Supabase Edge Function (Deno).
+## 1. Admin-only feature flags (security fix for Level 100)
 
-## What gets built
+Today the Level-100 ∞ Circular Economy Phase have a "Simulate" switch visible to **every** user — that's the security hole I spotted. We'll move all dev/preview overrides behind admin-only flags, and adding a Similar Switch to Level 50.
 
-### 1. Edge function `supabase/functions/curate-news/index.ts`
+**New table `admin_feature_flags**` (one row per admin user):
 
-- Imports the Anthropic SDK (`npm:@anthropic-ai/sdk`)
-- Reads `ANTHROPIC_API_KEY` from env
-- Accepts `POST { tierIds: number[], count?: number }`
-- Loads the matching rows from the `tiers` table to get each tier's `name` + `subcategories` — these become the "interests" passed to Claude (so it stays in sync with whatever you set in the Admin panel, including the 16 real tiers like Biochem, Quantum, Climate, Tourism, Real Estate)
-- Uses your exact prompt structure (curator role, JSON-only response, real HTTPS URLs, recent articles, varied sources) with `claude-sonnet-4-20250514`
-- Parses the JSON array, filters to valid `https://` URLs, returns `{ articles: [...] }`
-- CORS enabled, public access, handles upstream errors gracefully
+- `user_id` (uuid, PK, references auth.users)
+- `force_opera_search` (bool) — bypass Level-25 gate on Opera in-frame search
+- `force_investment_l50` (bool) — preview Level-50 Investment unlocks
+- `force_circular_l100` (bool) — preview Level-100 ∞ Circular Economy
+- `updated_at` (timestamp)
 
-### 2. Hook `useCurateNews` in `src/hooks/useAppData.ts`
+RLS: only the row owner can SELECT/UPDATE/INSERT, and only if they also have the `admin` role (`has_role(auth.uid(), 'admin')`). Non-admins cannot read or write — guarantees regular users can never flip these.
 
-- React Query mutation calling the function via `supabase.functions.invoke("curate-news", { body: { tierIds, count } })`
-- Returns `{ mutate, data, isPending, error }`
+**Admin page changes:**
 
-### 3. Research page (`src/pages/Research.tsx`)
+- New "My feature overrides" card at the top with three switches.
+- Hook `useAdminFlags()` reads/writes the row.
 
-- New card above the article list: **"Fetch live news"** with a refresh button
-  - When a specific tier is selected → fetches for that tier only
-  - When "All" is selected → uses `topInterestTiers` from settings (the user's connected tiers of interest)
-- Renders returned articles with a "Live" badge, source, summary, and an **Open** button that routes through the existing `InAppBrowser` (so reading still earns XP via Opera WebView)
-- Page Open for real so Opera WebView Need Active Internet Access
-- Live results are session-only (not written to DB)
-  &nbsp;
-  &nbsp;
+**Consumer pages:**
 
-## Caveat
+- `Investments.tsx`: replace the public `Switch` with a read of `useAdminFlags()`. The dev simulate toggles are removed for non-admins; admins see them inline as today, but they reflect the persisted flag.
+- `Research.tsx` + `BrowserPicker.tsx`: gate is `userLevel >= 25 || flags.force_opera_search`.
 
-LLMs don't truly browse — Claude generates URLs from training knowledge and recall. The function validates `https://` prefixes but cannot guarantee every link resolves. If a link is dead, the user can refresh to re-roll. (If you later want guaranteed-live results, Firecrawl search can be added on top — separate request.)
+---
 
-## Files
+## 2. Geolocation activation flow (real phone GPS + non-PII telemetry)
 
-- `supabase/functions/curate-news/index.ts` (new)
-- `src/hooks/useAppData.ts` (add `useCurateNews`)
-- `src/pages/Research.tsx` (add fetch panel + live results)
-- Secret: `ANTHROPIC_API_KEY` (you provide)
+Today flipping the Settings switch only calls `navigator.geolocation` in the web preview. On a packaged Android build we need an explicit permission flow.
+
+- Install `@capacitor/geolocation`.
+- New `requestGeolocation()` helper in `src/lib/geolocation.ts`:
+  - On native: `Geolocation.requestPermissions()` → `Geolocation.getCurrentPosition()`.
+  - On web: existing `navigator.geolocation` path.
+- Settings page: when the user toggles "GPS precision" ON, show a confirm dialog explaining what's collected (coarse coords, timezone, screen, locale, network type — **no PII**, no contacts, no IMEI), then trigger the permission request.
+- Persist the resulting non-PII telemetry to a new `device_telemetry` table (user_id, coords, device profile JSON, updated_at) with owner-only RLS so the admin panel can later show coverage stats without exposing personal data. 
+- Add `<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>` instructions to the Capacitor sync notes (manifest is regenerated by `npx cap sync`).
+
+---
+
+## 3. Research multiplier bar — stuck at 14 / base 7.5
+
+Root cause: `Research.tsx` passes `baseMultiplier={selectedTierData.multiplier}`, which **defaults to tier 4** even when "All" is selected, and consent bonuses (cookies +2, GPS +5) are added on top → permanent 7.5+ baseline regardless of activity.
+
+Fix:
+
+- When `selectedTier === null` (All), pass `baseMultiplier={undefined}` so `ExperienceBar` falls back to the live `user_stats.current_multiplier` (which moves with activity).
+- Stop double-adding `consentBonus` in `Research.tsx`'s footer — `ExperienceBar` already adds it.
+- The bottom session footer's "Active Multiplier" reads the same value as the bar so they stay in sync.
+
+---
+
+## 4. Color/icon drift on the published Lovable build
+
+The published build ships a stale CSS bundle for two reasons we can fix:
+
+- **Opera logo "red blob"**: the inner white ellipse is being painted under the red disc on some Android WebViews (z-order race with the `<defs>` gradient). Rewrite `OperaLogo.tsx` to draw the white ellipse as a separate `<path>` with explicit `fillRule="evenodd"` inside a single combined path, so the cutout is geometric, not stacked. Same authentic Opera mark, robust on all engines.
+- **Tier / cookie / map / investment icons going off-color**: these all use `currentColor` but several call sites pass a CSS variable that's only defined in dark mode. We'll inline explicit `color:` styles on the icon containers in `Research.tsx`, `Settings.tsx` (cookie + map), and `Investments.tsx` so published builds don't depend on the variable cascade.
+
+---
+
+## 5. Tier creation in Admin (minor)
+
+`useCreateTier` inserts but does not pass `subcategories`/`icon` defaults that satisfy the NOT NULL constraints in some cases, and Admin shows no error toast on RLS rejection. We'll:
+
+- Surface the supabase error in the toast.
+- Pre-fill `subcategories: []` and a sensible `icon` string so the insert always satisfies the table.
+
+---
+
+## Technical summary
+
+**DB migration** (one):
+
+- Create `admin_feature_flags` + RLS (admin-only owner access).
+- Create `device_telemetry` + RLS (owner-only).
+
+**New files:**
+
+- `src/hooks/useAdminFlags.ts`
+- `src/lib/geolocation.ts`
+
+**Edited files:**
+
+- `src/pages/Admin.tsx` — feature-flag card, better tier-create errors.
+- `src/pages/Investments.tsx` — replace public dev switch with admin flag.
+- `src/pages/Research.tsx` — pass `baseMultiplier={undefined}` for All, stop double-adding consent bonus, fix footer color.
+- `src/pages/Settings.tsx` — GPS confirm dialog + telemetry persistence, color fixes on cookie & map icons.
+- `src/components/BrowserPicker.tsx` — gate respects admin flag.
+- `src/components/icons/OperaLogo.tsx` — robust evenodd path.
+- `src/lib/operaWebView.ts` — no change to API, only docs.
+- `package.json` — add `@capacitor/geolocation`.
+
+**Capacitor:** user must run `npx cap sync` after pulling to pick up the geolocation plugin and Android manifest permission.
+
+No secrets needed — Anthropic stays as-is until you top up.

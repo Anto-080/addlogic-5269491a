@@ -2,12 +2,13 @@ import { useState, useMemo, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useTiers } from "@/hooks/useAppData";
 import { useIsAdmin, useUpdateTier, useCreateTier, useDeleteTier, type TierPatch } from "@/hooks/useAdmin";
+import { useAdminFlags, useUpdateAdminFlags } from "@/hooks/useAdminFlags";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TierIcon } from "@/components/TierIcon";
-import { ArrowLeft, ArrowUp, ArrowDown, Save, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Save, Plus, Trash2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 type Draft = Record<number, TierPatch>;
@@ -15,6 +16,8 @@ type Draft = Record<number, TierPatch>;
 export default function Admin() {
   const { data: isAdmin, isLoading: roleLoading } = useIsAdmin();
   const { data: tiers, isLoading } = useTiers();
+  const { data: flags } = useAdminFlags();
+  const updateFlags = useUpdateAdminFlags();
   const updateTier = useUpdateTier();
   const createTier = useCreateTier();
   const deleteTier = useDeleteTier();
@@ -133,6 +136,38 @@ export default function Admin() {
           </div>
         </header>
 
+        <Card className="border-primary/30 bg-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-primary" /> My feature overrides
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              These switches affect only your own admin account. Stored server-side with admin-only RLS — regular users
+              cannot read or flip them, fixing the previous Level-100 leak.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <FlagRow
+              label="Bypass Opera in-frame search gate"
+              hint="Enables the in-app Opera WebView search regardless of your level (normally Level 25)."
+              checked={!!flags?.force_opera_search}
+              onChange={(v) => updateFlags.mutate({ force_opera_search: v })}
+            />
+            <FlagRow
+              label="Simulate Level 50 — Investment phase"
+              hint="Preview the Investment Phase unlocks without leveling up."
+              checked={!!flags?.force_investment_l50}
+              onChange={(v) => updateFlags.mutate({ force_investment_l50: v })}
+            />
+            <FlagRow
+              label="Simulate Level 100 — ∞ Circular Economy"
+              hint="Preview the Circular Economy panel without leveling up."
+              checked={!!flags?.force_circular_l100}
+              onChange={(v) => updateFlags.mutate({ force_circular_l100: v })}
+            />
+          </CardContent>
+        </Card>
+
         {isLoading && <p className="text-muted-foreground">Loading tiers…</p>}
 
         <div className="space-y-3">
@@ -198,6 +233,28 @@ export default function Admin() {
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+function FlagRow({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-md border border-border/40 bg-secondary/20 p-3">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} />
     </div>
   );
 }

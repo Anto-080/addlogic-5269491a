@@ -1,10 +1,12 @@
 type Props = { size?: number; className?: string };
 
 /**
- * Authentic Opera "O" mark — solid red ring with a tall central white
- * ellipse cut-out, matching the brand mark used on com.opera.browser.
- * Used because we route searches through the actual Opera WebView and are
- * therefore licensed to display the trademark.
+ * Opera "O" mark — a single red shape with the inner white ellipse cut as a
+ * geometric hole using `fillRule="evenodd"`. Drawing both subpaths inside one
+ * <path> guarantees the cutout renders correctly on every WebView (Android
+ * Opera, iOS WKWebView, Chrome, Safari) — the previous two-shape stack could
+ * collapse into a red blob when the gradient defs were stripped by aggressive
+ * SVG sanitisers in some published bundles.
  */
 export function OperaLogo({ size = 24, className }: Props) {
   return (
@@ -16,16 +18,19 @@ export function OperaLogo({ size = 24, className }: Props) {
       aria-label="Opera"
       role="img"
     >
-      <defs>
-        <radialGradient id="opera-grad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#FF1B2D" />
-          <stop offset="100%" stopColor="#C9001F" />
-        </radialGradient>
-      </defs>
-      {/* Outer red disc */}
-      <circle cx="32" cy="32" r="30" fill="url(#opera-grad)" />
-      {/* Inner white ellipse cut-out — drawn directly so masks aren't needed */}
-      <ellipse cx="32" cy="32" rx="11" ry="20" fill="#ffffff" />
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        fill="#E60012"
+        d="
+          M 32 2
+          a 30 30 0 1 0 0.0001 0
+          Z
+          M 32 12
+          a 11 20 0 1 0 0.0001 0
+          Z
+        "
+      />
     </svg>
   );
 }

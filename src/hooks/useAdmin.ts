@@ -63,12 +63,13 @@ export function useCreateTier() {
     }) => {
       const { error } = await supabase.from("tiers").insert({
         ...row,
+        icon: row.icon || String(row.id),
         locked: row.locked ?? false,
         researchers: row.researchers ?? 0,
         avg_earning: row.avg_earning ?? 0,
         subcategories: row.subcategories ?? [],
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tiers"] }),
   });

@@ -6,6 +6,7 @@ import { ExternalLink, ShieldCheck, Lock } from "lucide-react";
 import { isNative, openInOperaWebView } from "@/lib/operaWebView";
 import { OperaLogo } from "@/components/icons/OperaLogo";
 import { recordSearch } from "@/lib/userInterestProfiler";
+import { useAdminFlags } from "@/hooks/useAdminFlags";
 
 type BrowserPickerProps = {
   onSearch?: (args: { url: string; engineName: string }) => void;
@@ -17,7 +18,8 @@ const SEARCH_GATE_LEVEL = 25;
 
 export function BrowserPicker({ onSearch, userLevel = 0 }: BrowserPickerProps) {
   const [query, setQuery] = useState("");
-  const gated = userLevel < SEARCH_GATE_LEVEL;
+  const { data: flags } = useAdminFlags();
+  const gated = userLevel < SEARCH_GATE_LEVEL && !flags?.force_opera_search;
 
   const launch = async () => {
     const q = encodeURIComponent(query.trim());
