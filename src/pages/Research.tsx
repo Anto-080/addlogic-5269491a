@@ -3,13 +3,14 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TIERS } from "@/lib/mockData";
-import { useArticles, useUserStats } from "@/hooks/useAppData";
-import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink } from "lucide-react";
+import { useArticles, useUserStats, useCurateNews, type LiveArticle } from "@/hooks/useAppData";
+import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink, Sparkles, RefreshCw, Loader2 } from "lucide-react";
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { InAppBrowser } from "@/components/InAppBrowser";
 import { TierIcon } from "@/components/TierIcon";
 import { useSettings, XP_PER_LEVEL, consentBonus } from "@/contexts/SettingsContext";
 import { ExperienceBar } from "@/components/ExperienceBar";
+import { toast } from "sonner";
 
 const SEARCH_GATE_LEVEL = 25;
 const TOP_TIER_GATE = 35;
@@ -103,6 +104,8 @@ export default function Research() {
   const { topInterestTiers, cookieAutoAccept, gpsPrecision } = useSettings();
   const { data: stats } = useUserStats();
   const { data: liveArticles = [] } = useArticles();
+  const curate = useCurateNews();
+  const [liveNews, setLiveNews] = useState<LiveArticle[]>([]);
 
   const selectedTierData = TIERS.find((t) => t.id === (selectedTier ?? 4)) ?? TIERS[3];
   const primaryTierId = selectedTier ?? 4;
