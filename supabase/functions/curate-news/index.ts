@@ -1,7 +1,7 @@
 // Edge function: curate-news
 // Uses Anthropic Claude to retrieve real, current articles for the user's
 // connected tiers of interest. Adapted from the user's Express server.
-import Anthropic from "npm:@anthropic-ai/sdk@0.32.1";
+import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.32.1";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
