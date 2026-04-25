@@ -2,12 +2,13 @@ import { useState, useMemo, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useTiers } from "@/hooks/useAppData";
 import { useIsAdmin, useUpdateTier, useCreateTier, useDeleteTier, type TierPatch } from "@/hooks/useAdmin";
+import { useAdminFlags, useUpdateAdminFlags } from "@/hooks/useAdminFlags";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TierIcon } from "@/components/TierIcon";
-import { ArrowLeft, ArrowUp, ArrowDown, Save, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, Save, Plus, Trash2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 type Draft = Record<number, TierPatch>;
