@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_feature_flags: {
+        Row: {
+          force_circular_l100: boolean
+          force_investment_l50: boolean
+          force_opera_search: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          force_circular_l100?: boolean
+          force_investment_l50?: boolean
+          force_opera_search?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          force_circular_l100?: boolean
+          force_investment_l50?: boolean
+          force_opera_search?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           created_at: string
@@ -63,6 +87,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      device_telemetry: {
+        Row: {
+          accuracy_m: number | null
+          lat: number | null
+          lng: number | null
+          profile: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          lat?: number | null
+          lng?: number | null
+          profile?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          lat?: number | null
+          lng?: number | null
+          profile?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       milestones: {
         Row: {
