@@ -163,10 +163,16 @@ export default function Investments() {
 
               <IdeasLibrary />
 
-              <div className="flex items-center justify-between text-xs px-1 pt-2 border-t" style={{ borderColor: "hsl(var(--circular-economy-foreground))" }}>
-                <span style={{ color: "hsl(var(--circular-economy-foreground))" }}>Dev: Simulate Level 100</span>
-                <Switch checked={simulateL100} onCheckedChange={setSimulateL100} data-emerald="true" />
-              </div>
+              {isAdmin && (
+                <div className="flex items-center justify-between text-xs px-1 pt-2 border-t" style={{ borderColor: "hsl(var(--circular-economy-foreground))" }}>
+                  <span style={{ color: "hsl(var(--circular-economy-foreground))" }}>Admin: Simulate Level 100</span>
+                  <Switch
+                    checked={!!flags?.force_circular_l100}
+                    onCheckedChange={(v) => updateFlags.mutate({ force_circular_l100: v })}
+                    data-emerald="true"
+                  />
+                </div>
+              )}
             </CardContent>
           )}
         </Card>
