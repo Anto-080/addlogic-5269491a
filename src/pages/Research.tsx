@@ -232,6 +232,65 @@ export default function Research() {
           ))}
         </div>
 
+        <Card className="bg-card border-crimson/30">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Sparkles className="h-4 w-4 text-crimson shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Live news from Claude</p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {selectedTier
+                      ? `Curating for ${TIERS.find((t) => t.id === selectedTier)?.name ?? "tier"}`
+                      : topInterestTiers.length
+                        ? `Curating for your top ${Math.min(topInterestTiers.length, 4)} interest${topInterestTiers.length === 1 ? "" : "s"}`
+                        : "Pick a tier or set interests in Settings"}
+                  </p>
+                </div>
+              </div>
+              <Button size="sm" onClick={handleFetchLive} disabled={curate.isPending} className="gap-1 shrink-0">
+                {curate.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                {liveNews.length ? "Refresh" : "Fetch"}
+              </Button>
+            </div>
+
+            {liveNews.length > 0 && (
+              <div className="space-y-2">
+                {liveNews.map((a, i) => {
+                  const tier = TIERS.find((t) => t.id === a.tier_id);
+                  return (
+                    <div
+                      key={`${a.url}-${i}`}
+                      className="rounded-lg border border-border/50 bg-secondary/20 p-3 hover:border-crimson/40 transition-colors cursor-pointer"
+                      onClick={() => handleOpenLive(a)}
+                    >
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-crimson/15 text-crimson font-semibold uppercase tracking-wider">Live</span>
+                        {tier && (
+                          <span className="flex items-center gap-1" style={{ color: tier.color }}>
+                            <TierIcon tierId={tier.id} size={12} />
+                            <span className="text-[10px]">{tier.name}</span>
+                          </span>
+                        )}
+                        <span className="text-[10px] text-muted-foreground">· {a.source}</span>
+                      </div>
+                      <h3 className="text-sm font-medium text-foreground leading-snug">{a.title}</h3>
+                      {a.summary && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{a.summary}</p>
+                      )}
+                      <div className="flex items-center justify-end mt-2">
+                        <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); handleOpenLive(a); }}>
+                          <ExternalLink className="h-3 w-3" /> Open
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-2 gap-2">
           <BannerAd position="top" />
           <BannerAd position="top" />
