@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -7,6 +6,8 @@ import workInProgressImg from "@/assets/work-in-progress.png";
 import circularSeal from "@/assets/circular-economy-seal.jpg";
 import infinityLoop from "@/assets/infinity-loop.jpg";
 import { useUserStats } from "@/hooks/useAppData";
+import { useIsAdmin } from "@/hooks/useAdmin";
+import { useAdminFlags, useUpdateAdminFlags } from "@/hooks/useAdminFlags";
 import { IdeasLibrary } from "@/components/IdeasLibrary";
 
 const CIRCULAR_UNLOCK = 100;
@@ -14,9 +15,12 @@ const INVESTMENT_UNLOCK = 50;
 
 export default function Investments() {
   const { data: stats } = useUserStats();
+  const { data: isAdmin } = useIsAdmin();
+  const { data: flags } = useAdminFlags();
+  const updateFlags = useUpdateAdminFlags();
   const userLevel = stats?.level ?? 1;
-  const [simulateL100, setSimulateL100] = useState(false);
-  const circularUnlocked = userLevel >= CIRCULAR_UNLOCK || simulateL100;
+  const investmentUnlocked = userLevel >= INVESTMENT_UNLOCK || (isAdmin && !!flags?.force_investment_l50);
+  const circularUnlocked = userLevel >= CIRCULAR_UNLOCK || (isAdmin && !!flags?.force_circular_l100);
   const circularPct = Math.min(100, (userLevel / CIRCULAR_UNLOCK) * 100);
   const investPct = Math.min(100, (userLevel / INVESTMENT_UNLOCK) * 100);
   // No inline color overrides — the single rule in index.css ([data-circular-card])
