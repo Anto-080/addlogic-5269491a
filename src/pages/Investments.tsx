@@ -51,13 +51,22 @@ export default function Investments() {
               <div className="h-3 rounded-full" style={{ width: `${investPct}%`, backgroundColor: "#004627" }} />
             </div>
             <p className="text-xs text-muted-foreground">{userLevel} / {INVESTMENT_UNLOCK} — {investPct.toFixed(0)}% to unlock</p>
-            {userLevel >= INVESTMENT_UNLOCK && (
+            {investmentUnlocked && (
               <img
                 src={infinityLoop}
                 alt="Investment phase unlocked — infinite loop"
                 className="mx-auto mt-4 rounded-lg w-full max-w-sm object-contain"
                 loading="lazy"
               />
+            )}
+            {isAdmin && (
+              <div className="flex items-center justify-between text-xs px-1 pt-3 border-t border-border/40">
+                <span className="text-muted-foreground">Admin: Simulate Level {INVESTMENT_UNLOCK}</span>
+                <Switch
+                  checked={!!flags?.force_investment_l50}
+                  onCheckedChange={(v) => updateFlags.mutate({ force_investment_l50: v })}
+                />
+              </div>
             )}
           </CardContent>
         </Card>
@@ -109,8 +118,14 @@ export default function Investments() {
                 activates when the user reaches Level {CIRCULAR_UNLOCK}.
               </p>
               <div className="flex items-center justify-between text-xs px-1">
-                <span className="text-muted-foreground">Dev: Simulate Level 100 (preview only)</span>
-                <Switch checked={simulateL100} onCheckedChange={setSimulateL100} data-emerald="true" />
+                <span className="text-muted-foreground">{isAdmin ? "Admin: Simulate Level 100" : "Locked — keep researching to unlock"}</span>
+                {isAdmin && (
+                  <Switch
+                    checked={!!flags?.force_circular_l100}
+                    onCheckedChange={(v) => updateFlags.mutate({ force_circular_l100: v })}
+                    data-emerald="true"
+                  />
+                )}
               </div>
             </CardContent>
           ) : (
