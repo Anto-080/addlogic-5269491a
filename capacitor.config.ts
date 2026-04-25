@@ -14,6 +14,13 @@ const config: CapacitorConfig = {
       // anti-fraud / tracking protections during in-app web browsing.
       androidCustomTabsPackage: "com.opera.browser",
     },
+    Geolocation: {
+      // Permissions are auto-added to AndroidManifest.xml & Info.plist by
+      // `npx cap sync`. After pulling, run:
+      //   npx cap sync
+      // to regenerate the native permission entries
+      // (ACCESS_FINE_LOCATION on Android, NSLocationWhenInUseUsageDescription on iOS).
+    },
   },
 };
 
