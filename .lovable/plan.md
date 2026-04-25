@@ -1,63 +1,47 @@
-## What's actually wrong
+## Goal
 
-I navigated to your published site and confirmed the root cause of most of your frustration:
+Add a live news fetcher to the Research page that uses the **Anthropic Claude SDK** (as in your original code) to retrieve real, current articles for the user's tiers of interest.
 
-- `https://addlogic.lovable.app/` still serves the **old build** — "ResearchRewards" title, old `/auth` route, no AddLogic branding.
-- `https://addlogic.lovable.app/login` returns **404** — the new route exists in code but has never been pushed live.
+## Setup
 
-Every recent fix (AddLogic branding, `/login`, Google OAuth redirect, lag reductions, real Supabase data) is sitting in the preview build only. The live domain has not been re-published since those edits. **Clicking Publish → Update is required to push them live** — code edits alone do not redeploy the published domain.
+- **New secret required**: `ANTHROPIC_API_KEY` — I'll request it via the secrets prompt before deploying.
+- No new tables, no Express server. The Express logic moves into one Supabase Edge Function (Deno).
 
-On top of that, two real code issues remain that cause the lag and the "still mock" XP bar:
+## What gets built
 
-1. `ExperienceBar` runs a 1-second `setInterval` *plus* a `setState` re-render every tick on every page that mounts it (Dashboard + Research). On Dashboard it's pointless because `earning={false}` — it still re-renders the whole bar every second and competes with the Switch toggles you reported as laggy.
-2. XP / level / multiplier still come from `localStorage` seeded with `MOCK_EARNINGS` — never from the `user_stats` row that already exists in the database. So the Experience bar genuinely is mock.
-3. `Research.tsx` still imports `MOCK_ARTICLES` and reads `getXpSnapshot().level` instead of the DB level.
-4. `Tiers.tsx` pins Tourism+Real Estate to the **bottom of the list** instead of placing them inside the blue band where their colors belong.
+### 1. Edge function `supabase/functions/curate-news/index.ts`
 
----
+- Imports the Anthropic SDK (`npm:@anthropic-ai/sdk`)
+- Reads `ANTHROPIC_API_KEY` from env
+- Accepts `POST { tierIds: number[], count?: number }`
+- Loads the matching rows from the `tiers` table to get each tier's `name` + `subcategories` — these become the "interests" passed to Claude (so it stays in sync with whatever you set in the Admin panel, including the 16 real tiers like Biochem, Quantum, Climate, Tourism, Real Estate)
+- Uses your exact prompt structure (curator role, JSON-only response, real HTTPS URLs, recent articles, varied sources) with `claude-sonnet-4-20250514`
+- Parses the JSON array, filters to valid `https://` URLs, returns `{ articles: [...] }`
+- CORS enabled, public access, handles upstream errors gracefully
 
-## Plan
+### 2. Hook `useCurateNews` in `src/hooks/useAppData.ts`
 
-### 1. Re-publish the live domain (you do this, one click)
-After I land the code fixes below, open Publish → **Update**. Without that step `addlogic.lovable.app` will keep showing the old "ResearchRewards" screen and `/login` will keep 404'ing — no code change can fix that for you.
+- React Query mutation calling the function via `supabase.functions.invoke("curate-news", { body: { tierIds, count } })`
+- Returns `{ mutate, data, isPending, error }`
 
-### 2. Stop the Dashboard lag
-- In `ExperienceBar.tsx`: only run the 1s ticker when `earning === true`. On Dashboard the bar will render once and stay still; toggles will respond instantly.
-- Remove the `force` re-render path entirely on the dashboard side; subscribe to a tiny module-level event emitter so only the Research-room copy updates.
-- Drop the `AnimatedCounter` 30 ms interval on Dashboard summary cards (3 of them × 40 ticks = 120 renders on every mount); replace with a single CSS transition.
+### 3. Research page (`src/pages/Research.tsx`)
 
-### 3. Make XP / Multiplier truly live (kill the mock)
-- Move XP, level, and `current_multiplier` reads/writes to the existing `user_stats` Supabase row via `useUserStats` + a small `updateUserStats` mutation.
-- Keep a 1s in-memory accumulator while Research is open; flush to the DB every ~15s and on unmount. No `localStorage` mock fallback — show "—" until the row loads.
-- Delete `MOCK_EARNINGS` consumption from `SettingsContext.tsx`.
+- New card above the article list: **"Fetch live news"** with a refresh button
+  - When a specific tier is selected → fetches for that tier only
+  - When "All" is selected → uses `topInterestTiers` from settings (the user's connected tiers of interest)
+- Renders returned articles with a "Live" badge, source, summary, and an **Open** button that routes through the existing `InAppBrowser` (so reading still earns XP via Opera WebView)
+- Page Open for real so Opera WebView Need Active Internet Access
+- Live results are session-only (not written to DB)
+  &nbsp;
+  &nbsp;
 
-### 4. Replace remaining mock imports
-- `Research.tsx`: swap `MOCK_ARTICLES` → `useArticles()`, swap `getXpSnapshot().level` → `useUserStats().level`.
-- `IdeasLibrary.tsx` + `Tiers.tsx` still pull `TIERS` from `mockData.ts` — switch to `useTiers()` (already exists), keep `mockData` only as the offline fallback inside that hook.
+## Caveat
 
-### 5. Fix tier ordering (chromatic scheme)
-Use the natural multiplier-descending order so the blue band stays contiguous: Tech → Art → Global News → Entertainment → Food → **Tourism & Travel** → **Real Estate** → Personal Shopping → … . Remove the "pin to tail" logic that was shoving Tourism + Real Estate below the locked red bottom tiers.
+LLMs don't truly browse — Claude generates URLs from training knowledge and recall. The function validates `https://` prefixes but cannot guarantee every link resolves. If a link is dead, the user can refresh to re-roll. (If you later want guaranteed-live results, Firecrawl search can be added on top — separate request.)
 
-### 6. Cleanup
-- Remove the now-unused `setMultiplier` / `addXpForSeconds` / `getXpSnapshot` exports.
-- Keep the `/auth → /login` redirect so old bookmarks work.
+## Files
 
----
-
-## Files I will touch
-- `src/components/ExperienceBar.tsx` — gated ticker, no-op on Dashboard
-- `src/contexts/SettingsContext.tsx` — drop XP store + MOCK_EARNINGS import
-- `src/hooks/useAppData.ts` — add `useUpdateUserStats` mutation
-- `src/pages/Dashboard.tsx` — remove AnimatedCounter interval
-- `src/pages/Research.tsx` — live articles + live level + DB-backed XP flush
-- `src/pages/Tiers.tsx` — restore chromatic order
-- `src/components/IdeasLibrary.tsx` — live tiers
-
-## What will NOT change
-- Auth code, Google OAuth wiring, `/login` route, `/auth` redirect — already correct, the only thing missing is republishing.
-- Database schema — `user_stats` already has `xp`, `level`, `current_multiplier`.
-
-## After I finish
-You click **Publish → Update**. Then `addlogic.lovable.app/login` will load the AddLogic page and Google sign-in will land on `/dashboard`. If it still shows ResearchRewards after publishing, that's a stale CDN cache — hard-refresh (Ctrl/Cmd+Shift+R) once.
-
-Approve and I'll execute.
+- `supabase/functions/curate-news/index.ts` (new)
+- `src/hooks/useAppData.ts` (add `useCurateNews`)
+- `src/pages/Research.tsx` (add fetch panel + live results)
+- Secret: `ANTHROPIC_API_KEY` (you provide)
