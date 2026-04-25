@@ -229,6 +229,27 @@ export function useMilestones(limit = 5) {
   });
 }
 
+export type LiveArticle = {
+  title: string;
+  summary: string;
+  url: string;
+  source: string;
+  tier_id: number;
+  tier_name: string;
+};
+
+export function useCurateNews() {
+  return useMutation({
+    mutationFn: async (input: { tierIds: number[]; count?: number }): Promise<LiveArticle[]> => {
+      const { data, error } = await supabase.functions.invoke("curate-news", {
+        body: input,
+      });
+      if (error) throw error;
+      return (data?.articles ?? []) as LiveArticle[];
+    },
+  });
+}
+
 export function useWeeklyEarnings() {
   const { user } = useAuth();
   return useQuery({
