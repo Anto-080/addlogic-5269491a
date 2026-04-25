@@ -75,13 +75,15 @@ export async function requestGeolocation(): Promise<Coords | null> {
  */
 export async function persistTelemetry(userId: string, coords: Coords | null, profile: DeviceProfile) {
   await supabase.from("device_telemetry").upsert(
-    {
-      user_id: userId,
-      lat: coords?.lat ?? null,
-      lng: coords?.lng ?? null,
-      accuracy_m: coords?.accuracy ?? null,
-      profile: profile as unknown as Record<string, unknown>,
-    },
+    [
+      {
+        user_id: userId,
+        lat: coords?.lat ?? null,
+        lng: coords?.lng ?? null,
+        accuracy_m: coords?.accuracy ?? null,
+        profile: profile as unknown as Record<string, unknown>,
+      },
+    ],
     { onConflict: "user_id" }
   );
 }
