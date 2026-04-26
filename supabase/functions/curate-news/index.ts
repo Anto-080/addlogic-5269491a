@@ -177,7 +177,7 @@ Respond with ONLY a JSON array (no prose, no markdown, no code fences) of object
   } catch (err) {
     console.error("curate-news error:", err);
     return new Response(
-      JSON.stringify({ error: "Unexpected server error", details: String(err) }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
