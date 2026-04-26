@@ -2,8 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { TIERS } from "@/lib/mockData";
-import { useEffect, useState } from "react";
-import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
 import { ClockIcon } from "@/components/icons/ClockIcon";
@@ -12,6 +12,13 @@ import { TierIcon } from "@/components/TierIcon";
 import { ExperienceBar } from "@/components/ExperienceBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useArticles, useMilestones, useUserStats } from "@/hooks/useAppData";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { requestGeolocation, persistTelemetry, snapshotDeviceProfile } from "@/lib/geolocation";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 function AnimatedCounter({ target }: { target: number }) {
   // No interval — Dashboard had three of these running every 30ms causing
@@ -21,12 +28,42 @@ function AnimatedCounter({ target }: { target: number }) {
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
+  const { user } = useAuth();
   const [couponsOpen, setCouponsOpen] = useState(false);
+  const [gpsConfirmOpen, setGpsConfirmOpen] = useState(false);
+  const [requestingGps, setRequestingGps] = useState(false);
   const primaryTier = TIERS[3];
 
   const { data: stats } = useUserStats();
   const { data: dailyDesk = [] } = useArticles({ dailyDesk: true });
   const { data: milestones = [] } = useMilestones(5);
+
+  const handleGpsToggle = (v: boolean) => {
+    if (v) setGpsConfirmOpen(true);
+    else setGpsPrecision(false);
+  };
+
+  const confirmGpsActivation = async () => {
+    setGpsConfirmOpen(false);
+    setRequestingGps(true);
+    try {
+      const coords = await requestGeolocation();
+      const profile = snapshotDeviceProfile();
+      if (user) await persistTelemetry(user.id, coords, profile);
+      if (coords) {
+        setGpsPrecision(true);
+        toast.success("Geolocation enabled — non-PII telemetry recorded");
+      } else {
+        setGpsPrecision(false);
+        toast.error("Permission denied or unavailable");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to enable GPS");
+      setGpsPrecision(false);
+    } finally {
+      setRequestingGps(false);
+    }
+  };
 
   const summary = [
     { label: "Today",     value: stats?.earnings_today ?? 0,    Icon: SandglassIcon },
@@ -98,7 +135,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
-              <Switch checked={gpsPrecision} onCheckedChange={setGpsPrecision} data-emerald="true" />
+              <Switch checked={gpsPrecision} onCheckedChange={handleGpsToggle} disabled={requestingGps} data-emerald="true" />
             </div>
           </CardContent>
         </Card>
