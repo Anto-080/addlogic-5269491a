@@ -13,6 +13,7 @@ const corsHeaders = {
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 interface RequestBody {
@@ -35,9 +36,30 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (!ANTHROPIC_API_KEY) {
+    // ---- Auth gate: require a valid signed-in user. ----
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({ error: "ANTHROPIC_API_KEY is not configured" }),
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: authError } = await userClient.auth.getClaims(token);
+    if (authError || !claims?.claims?.sub) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (!ANTHROPIC_API_KEY) {
+      console.error("curate-news: ANTHROPIC_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ error: "Service temporarily unavailable" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
