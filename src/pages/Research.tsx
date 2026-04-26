@@ -206,7 +206,10 @@ export default function Research() {
           </div>
         )}
 
-        <BrowserPicker onSearch={(args) => setBrowser(args)} userLevel={userLevel} />
+        <BrowserPicker
+          onOpenResult={(item) => setBrowser({ url: item.url, engineName: "Opera WebView" })}
+          userLevel={userLevel}
+        />
 
         <Card className="bg-card border-border/60 glow-amber">
           <CardContent className="p-4 space-y-3">

@@ -73,16 +73,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (document.referrer) recordSearch(document.referrer);
   }, [cookieAutoAccept]);
 
-  // Geolocation is now requested explicitly via the Dashboard's GPS toggle
-  // (see src/lib/geolocation.ts + src/pages/Dashboard.tsx). No automatic
-  // polling here — that was the source of the lag.
+  // Snapshot device profile ONCE per GPS-on transition. Avoids the previous
+  // re-render storm where toggling either switch caused
+  // ExperienceBar -> user_stats -> Dashboard re-render -> resnapshot loop.
   useEffect(() => {
     if (!gpsPrecision) {
       setCoords(null);
       setDeviceProfile(null);
       return;
     }
+    if (deviceProfile) return;
     setDeviceProfile(snapshotDeviceProfile());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gpsPrecision]);
 
   useEffect(() => {
