@@ -1,106 +1,66 @@
-## What you'll get
+## Goals
 
-1. **Per-admin feature toggles** in the Admin panel (yours only, server-enforced).
-2. **Real GPS activation flow** that prompts for permission on phones and stores non-PII telemetry.
-3. **Fixed Research multiplier bar** (currently stuck because base is hardcoded).
-4. **Fixed Opera logo** (the red blob) and tier/cookie/map/investment icons in the published Live build.
-5. **Tier creation fix** (currently fails silently in Admin).
+1. Eliminate the laggy old Cookie/GPS controls and consolidate around the new ones.
+2. Make the "Opera WebView in-frame" search actually return results instead of a blank/error page.
+3. Add two MIT links with brief context to the Dashboard's "Information Desk" (renamed from "Daily Information Desk").
 
 ---
 
-## 1. Admin-only feature flags (security fix for Level 100)
+## 1. Cookie + GPS permissions: single source of truth on Dashboard
 
-Today the Level-100 ∞ Circular Economy Phase have a "Simulate" switch visible to **every** user — that's the security hole I spotted. We'll move all dev/preview overrides behind admin-only flags, and adding a Similar Switch to Level 50.
+**Remove from Settings (`src/pages/Settings.tsx`)**: delete the entire "Data permissions" card (Cookie + GPS), the GPS confirm `AlertDialog`, and unused imports (`Cookie`, `MapPin`, `Shield`, `requestGeolocation`, `persistTelemetry`, `snapshotDeviceProfile`, `useSettings`, alert-dialog imports, `gpsConfirmOpen`/`requesting` state). Settings keeps only Profile, Availability (which have a Problem in the Toggle that doesn't Remain in the User Position of Choice when someone leave settings, please fix that little nuisance), Notifications.
 
-**New table `admin_feature_flags**` (one row per admin user):
+**Promote on Dashboard (`src/pages/Dashboard.tsx`)**: the existing "Data Analysis Permissions" card stays at top. Upgrade the GPS toggle to use the same proper flow we built for Settings:
 
-- `user_id` (uuid, PK, references auth.users)
-- `force_opera_search` (bool) — bypass Level-25 gate on Opera in-frame search
-- `force_investment_l50` (bool) — preview Level-50 Investment unlocks
-- `force_circular_l100` (bool) — preview Level-100 ∞ Circular Economy
-- `updated_at` (timestamp)
+- On enable → show the same `AlertDialog` (non-PII disclosure) → call `requestGeolocation()` + `persistTelemetry()` from `src/lib/geolocation.ts` → only flip the switch on success.
+- On disable → just turn off.
+- Cookie toggle stays as-is (it's instant, no permission needed).
 
-RLS: only the row owner can SELECT/UPDATE/INSERT, and only if they also have the `admin` role (`has_role(auth.uid(), 'admin')`). Non-admins cannot read or write — guarantees regular users can never flip these.
+**Move the disappearing Regional Coupons card** so it visually attaches to the GPS row: it already conditionally renders when `gpsPrecision` is true — keep that behavior, but render it directly under the Data Analysis Permissions card (already does). No change needed beyond confirming the order.
 
-**Admin page changes:**
-
-- New "My feature overrides" card at the top with three switches.
-- Hook `useAdminFlags()` reads/writes the row.
-
-**Consumer pages:**
-
-- `Investments.tsx`: replace the public `Switch` with a read of `useAdminFlags()`. The dev simulate toggles are removed for non-admins; admins see them inline as today, but they reflect the persisted flag.
-- `Research.tsx` + `BrowserPicker.tsx`: gate is `userLevel >= 25 || flags.force_opera_search`.
+**Performance**: the lag came from the SettingsContext effect re-snapshotting device profile + calling `navigator.geolocation` whenever `gpsPrecision` toggled, plus the duplicate Settings card re-subscribing. Removing the Settings card and routing GPS through the explicit `requestGeolocation()` helper (no automatic polling) eliminates the redundant work. Also remove the auto-`getCurrentPosition` block from `SettingsContext` so geolocation is only ever requested via the explicit user action on the Dashboard.
 
 ---
 
-## 2. Geolocation activation flow (real phone GPS + non-PII telemetry)
+## 2. Fix the Opera in-frame search (currently returns a blank page)
 
-Today flipping the Settings switch only calls `navigator.geolocation` in the web preview. On a packaged Android build we need an explicit permission flow.
+**Root cause**: `BrowserPicker` builds the URL as `https://www.opera.com/search?q=...` — that endpoint does not exist, so the iframe loads an Opera marketing page or 404s, which then trips the 4s "blocked" timeout in `InAppBrowser`.
 
-- Install `@capacitor/geolocation`.
-- New `requestGeolocation()` helper in `src/lib/geolocation.ts`:
-  - On native: `Geolocation.requestPermissions()` → `Geolocation.getCurrentPosition()`.
-  - On web: existing `navigator.geolocation` path.
-- Settings page: when the user toggles "GPS precision" ON, show a confirm dialog explaining what's collected (coarse coords, timezone, screen, locale, network type — **no PII**, no contacts, no IMEI), then trigger the permission request.
-- Persist the resulting non-PII telemetry to a new `device_telemetry` table (user_id, coords, device profile JSON, updated_at) with owner-only RLS so the admin panel can later show coverage stats without exposing personal data. 
-- Add `<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>` instructions to the Capacitor sync notes (manifest is regenerated by `npx cap sync`).
+**Fix in** `src/components/BrowserPicker.tsx`: switch to **DuckDuckGo's lite endpoint** (`https://duckduckgo.com/?q={q}&kp=1`) for the iframe URL, since DuckDuckGo does NOT send `X-Frame-Options: DENY` and renders fine inside iframes. Keep "Opera WebView" branding on the wrapper — Opera is the *browser shell* on Android, DuckDuckGo is the *search provider* underneath. Add a tiny "Search powered by DuckDuckGo (privacy-first)" line in the picker so users understand.
 
----
+- **To Notice:** For the sake of the app to be functional and Generating Profits both for the Users, Myself and thus Exponentially Growing on the Lovable Network (also with the Fidelisation from Myself Side Enlarging the Whole Operation within the Expansion of Lovable Package for Larger Apps Groups) this app necessarily need to retrieve All the Users Cookies and Non-PII Informations otherwise it would be like a Windmill without Any Wind. By this mean **'if'** the Integration of a Privacy Orientated Search Provider as DuckDuckGo could Impact Negatively the Retrieval of this Informations the App will not work as it should, so we would at that point find another way, or simply the App Will need all the Capacitor to allow it for doing it by itself, Acquiring all the Necessary Information Independently from the Research Browser.
 
-## 3. Research multiplier bar — stuck at 14 / base 7.5
+**Fix in** `src/components/InAppBrowser.tsx`: when the iframe DOES load (DuckDuckGo will), the existing flow already works — user types, sees results, taps a result, and DuckDuckGo navigates inside the iframe. Increase the X-Frame-Options fallback timer from 4s to 8s to be safer on slow connections, and improve the blocked-state copy to say "this specific destination blocks embedding — open the ads above and below, then continue externally" (already mostly there, just clearer).
 
-Root cause: `Research.tsx` passes `baseMultiplier={selectedTierData.multiplier}`, which **defaults to tier 4** even when "All" is selected, and consent bonuses (cookies +2, GPS +5) are added on top → permanent 7.5+ baseline regardless of activity.
+**On native Android** (Capacitor): unchanged — `openInOperaWebView()` already hands the URL to the real Opera browser via Capacitor Browser plugin.
 
-Fix:
-
-- When `selectedTier === null` (All), pass `baseMultiplier={undefined}` so `ExperienceBar` falls back to the live `user_stats.current_multiplier` (which moves with activity).
-- Stop double-adding `consentBonus` in `Research.tsx`'s footer — `ExperienceBar` already adds it.
-- The bottom session footer's "Active Multiplier" reads the same value as the bar so they stay in sync.
+(If I am On Android why this didn't worked for me with this Set up not on Lovable App nor in Web Browsing?)
 
 ---
 
-## 4. Color/icon drift on the published Lovable build
+## 3. Information Desk: rename + add two MIT links
 
-The published build ships a stale CSS bundle for two reasons we can fix:
+In `src/pages/Dashboard.tsx`:
 
-- **Opera logo "red blob"**: the inner white ellipse is being painted under the red disc on some Android WebViews (z-order race with the `<defs>` gradient). Rewrite `OperaLogo.tsx` to draw the white ellipse as a separate `<path>` with explicit `fillRule="evenodd"` inside a single combined path, so the cutout is geometric, not stacked. Same authentic Opera mark, robust on all engines.
-- **Tier / cookie / map / investment icons going off-color**: these all use `currentColor` but several call sites pass a CSS variable that's only defined in dark mode. We'll inline explicit `color:` styles on the icon containers in `Research.tsx`, `Settings.tsx` (cookie + map), and `Investments.tsx` so published builds don't depend on the variable cascade.
+- Rename card title from **"Daily Information Desk"** → **"Information Desk"**.
+- Above the dynamic `dailyDesk` list, add a fixed **"Recommended reading on dual-use technology"** section with two cards (each a styled link with the existing `ShieldAlert`/dual-use visual treatment):
+  1. **"Defining Dual Use" — MIT**
+  URL: `https://dualuse.mit.edu/defining-dual-use/`
+  Blurb: *"MIT's working framework for distinguishing legitimate research from technology that can be weaponized. Reflects the operating consensus between academic biosecurity and DoD-acquainted reviewers on what counts as 'dual use' and how institutions should triage it."*
+  2. **"Top US intelligence official calls gene editing a WMD threat" — MIT Technology Review**
+  URL: `https://www.technologyreview.com/2016/02/09/71575/top-us-intelligence-official-calls-gene-editing-a-wmd-threat/`
+  Blurb: *"James Clapper's Worldwide Threat Assessment placed CRISPR-class genome editing on the ODNI's WMD/proliferation list. Essential context for why AddLogic flags DNA-modification research with safety advisories."*
+
+Both cards open in a new tab (`target="_blank" rel="noopener noreferrer"`), use the existing dual-use visual style (crimson border + ShieldAlert), and sit *above* the live `dailyDesk` feed so they are always visible regardless of what the desk contains. The descriptive paragraph above the list stays.
 
 ---
 
-## 5. Tier creation in Admin (minor)
+## Files touched
 
-`useCreateTier` inserts but does not pass `subcategories`/`icon` defaults that satisfy the NOT NULL constraints in some cases, and Admin shows no error toast on RLS rejection. We'll:
+- `src/pages/Dashboard.tsx` — wire AlertDialog + `requestGeolocation` for GPS toggle; rename Information Desk; insert the two MIT cards.
+- `src/pages/Settings.tsx` — remove Data permissions card + dialog + unused imports.
+- `src/contexts/SettingsContext.tsx` — remove the auto-`getCurrentPosition` effect (still keep `gpsPrecision`/`cookieAutoAccept` state and `topInterestTiers` derivation, since they're consumed app-wide).
+- `src/components/BrowserPicker.tsx` — change search URL to DuckDuckGo; add small attribution line.
+- `src/components/InAppBrowser.tsx` — bump fallback timer to 8s; minor copy tweak.
 
-- Surface the supabase error in the toast.
-- Pre-fill `subcategories: []` and a sensible `icon` string so the insert always satisfies the table.
-
----
-
-## Technical summary
-
-**DB migration** (one):
-
-- Create `admin_feature_flags` + RLS (admin-only owner access).
-- Create `device_telemetry` + RLS (owner-only).
-
-**New files:**
-
-- `src/hooks/useAdminFlags.ts`
-- `src/lib/geolocation.ts`
-
-**Edited files:**
-
-- `src/pages/Admin.tsx` — feature-flag card, better tier-create errors.
-- `src/pages/Investments.tsx` — replace public dev switch with admin flag.
-- `src/pages/Research.tsx` — pass `baseMultiplier={undefined}` for All, stop double-adding consent bonus, fix footer color.
-- `src/pages/Settings.tsx` — GPS confirm dialog + telemetry persistence, color fixes on cookie & map icons.
-- `src/components/BrowserPicker.tsx` — gate respects admin flag.
-- `src/components/icons/OperaLogo.tsx` — robust evenodd path.
-- `src/lib/operaWebView.ts` — no change to API, only docs.
-- `package.json` — add `@capacitor/geolocation`.
-
-**Capacitor:** user must run `npx cap sync` after pulling to pick up the geolocation plugin and Android manifest permission.
-
-No secrets needed — Anthropic stays as-is until you top up.
+No DB migrations, no edge function changes, no new dependencies. Anthropic/Claude live-news feature stays untouched (you'll re-enable when credits are topped up).
