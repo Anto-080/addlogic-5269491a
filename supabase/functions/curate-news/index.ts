@@ -13,6 +13,7 @@ const corsHeaders = {
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 interface RequestBody {
@@ -35,9 +36,30 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (!ANTHROPIC_API_KEY) {
+    // ---- Auth gate: require a valid signed-in user. ----
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({ error: "ANTHROPIC_API_KEY is not configured" }),
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: authError } = await userClient.auth.getUser(token);
+    if (authError || !userData?.user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (!ANTHROPIC_API_KEY) {
+      console.error("curate-news: ANTHROPIC_API_KEY is not configured");
+      return new Response(
+        JSON.stringify({ error: "Service temporarily unavailable" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -117,8 +139,9 @@ Respond with ONLY a JSON array (no prose, no markdown, no code fences) of object
     const start = raw.indexOf("[");
     const end = raw.lastIndexOf("]");
     if (start === -1 || end === -1 || end <= start) {
+      console.error("curate-news: Claude returned non-array response", { raw });
       return new Response(
-        JSON.stringify({ error: "Claude did not return a JSON array", raw }),
+        JSON.stringify({ error: "Upstream returned an invalid response" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -127,8 +150,9 @@ Respond with ONLY a JSON array (no prose, no markdown, no code fences) of object
     try {
       parsed = JSON.parse(raw.slice(start, end + 1));
     } catch (e) {
+      console.error("curate-news: failed to parse Claude response", e, { raw });
       return new Response(
-        JSON.stringify({ error: "Failed to parse Claude response", details: String(e), raw }),
+        JSON.stringify({ error: "Upstream returned an invalid response" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -153,7 +177,7 @@ Respond with ONLY a JSON array (no prose, no markdown, no code fences) of object
   } catch (err) {
     console.error("curate-news error:", err);
     return new Response(
-      JSON.stringify({ error: "Unexpected server error", details: String(err) }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
