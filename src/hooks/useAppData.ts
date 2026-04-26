@@ -147,11 +147,20 @@ export function useSponsors() {
   return useQuery({
     queryKey: ["sponsors"],
     queryFn: async (): Promise<SponsorRow[]> => {
-      const { data, error } = await supabase.from("sponsors").select("*").order("bid_amount", { ascending: false });
+      // Use the public-safe view that omits bid_amount, impressions, and ctr
+      // (those are admin-only via RLS on the underlying sponsors table).
+      const { data, error } = await (supabase as any)
+        .from("sponsors_public")
+        .select("id, company, tier_id, rating")
+        .order("rating", { ascending: false });
       if (error || !data) return [];
       return data.map((s: any) => ({
-        ...s,
-        bid_amount: Number(s.bid_amount),
+        id: s.id,
+        company: s.company,
+        tier_id: s.tier_id,
+        bid_amount: 0,
+        impressions: null,
+        ctr: null,
         rating: Number(s.rating),
       }));
     },
