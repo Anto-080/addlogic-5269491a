@@ -139,8 +139,9 @@ Respond with ONLY a JSON array (no prose, no markdown, no code fences) of object
     const start = raw.indexOf("[");
     const end = raw.lastIndexOf("]");
     if (start === -1 || end === -1 || end <= start) {
+      console.error("curate-news: Claude returned non-array response", { raw });
       return new Response(
-        JSON.stringify({ error: "Claude did not return a JSON array", raw }),
+        JSON.stringify({ error: "Upstream returned an invalid response" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -149,8 +150,9 @@ Respond with ONLY a JSON array (no prose, no markdown, no code fences) of object
     try {
       parsed = JSON.parse(raw.slice(start, end + 1));
     } catch (e) {
+      console.error("curate-news: failed to parse Claude response", e, { raw });
       return new Response(
-        JSON.stringify({ error: "Failed to parse Claude response", details: String(e), raw }),
+        JSON.stringify({ error: "Upstream returned an invalid response" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
