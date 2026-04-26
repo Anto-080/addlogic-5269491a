@@ -370,29 +370,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <AlertDialog open={gpsConfirmOpen} onOpenChange={setGpsConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Enable GPS &amp; device analytics?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your device will ask for location permission. We will store only:
-              <span className="block mt-2 text-foreground/80">
-                • Coarse coordinates and accuracy<br />
-                • Timezone, locale, screen size<br />
-                • Hardware concurrency, memory tier, network type
-              </span>
-              <span className="block mt-2">
-                We do <strong>not</strong> collect: contacts, IMEI, phone number, browsing history, or any personally
-                identifiable information. Data is owner-only — only you can read it.
-              </span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmGpsActivation}>Activate GPS</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </AppLayout>
   );
 }
