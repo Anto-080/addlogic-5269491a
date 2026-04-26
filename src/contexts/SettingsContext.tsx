@@ -73,6 +73,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (document.referrer) recordSearch(document.referrer);
   }, [cookieAutoAccept]);
 
+  // Geolocation is now requested explicitly via the Dashboard's GPS toggle
+  // (see src/lib/geolocation.ts + src/pages/Dashboard.tsx). No automatic
+  // polling here — that was the source of the lag.
   useEffect(() => {
     if (!gpsPrecision) {
       setCoords(null);
@@ -80,12 +83,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       return;
     }
     setDeviceProfile(snapshotDeviceProfile());
-    if (typeof navigator === "undefined" || !navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => { /* permission denied */ },
-      { enableHighAccuracy: true, maximumAge: 60_000, timeout: 8_000 }
-    );
   }, [gpsPrecision]);
 
   useEffect(() => {
