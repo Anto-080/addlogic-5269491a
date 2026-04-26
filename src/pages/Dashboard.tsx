@@ -88,33 +88,30 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground">Your research hub — keep exploring, keep earning.</p>
         </div>
 
-        {/* Data Analysis Permissions — placed first so users immediately see what powers earnings */}
+        {/* Data permissions — single compact card. Powers the entire earning engine. */}
         <Card className="bg-card border-border/50 glow-amber">
           <CardContent className="p-4 space-y-4">
-            <p className="text-sm font-semibold text-foreground">Data Analysis Permissions</p>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Data permissions</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                These two consents are what the rewards engine runs on. Toggle them off any time.
+              </p>
+            </div>
 
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3 flex-1">
-                <div className="shrink-0 mt-0.5">
-                    <svg viewBox="0 0 32 32" width="36" height="36" aria-label="Cookie">
-                      <circle cx="16" cy="16" r="13" fill="hsl(var(--cookie-dough))" stroke="hsl(var(--border))" strokeWidth="1.5" opacity={cookieAutoAccept ? 1 : 0.72} />
-                      <circle cx="11" cy="12" r="1.6" fill="hsl(var(--cookie-chip))" opacity={cookieAutoAccept ? 1 : 0.36} />
-                      <circle cx="20" cy="11" r="1.2" fill="hsl(var(--cookie-chip))" opacity={cookieAutoAccept ? 1 : 0.36} />
-                      <circle cx="22" cy="18" r="1.6" fill="hsl(var(--cookie-chip))" opacity={cookieAutoAccept ? 1 : 0.36} />
-                      <circle cx="13" cy="20" r="1.3" fill="hsl(var(--cookie-chip))" opacity={cookieAutoAccept ? 1 : 0.36} />
-                      <circle cx="18" cy="22" r="1.1" fill="hsl(var(--cookie-chip))" opacity={cookieAutoAccept ? 1 : 0.36} />
-                    </svg>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">Cookie Auto-Accept &amp; Profile Sync</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Essential requirement: <strong className="text-foreground/90">retrieves first-, third-party
-                    and commercial cookies</strong> already on your device to map your dominant interests, and
-                    <strong className="text-foreground/90"> auto-accepts every cookie banner</strong> while you browse
-                    inside the in-app Opera WebView. The rewards engine cannot function without it.
+            {/* Cookie row */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <Cookie
+                  className={`h-7 w-7 mt-0.5 shrink-0 transition-opacity ${cookieAutoAccept ? "opacity-100" : "opacity-50"}`}
+                  style={{ color: "hsl(var(--cookie-chip))" }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Cookie auto-accept &amp; profile sync</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Reads first-party cookies on this device to map dominant interests and auto-accepts cookie banners while you browse in-app.
                   </p>
-                  <p className="text-[11px] mt-2 font-semibold" style={{ color: "hsl(348 83% 60%)" }}>
-                    Baseline multiplier: x{COOKIE_BONUS} {cookieAutoAccept ? "· active" : "· inactive"}
+                  <p className="text-[11px] mt-1 font-semibold text-crimson">
+                    Multiplier x{COOKIE_BONUS} {cookieAutoAccept ? "· active" : "· inactive"}
                   </p>
                 </div>
               </div>
@@ -123,73 +120,83 @@ export default function Dashboard() {
 
             <div className="border-t border-border/40" />
 
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3 flex-1">
-                <div className="shrink-0 mt-0.5">
-                  <svg viewBox="0 0 32 32" width="36" height="36" aria-label="GPS pin">
-                    <path d="M16 3 C10 3 6 7 6 13 C6 20 16 29 16 29 C16 29 26 20 26 13 C26 7 22 3 16 3 Z" fill={gpsPrecision ? "#004627" : "hsl(var(--secondary))"} stroke="hsl(var(--border))" strokeWidth="1.5" />
-                    <circle cx="16" cy="13" r="4" fill={gpsPrecision ? "#9A7246" : "hsl(var(--muted-foreground))"} />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">GPS &amp; Anonymous Device Analytics</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Beyond live location, this unlocks the anonymous device-side signals cookies cannot see —
-                    <strong className="text-foreground/90"> handset model, OS, screen, locale, daily active-usage
-                    pattern, network type</strong>. Combined with the cookie sync above, it produces a non-PII profile
-                    used to match you to higher-paying regional ads and the Regional Coupons feed below.
+            {/* GPS row */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <MapPin
+                  className={`h-7 w-7 mt-0.5 shrink-0 transition-opacity ${gpsPrecision ? "opacity-100" : "opacity-50"}`}
+                  style={{ color: gpsPrecision ? "#9A7246" : "hsl(var(--muted-foreground))" }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Location &amp; non-PII device profile</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Coarse location plus anonymous signals (timezone, locale, screen, hardware tier, network type) used to surface higher-paying regional ads and coupons. No contacts, no IMEI, no browsing history.
                   </p>
-                  <p className="text-[11px] mt-2 font-semibold" style={{ color: "hsl(348 83% 60%)" }}>
-                    Baseline multiplier: x{GPS_BONUS} {gpsPrecision ? "· active" : "· inactive"}
+                  <p className="text-[11px] mt-1 font-semibold text-crimson">
+                    Multiplier x{GPS_BONUS} {gpsPrecision ? "· active" : "· inactive"}
                   </p>
+                  {permission === "denied" && (
+                    <p className="text-[11px] mt-2 flex items-start gap-1 text-destructive">
+                      <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                      <span>
+                        Your browser is blocking location for this site. Tap the lock/info icon next to the address bar → Site settings → Location → Allow, then toggle this back on.
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
-              <Switch checked={gpsPrecision} onCheckedChange={handleGpsToggle} disabled={requestingGps} data-emerald="true" />
+              <Switch
+                checked={gpsPrecision}
+                onCheckedChange={handleGpsToggle}
+                disabled={requestingGps}
+                data-emerald="true"
+              />
             </div>
+
+            {/* Coupons appear right under the GPS row when location is on */}
+            {gpsPrecision && (
+              <div className="border-t border-border/40 pt-3">
+                <Collapsible open={couponsOpen} onOpenChange={setCouponsOpen}>
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full flex items-center justify-between gap-2 text-left"
+                      aria-expanded={couponsOpen}
+                    >
+                      <span className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                        <Tag className="h-4 w-4 text-money" /> Regional coupons
+                        <span className="text-[10px] text-muted-foreground font-normal ml-1">
+                          live feed · tap to {couponsOpen ? "hide" : "open"}
+                        </span>
+                      </span>
+                      {couponsOpen
+                        ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                        : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {[
+                        { brand: "GreenLeaf Café", offer: "20% off espresso", dist: "0.4 km" },
+                        { brand: "MetroBooks", offer: "Buy 2 get 1 free — science", dist: "1.1 km" },
+                        { brand: "EcoMart", offer: "$5 off bulk produce", dist: "2.0 km" },
+                        { brand: "FitLab Gym", offer: "First week free trial", dist: "2.6 km" },
+                      ].map((c) => (
+                        <div key={c.brand} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{c.brand}</p>
+                            <p className="text-xs text-muted-foreground">{c.offer}</p>
+                          </div>
+                          <span className="text-[10px] text-money font-medium">{c.dist}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        {gpsPrecision && (
-          <Card className="bg-card border-border/50">
-            <Collapsible open={couponsOpen} onOpenChange={setCouponsOpen}>
-              <CollapsibleTrigger asChild>
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between gap-2 p-4 text-left"
-                  aria-expanded={couponsOpen}
-                >
-                  <span className="text-base font-semibold flex items-center gap-2 text-foreground">
-                    <Tag className="h-5 w-5 text-money" /> Regional Coupons
-                    <span className="text-[10px] text-muted-foreground font-normal ml-1">
-                      live feed · tap to {couponsOpen ? "hide" : "open"}
-                    </span>
-                  </span>
-                  {couponsOpen
-                    ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    { brand: "GreenLeaf Café", offer: "20% off espresso", dist: "0.4 km" },
-                    { brand: "MetroBooks", offer: "Buy 2 get 1 free — science", dist: "1.1 km" },
-                    { brand: "EcoMart", offer: "$5 off bulk produce", dist: "2.0 km" },
-                    { brand: "FitLab Gym", offer: "First week free trial", dist: "2.6 km" },
-                  ].map((c) => (
-                    <div key={c.brand} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{c.brand}</p>
-                        <p className="text-xs text-muted-foreground">{c.offer}</p>
-                      </div>
-                      <span className="text-[10px] text-money font-medium">{c.dist}</span>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-        )}
 
         {/* Earnings Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
