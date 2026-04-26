@@ -2,8 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { TIERS } from "@/lib/mockData";
-import { useEffect, useState } from "react";
-import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
 import { ClockIcon } from "@/components/icons/ClockIcon";
@@ -12,6 +12,13 @@ import { TierIcon } from "@/components/TierIcon";
 import { ExperienceBar } from "@/components/ExperienceBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useArticles, useMilestones, useUserStats } from "@/hooks/useAppData";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { requestGeolocation, persistTelemetry, snapshotDeviceProfile } from "@/lib/geolocation";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 function AnimatedCounter({ target }: { target: number }) {
   // No interval — Dashboard had three of these running every 30ms causing
@@ -21,12 +28,42 @@ function AnimatedCounter({ target }: { target: number }) {
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
+  const { user } = useAuth();
   const [couponsOpen, setCouponsOpen] = useState(false);
+  const [gpsConfirmOpen, setGpsConfirmOpen] = useState(false);
+  const [requestingGps, setRequestingGps] = useState(false);
   const primaryTier = TIERS[3];
 
   const { data: stats } = useUserStats();
   const { data: dailyDesk = [] } = useArticles({ dailyDesk: true });
   const { data: milestones = [] } = useMilestones(5);
+
+  const handleGpsToggle = (v: boolean) => {
+    if (v) setGpsConfirmOpen(true);
+    else setGpsPrecision(false);
+  };
+
+  const confirmGpsActivation = async () => {
+    setGpsConfirmOpen(false);
+    setRequestingGps(true);
+    try {
+      const coords = await requestGeolocation();
+      const profile = snapshotDeviceProfile();
+      if (user) await persistTelemetry(user.id, coords, profile);
+      if (coords) {
+        setGpsPrecision(true);
+        toast.success("Geolocation enabled — non-PII telemetry recorded");
+      } else {
+        setGpsPrecision(false);
+        toast.error("Permission denied or unavailable");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to enable GPS");
+      setGpsPrecision(false);
+    } finally {
+      setRequestingGps(false);
+    }
+  };
 
   const summary = [
     { label: "Today",     value: stats?.earnings_today ?? 0,    Icon: SandglassIcon },
@@ -98,7 +135,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
-              <Switch checked={gpsPrecision} onCheckedChange={setGpsPrecision} data-emerald="true" />
+              <Switch checked={gpsPrecision} onCheckedChange={handleGpsToggle} disabled={requestingGps} data-emerald="true" />
             </div>
           </CardContent>
         </Card>
@@ -191,13 +228,62 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Newspaper className="h-5 w-5 text-money" />
-              Daily Information Desk
+              Information Desk
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground mb-3">
               Curated articles. Topics involving dual-use technologies (CRISPR-Cas9, molecular chirality, receptor chimerism) are marked with safety advisories from accredited sources. AddLogic does not sponsor speculative dual-use research.
             </p>
+
+            {/* Recommended reading on dual-use technology — fixed references */}
+            <div className="space-y-2 mb-4">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Recommended reading on dual-use technology
+              </p>
+              <a
+                href="https://dualuse.mit.edu/defining-dual-use/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-3 rounded-lg border border-crimson/40 bg-crimson/5 hover:bg-crimson/10 transition-colors"
+              >
+                <div className="flex items-start gap-2">
+                  <ShieldAlert className="h-4 w-4 text-crimson mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground flex items-center gap-1">
+                      Defining Dual Use — MIT
+                      <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      MIT's working framework for distinguishing legitimate research from technology that can be
+                      weaponized. Reflects the operating consensus between academic biosecurity and DoD-acquainted
+                      reviewers on what counts as "dual use" and how institutions should triage it.
+                    </p>
+                  </div>
+                </div>
+              </a>
+              <a
+                href="https://www.technologyreview.com/2016/02/09/71575/top-us-intelligence-official-calls-gene-editing-a-wmd-threat/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-3 rounded-lg border border-crimson/40 bg-crimson/5 hover:bg-crimson/10 transition-colors"
+              >
+                <div className="flex items-start gap-2">
+                  <ShieldAlert className="h-4 w-4 text-crimson mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground flex items-center gap-1">
+                      Gene editing flagged as a WMD threat — MIT Technology Review
+                      <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      James Clapper's Worldwide Threat Assessment placed CRISPR-class genome editing on the ODNI's
+                      WMD/proliferation list. Essential context for why AddLogic flags DNA-modification research with
+                      safety advisories.
+                    </p>
+                  </div>
+                </div>
+              </a>
+            </div>
             <div className="space-y-2">
               {dailyDesk.length === 0 && (
                 <p className="text-xs text-muted-foreground italic">Loading today's desk…</p>
@@ -267,6 +353,30 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={gpsConfirmOpen} onOpenChange={setGpsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Enable GPS &amp; device analytics?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your device will ask for location permission. We will store only:
+              <span className="block mt-2 text-foreground/80">
+                • Coarse coordinates and accuracy<br />
+                • Timezone, locale, screen size<br />
+                • Hardware concurrency, memory tier, network type
+              </span>
+              <span className="block mt-2">
+                We do <strong>not</strong> collect: contacts, IMEI, phone number, browsing history, or any personally
+                identifiable information. Data is owner-only — only you can read it.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmGpsActivation}>Activate GPS</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

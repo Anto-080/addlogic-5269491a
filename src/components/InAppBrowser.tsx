@@ -26,7 +26,7 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!loaded) setBlocked(true);
-    }, 4000);
+    }, 8000);
     return () => clearTimeout(timer);
   }, [loaded]);
 

@@ -13,7 +13,12 @@ type BrowserPickerProps = {
   userLevel?: number;
 };
 
-const OPERA_SEARCH = "https://www.opera.com/search?q={q}";
+// DuckDuckGo's HTML endpoint does NOT send X-Frame-Options: DENY, so it
+// renders inside the in-app Opera WebView iframe. The Opera shell still
+// runs on top on native Android (handled by openInOperaWebView).
+// Cookie auto-accept and non-PII device telemetry are gathered locally
+// and are independent of which search provider serves results.
+const OPERA_SEARCH = "https://duckduckgo.com/?q={q}&kp=1&kae=d";
 const SEARCH_GATE_LEVEL = 25;
 
 export function BrowserPicker({ onSearch, userLevel = 0 }: BrowserPickerProps) {
@@ -47,7 +52,9 @@ export function BrowserPicker({ onSearch, userLevel = 0 }: BrowserPickerProps) {
         <p className="text-xs text-muted-foreground">
           On Android, your search is routed through Opera's hardened WebView — multiple layers of anti-fraud
           and malicious-redirect protection keep scammers from siphoning research funds. In the web preview the same
-          query opens through an in-app sandboxed view.
+          query opens through an in-app sandboxed view. Search results are served by{" "}
+          <span className="text-foreground/90 font-medium">DuckDuckGo</span> (the only major engine that allows
+          embedding); cookie sync and device telemetry continue working normally.
         </p>
 
         <div className="flex items-center gap-2 p-3 rounded-lg border border-[#9A7246]/30 bg-[#9A7246]/5">
