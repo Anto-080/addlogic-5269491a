@@ -61,16 +61,17 @@ Deno.serve(async (req) => {
       [];
 
     const results: SearchResult[] = raw
-      .map((r: Record<string, unknown>) => {
-        const url = String(r.url ?? "");
+      // deno-lint-ignore no-explicit-any
+      .map((r: any) => {
+        const url = String(r?.url ?? "");
         let host = "";
         try { host = new URL(url).hostname.replace(/^www\./, ""); } catch { host = ""; }
         return {
-          title: String(r.title ?? r.metadata?.["title"] ?? url),
+          title: String(r?.title ?? r?.metadata?.title ?? url),
           url,
-          snippet: String(r.description ?? r.snippet ?? r.markdown ?? ""),
+          snippet: String(r?.description ?? r?.snippet ?? r?.markdown ?? ""),
           source: host || "web",
-        };
+        } as SearchResult;
       })
       .filter((r: SearchResult) => r.url);
 
