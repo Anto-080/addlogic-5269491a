@@ -2,8 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { TIERS } from "@/lib/mockData";
-import { useState } from "react";
-import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info } from "lucide-react";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
 import { ClockIcon } from "@/components/icons/ClockIcon";
@@ -13,16 +13,13 @@ import { ExperienceBar } from "@/components/ExperienceBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useArticles, useMilestones, useUserStats } from "@/hooks/useAppData";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { requestGeolocation, persistTelemetry, snapshotDeviceProfile } from "@/lib/geolocation";
+  readGeolocationPermission, requestWebGeolocation, type GeolocationPermissionState,
+} from "@/lib/webGeolocation";
+import { persistTelemetry, snapshotDeviceProfile } from "@/lib/geolocation";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 function AnimatedCounter({ target }: { target: number }) {
-  // No interval — Dashboard had three of these running every 30ms causing
-  // visible lag. CSS handles the visual transition via the parent card.
   return <span>${target.toFixed(2)}</span>;
 }
 
@@ -30,35 +27,47 @@ export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
   const { user } = useAuth();
   const [couponsOpen, setCouponsOpen] = useState(false);
-  const [gpsConfirmOpen, setGpsConfirmOpen] = useState(false);
   const [requestingGps, setRequestingGps] = useState(false);
+  const [permission, setPermission] = useState<GeolocationPermissionState>("prompt");
   const primaryTier = TIERS[3];
 
   const { data: stats } = useUserStats();
   const { data: dailyDesk = [] } = useArticles({ dailyDesk: true });
   const { data: milestones = [] } = useMilestones(5);
 
-  const handleGpsToggle = (v: boolean) => {
-    if (v) setGpsConfirmOpen(true);
-    else setGpsPrecision(false);
-  };
+  // Read browser permission state once on mount; it doesn't trigger a prompt.
+  useEffect(() => {
+    let cancelled = false;
+    readGeolocationPermission().then((s) => { if (!cancelled) setPermission(s); });
+    return () => { cancelled = true; };
+  }, []);
 
-  const confirmGpsActivation = async () => {
-    setGpsConfirmOpen(false);
+  const handleGpsToggle = async (v: boolean) => {
+    if (!v) {
+      setGpsPrecision(false);
+      return;
+    }
     setRequestingGps(true);
     try {
-      const coords = await requestGeolocation();
-      const profile = snapshotDeviceProfile();
-      if (user) await persistTelemetry(user.id, coords, profile);
+      const coords = await requestWebGeolocation();
+      const newPerm = await readGeolocationPermission();
+      setPermission(newPerm);
       if (coords) {
+        if (user) {
+          await persistTelemetry(user.id, coords, snapshotDeviceProfile());
+        }
         setGpsPrecision(true);
-        toast.success("Geolocation enabled — non-PII telemetry recorded");
+        toast.success("Location active — non-PII telemetry recorded");
       } else {
         setGpsPrecision(false);
-        toast.error("Permission denied or unavailable");
+        if (newPerm === "denied") {
+          toast.error("Location blocked. Tap the lock/info icon in the address bar to allow it.");
+        } else {
+          toast.error("Location permission denied or unavailable");
+        }
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to enable GPS");
+      toast.error(e instanceof Error ? e.message : "Failed to enable location");
       setGpsPrecision(false);
     } finally {
       setRequestingGps(false);
