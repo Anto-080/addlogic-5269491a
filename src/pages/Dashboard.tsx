@@ -228,13 +228,62 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Newspaper className="h-5 w-5 text-money" />
-              Daily Information Desk
+              Information Desk
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground mb-3">
               Curated articles. Topics involving dual-use technologies (CRISPR-Cas9, molecular chirality, receptor chimerism) are marked with safety advisories from accredited sources. AddLogic does not sponsor speculative dual-use research.
             </p>
+
+            {/* Recommended reading on dual-use technology — fixed references */}
+            <div className="space-y-2 mb-4">
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Recommended reading on dual-use technology
+              </p>
+              <a
+                href="https://dualuse.mit.edu/defining-dual-use/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-3 rounded-lg border border-crimson/40 bg-crimson/5 hover:bg-crimson/10 transition-colors"
+              >
+                <div className="flex items-start gap-2">
+                  <ShieldAlert className="h-4 w-4 text-crimson mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground flex items-center gap-1">
+                      Defining Dual Use — MIT
+                      <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      MIT's working framework for distinguishing legitimate research from technology that can be
+                      weaponized. Reflects the operating consensus between academic biosecurity and DoD-acquainted
+                      reviewers on what counts as "dual use" and how institutions should triage it.
+                    </p>
+                  </div>
+                </div>
+              </a>
+              <a
+                href="https://www.technologyreview.com/2016/02/09/71575/top-us-intelligence-official-calls-gene-editing-a-wmd-threat/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-3 rounded-lg border border-crimson/40 bg-crimson/5 hover:bg-crimson/10 transition-colors"
+              >
+                <div className="flex items-start gap-2">
+                  <ShieldAlert className="h-4 w-4 text-crimson mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground flex items-center gap-1">
+                      Gene editing flagged as a WMD threat — MIT Technology Review
+                      <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      James Clapper's Worldwide Threat Assessment placed CRISPR-class genome editing on the ODNI's
+                      WMD/proliferation list. Essential context for why AddLogic flags DNA-modification research with
+                      safety advisories.
+                    </p>
+                  </div>
+                </div>
+              </a>
+            </div>
             <div className="space-y-2">
               {dailyDesk.length === 0 && (
                 <p className="text-xs text-muted-foreground italic">Loading today's desk…</p>
