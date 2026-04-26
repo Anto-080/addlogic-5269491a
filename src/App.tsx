@@ -59,7 +59,9 @@ const App = () => (
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/offers" element={<ProtectedRoute><Offers /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-              <Route path="/dev/vault-diff" element={<VaultDiff />} />
+              {import.meta.env.DEV && (
+                <Route path="/dev/vault-diff" element={<VaultDiff />} />
+              )}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </SettingsProvider>
