@@ -1,6 +1,10 @@
 // In-app web search powered by Firecrawl. Returns a list of result cards
 // the client renders inline — no iframe, so no X-Frame-Options issues.
-import { corsHeaders } from "@supabase/supabase-js/cors";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
 
 type SearchResult = {
   title: string;
