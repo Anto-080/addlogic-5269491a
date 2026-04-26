@@ -381,7 +381,35 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      sponsors_public: {
+        Row: {
+          company: string | null
+          id: string | null
+          rating: number | null
+          tier_id: number | null
+        }
+        Insert: {
+          company?: string | null
+          id?: string | null
+          rating?: number | null
+          tier_id?: number | null
+        }
+        Update: {
+          company?: string | null
+          id?: string | null
+          rating?: number | null
+          tier_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsors_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
