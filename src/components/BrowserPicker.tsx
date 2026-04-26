@@ -1,43 +1,46 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ExternalLink, ShieldCheck, Lock } from "lucide-react";
-import { isNative, openInOperaWebView } from "@/lib/operaWebView";
+import { ShieldCheck, Lock } from "lucide-react";
 import { OperaLogo } from "@/components/icons/OperaLogo";
 import { recordSearch } from "@/lib/userInterestProfiler";
 import { useAdminFlags } from "@/hooks/useAdminFlags";
+import { useWebSearch } from "@/hooks/useWebSearch";
+import { SearchResults, type SearchResultItem } from "@/components/SearchResults";
 
 type BrowserPickerProps = {
-  onSearch?: (args: { url: string; engineName: string }) => void;
+  /**
+   * Called when the user opens a result. The parent decides whether to show
+   * the in-app overlay or hand off to a new tab.
+   */
+  onOpenResult?: (item: SearchResultItem) => void;
   userLevel?: number;
 };
 
-// DuckDuckGo's HTML endpoint does NOT send X-Frame-Options: DENY, so it
-// renders inside the in-app Opera WebView iframe. The Opera shell still
-// runs on top on native Android (handled by openInOperaWebView).
-// Cookie auto-accept and non-PII device telemetry are gathered locally
-// and are independent of which search provider serves results.
-const OPERA_SEARCH = "https://duckduckgo.com/?q={q}&kp=1&kae=d";
 const SEARCH_GATE_LEVEL = 25;
 
-export function BrowserPicker({ onSearch, userLevel = 0 }: BrowserPickerProps) {
-  const [query, setQuery] = useState("");
+/**
+ * In-app search powered by our own results page (Firecrawl-backed edge
+ * function). We do NOT iframe an external engine — every mainstream search
+ * site sends X-Frame-Options: SAMEORIGIN and would error out with
+ * net::ERR_BLOCKED_BY_RESPONSE.
+ */
+export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProps) {
+  const [lastQuery, setLastQuery] = useState("");
+  const [results, setResults] = useState<SearchResultItem[]>([]);
+  const search = useWebSearch();
   const { data: flags } = useAdminFlags();
   const gated = userLevel < SEARCH_GATE_LEVEL && !flags?.force_opera_search;
 
-  const launch = async () => {
-    const q = encodeURIComponent(query.trim());
-    if (!q || gated) return;
-    recordSearch(query.trim());
-    const url = OPERA_SEARCH.replace("{q}", q);
-
-    if (isNative()) {
-      const handed = await openInOperaWebView(url);
-      if (handed) return;
+  const runSearch = async (query: string) => {
+    if (gated) return;
+    setLastQuery(query);
+    recordSearch(query);
+    try {
+      const r = await search.mutateAsync(query);
+      setResults(r);
+    } catch {
+      setResults([]);
     }
-    if (onSearch) onSearch({ url, engineName: "Opera WebView" });
-    else window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -50,11 +53,10 @@ export function BrowserPicker({ onSearch, userLevel = 0 }: BrowserPickerProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">
-          On Android, your search is routed through Opera's hardened WebView — multiple layers of anti-fraud
-          and malicious-redirect protection keep scammers from siphoning research funds. In the web preview the same
-          query opens through an in-app sandboxed view. Search results are served by{" "}
-          <span className="text-foreground/90 font-medium">DuckDuckGo</span> (the only major engine that allows
-          embedding); cookie sync and device telemetry continue working normally.
+          Searches run through our hardened in-app pipeline — no third-party engine is loaded inside the frame
+          (every major engine refuses iframe embedding, which is what previously broke this feature). Results
+          are fetched server-side and rendered here as cards. Cookie auto-accept and device telemetry continue
+          working normally.
         </p>
 
         <div className="flex items-center gap-2 p-3 rounded-lg border border-[#9A7246]/30 bg-[#9A7246]/5">
@@ -69,28 +71,21 @@ export function BrowserPicker({ onSearch, userLevel = 0 }: BrowserPickerProps) {
           <span className="text-[10px] uppercase tracking-wider text-money font-medium">Default</span>
         </div>
 
-        <div className="relative">
-          <div className="flex gap-2">
-            <Input
-              placeholder={gated ? `Unlocks at Level ${SEARCH_GATE_LEVEL}` : "Search the web…"}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") launch(); }}
-              disabled={gated}
-              className="bg-secondary/50"
-            />
-            <Button onClick={launch} disabled={gated} className="gap-2 shrink-0 bg-money hover:bg-money/90 text-white">
-              <ExternalLink className="h-4 w-4" />
-              Open
-            </Button>
+        {gated ? (
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground p-3 rounded-lg border border-dashed border-border/50">
+            <Lock className="h-3 w-3" />
+            In-app Opera search unlocks at <span className="text-money font-semibold">Level {SEARCH_GATE_LEVEL}</span> — keep researching to unlock.
           </div>
-          {gated && (
-            <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
-              <Lock className="h-3 w-3" />
-              In-app Opera search unlocks at <span className="text-money font-semibold">Level {SEARCH_GATE_LEVEL}</span> — keep researching to unlock.
-            </div>
-          )}
-        </div>
+        ) : (
+          <SearchResults
+            initialQuery={lastQuery}
+            results={results}
+            loading={search.isPending}
+            error={search.error ? (search.error as Error).message : null}
+            onSearch={runSearch}
+            onOpen={(item) => onOpenResult?.(item)}
+          />
+        )}
       </CardContent>
     </Card>
   );
