@@ -381,6 +381,47 @@ export type Database = {
       }
     }
     Views: {
+      offers_public: {
+        Row: {
+          created_at: string | null
+          discount: number | null
+          id: string | null
+          merchant: string | null
+          original_price: number | null
+          sale_price: number | null
+          tier_id: number | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          discount?: number | null
+          id?: string | null
+          merchant?: string | null
+          original_price?: number | null
+          sale_price?: number | null
+          tier_id?: number | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          discount?: number | null
+          id?: string | null
+          merchant?: string | null
+          original_price?: number | null
+          sale_price?: number | null
+          tier_id?: number | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsors_public: {
         Row: {
           company: string | null

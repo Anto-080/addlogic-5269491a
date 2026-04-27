@@ -120,13 +120,17 @@ export function useOffers() {
   return useQuery({
     queryKey: ["offers"],
     queryFn: async (): Promise<OfferRow[]> => {
-      const { data, error } = await supabase.from("offers").select("*").order("created_at", { ascending: false });
+      // Use the public-safe view; cpa_payout is admin-only via RLS on the underlying table.
+      const { data, error } = await (supabase as any)
+        .from("offers_public")
+        .select("id, merchant, tier_id, title, original_price, sale_price, discount, created_at")
+        .order("created_at", { ascending: false });
       if (error || !data) return [];
       return data.map((o: any) => ({
         ...o,
         original_price: Number(o.original_price),
         sale_price: Number(o.sale_price),
-        cpa_payout: Number(o.cpa_payout),
+        cpa_payout: 0,
       }));
     },
     staleTime: 60_000,
