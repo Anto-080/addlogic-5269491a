@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Cookie, ShieldCheck, AlertTriangle, Hand } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { AdBanner } from "@/components/AdBanner";
-import { isNative, openInOperaWebView } from "@/lib/operaWebView";
 
 type Props = {
   url: string;
@@ -22,7 +21,6 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
   const [bottomAdOpened, setBottomAdOpened] = useState(false);
   const [touches, setTouches] = useState(0);
 
-  // If iframe doesn't fire load within 4s, assume X-Frame-Options blocked it.
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!loaded) setBlocked(true);
@@ -30,7 +28,6 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
     return () => clearTimeout(timer);
   }, [loaded]);
 
-  // Track screen interactions to deter bots from collecting passive revenue.
   useEffect(() => {
     const onTouch = () => setTouches((t) => t + 1);
     window.addEventListener("touchstart", onTouch, { passive: true });
@@ -43,23 +40,11 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
     };
   }, []);
 
-  // On native Android: hand off to Opera WebView and close this overlay.
-  useEffect(() => {
-    if (!isNative()) return;
-    let cancelled = false;
-    (async () => {
-      const handed = await openInOperaWebView(url);
-      if (handed && !cancelled) onClose();
-    })();
-    return () => { cancelled = true; };
-  }, [url, onClose]);
-
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
-      {/* Header strip */}
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border bg-card">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs text-primary shrink-0 font-semibold">Opera WebView</span>
+          <span className="text-xs text-primary shrink-0 font-semibold">{engineName}</span>
           <span className="text-xs text-foreground/70 truncate font-mono">{url}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -76,7 +61,6 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
         </div>
       </div>
 
-      {/* Top ad */}
       <div className="px-3 pt-3">
         <AdBanner
           position="top"
@@ -87,7 +71,6 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
         />
       </div>
 
-      {/* Body */}
       <div className="flex-1 px-3 py-3 min-h-0">
         {!blocked ? (
           <iframe
@@ -106,7 +89,7 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
                 {engineName} blocks in-app embedding
               </p>
               <p className="text-xs text-muted-foreground">
-                Many search engines (Google, etc.) refuse iframe loading. Open the highest-paying ads above &amp; below first
+                This site refuses iframe loading (X-Frame-Options). Open the highest-paying ads above &amp; below first
                 — they pay your retribution. Then continue your research in your favorite external browser.
               </p>
               <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1">
@@ -125,7 +108,6 @@ export function InAppBrowser({ url, fallbackUrl, engineName, primaryTierId, onCl
         )}
       </div>
 
-      {/* Bottom ad */}
       <div className="px-3 pb-3">
         <AdBanner
           position="bottom"

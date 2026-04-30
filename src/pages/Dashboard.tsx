@@ -12,12 +12,9 @@ import { TierIcon } from "@/components/TierIcon";
 import { ExperienceBar } from "@/components/ExperienceBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useArticles, useMilestones, useUserStats } from "@/hooks/useAppData";
-import {
-  readGeolocationPermission, requestWebGeolocation, type GeolocationPermissionState,
-} from "@/lib/webGeolocation";
-import { persistTelemetry, snapshotDeviceProfile } from "@/lib/geolocation";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import { readGeolocationPermission, type GeolocationPermissionState } from "@/lib/webGeolocation";
+import { AdBlockConsentSlide, adBlockSlideAlreadySatisfied } from "@/components/AdBlockConsentSlide";
+import { GeoConsentSlide } from "@/components/GeoConsentSlide";
 
 function AnimatedCounter({ target }: { target: number }) {
   return <span>${target.toFixed(2)}</span>;
@@ -25,53 +22,36 @@ function AnimatedCounter({ target }: { target: number }) {
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
-  const { user } = useAuth();
   const [couponsOpen, setCouponsOpen] = useState(false);
-  const [requestingGps, setRequestingGps] = useState(false);
   const [permission, setPermission] = useState<GeolocationPermissionState>("prompt");
+  const [adBlockSlideOpen, setAdBlockSlideOpen] = useState(false);
+  const [geoSlideOpen, setGeoSlideOpen] = useState(false);
   const primaryTier = TIERS[3];
 
   const { data: stats } = useUserStats();
   const { data: dailyDesk = [] } = useArticles({ dailyDesk: true });
   const { data: milestones = [] } = useMilestones(5);
 
-  // Read browser permission state once on mount; it doesn't trigger a prompt.
   useEffect(() => {
     let cancelled = false;
     readGeolocationPermission().then((s) => { if (!cancelled) setPermission(s); });
     return () => { cancelled = true; };
   }, []);
 
-  const handleGpsToggle = async (v: boolean) => {
+  const handleCookieToggle = (v: boolean) => {
+    setCookieAutoAccept(v);
+    if (v && !adBlockSlideAlreadySatisfied()) {
+      setAdBlockSlideOpen(true);
+    }
+  };
+
+  const handleGpsToggle = (v: boolean) => {
     if (!v) {
       setGpsPrecision(false);
       return;
     }
-    setRequestingGps(true);
-    try {
-      const coords = await requestWebGeolocation();
-      const newPerm = await readGeolocationPermission();
-      setPermission(newPerm);
-      if (coords) {
-        if (user) {
-          await persistTelemetry(user.id, coords, snapshotDeviceProfile());
-        }
-        setGpsPrecision(true);
-        toast.success("Location active — non-PII telemetry recorded");
-      } else {
-        setGpsPrecision(false);
-        if (newPerm === "denied") {
-          toast.error("Location blocked. Tap the lock/info icon in the address bar to allow it.");
-        } else {
-          toast.error("Location permission denied or unavailable");
-        }
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to enable location");
-      setGpsPrecision(false);
-    } finally {
-      setRequestingGps(false);
-    }
+    // Open the consent slide; it stays until coords are obtained.
+    setGeoSlideOpen(true);
   };
 
   const summary = [
@@ -115,7 +95,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
-              <Switch checked={cookieAutoAccept} onCheckedChange={setCookieAutoAccept} data-emerald="true" />
+              <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
             </div>
 
             <div className="border-t border-border/40" />
@@ -148,7 +128,6 @@ export default function Dashboard() {
               <Switch
                 checked={gpsPrecision}
                 onCheckedChange={handleGpsToggle}
-                disabled={requestingGps}
                 data-emerald="true"
               />
             </div>
@@ -370,6 +349,15 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      <AdBlockConsentSlide
+        open={adBlockSlideOpen}
+        onSatisfied={() => setAdBlockSlideOpen(false)}
+      />
+      <GeoConsentSlide
+        open={geoSlideOpen}
+        onSatisfied={() => { setGpsPrecision(true); setGeoSlideOpen(false); }}
+        onCancel={() => { setGpsPrecision(false); setGeoSlideOpen(false); }}
+      />
     </AppLayout>
   );
 }

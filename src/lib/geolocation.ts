@@ -1,4 +1,3 @@
-import { isNative } from "@/lib/operaWebView";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Coords = { lat: number; lng: number; accuracy?: number };
@@ -40,31 +39,12 @@ export function snapshotDeviceProfile(): DeviceProfile {
  * navigator.geolocation. Returns `null` if the user denies.
  */
 export async function requestGeolocation(): Promise<Coords | null> {
-  if (isNative()) {
-    try {
-      const { Geolocation } = await import("@capacitor/geolocation");
-      const perm = await Geolocation.requestPermissions({ permissions: ["location"] });
-      if (perm.location !== "granted") return null;
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10_000,
-      });
-      return {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        accuracy: pos.coords.accuracy,
-      };
-    } catch {
-      return null;
-    }
-  }
-
   if (typeof navigator === "undefined" || !navigator.geolocation) return null;
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
       () => resolve(null),
-      { enableHighAccuracy: true, maximumAge: 60_000, timeout: 10_000 }
+      { enableHighAccuracy: false, maximumAge: 60_000, timeout: 10_000 }
     );
   });
 }

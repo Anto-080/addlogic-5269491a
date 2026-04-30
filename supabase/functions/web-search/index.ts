@@ -1,5 +1,5 @@
-// In-app web search powered by Firecrawl. Returns a list of result cards
-// the client renders inline — no iframe, so no X-Frame-Options issues.
+// In-app web search powered by DuckDuckGo (HTML endpoint scraped server-side).
+// No API key required. Returns the same shape <SearchResults /> already renders.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -13,18 +13,59 @@ type SearchResult = {
   source: string;
 };
 
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
+}
+
+function stripTags(s: string): string {
+  return s.replace(/<[^>]+>/g, "");
+}
+
+// DDG wraps real URLs behind /l/?uddg=<encoded>
+function unwrapDdgUrl(href: string): string {
+  try {
+    const u = href.startsWith("//") ? `https:${href}` : href;
+    const parsed = new URL(u, "https://duckduckgo.com");
+    const wrapped = parsed.searchParams.get("uddg");
+    if (wrapped) return decodeURIComponent(wrapped);
+    return parsed.toString();
+  } catch {
+    return href;
+  }
+}
+
+function parseDdgHtml(html: string, limit: number): SearchResult[] {
+  const out: SearchResult[] = [];
+  // Each result is a div with class result__body / result. Match title anchor + snippet.
+  const blockRe = /<div[^>]*class="[^"]*\bresult\b[^"]*"[\s\S]*?(?=<div[^>]*class="[^"]*\bresult\b|$)/g;
+  const blocks = html.match(blockRe) ?? [];
+  for (const block of blocks) {
+    if (out.length >= limit) break;
+    const aMatch = block.match(/<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/);
+    if (!aMatch) continue;
+    const url = unwrapDdgUrl(aMatch[1]);
+    const title = decodeEntities(stripTags(aMatch[2])).trim();
+    const snipMatch = block.match(/<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/);
+    const snippet = snipMatch ? decodeEntities(stripTags(snipMatch[1])).trim() : "";
+    let source = "web";
+    try { source = new URL(url).hostname.replace(/^www\./, ""); } catch { /* noop */ }
+    if (url && title) out.push({ title, url, snippet, source });
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const apiKey = Deno.env.get("FIRECRAWL_API_KEY");
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: "FIRECRAWL_API_KEY is not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
     const body = await req.json().catch(() => ({}));
     const query = typeof body?.query === "string" ? body.query.trim() : "";
     const limit = Math.min(Math.max(Number(body?.limit) || 8, 1), 15);
@@ -35,49 +76,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    const fc = await fetch("https://api.firecrawl.dev/v2/search", {
-      method: "POST",
+    const ddg = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
+      method: "GET",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+        // DDG returns a different (sparser) page without a real UA.
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
       },
-      body: JSON.stringify({ query, limit }),
     });
 
-    const json = await fc.json().catch(() => null);
-    if (!fc.ok) {
+    if (!ddg.ok) {
       return new Response(
-        JSON.stringify({
-          error: "Search provider error",
-          status: fc.status,
-          details: json,
-        }),
+        JSON.stringify({ error: "Search provider error", status: ddg.status }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Firecrawl v2 returns { success, data: { web: [{ title, url, description, ... }] } }
-    // or { data: [...] } depending on version. Normalize both shapes.
-    const raw =
-      (json?.data?.web && Array.isArray(json.data.web) && json.data.web) ||
-      (Array.isArray(json?.data) && json.data) ||
-      (Array.isArray(json?.web) && json.web) ||
-      [];
-
-    const results: SearchResult[] = raw
-      // deno-lint-ignore no-explicit-any
-      .map((r: any) => {
-        const url = String(r?.url ?? "");
-        let host = "";
-        try { host = new URL(url).hostname.replace(/^www\./, ""); } catch { host = ""; }
-        return {
-          title: String(r?.title ?? r?.metadata?.title ?? url),
-          url,
-          snippet: String(r?.description ?? r?.snippet ?? r?.markdown ?? ""),
-          source: host || "web",
-        } as SearchResult;
-      })
-      .filter((r: SearchResult) => r.url);
+    const html = await ddg.text();
+    const results = parseDdgHtml(html, limit);
 
     return new Response(
       JSON.stringify({ query, results }),

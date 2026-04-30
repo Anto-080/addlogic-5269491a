@@ -167,7 +167,7 @@ export default function Research() {
   };
 
   const handleOpenLive = (a: LiveArticle) => {
-    setBrowser({ url: a.url, engineName: "Opera WebView" });
+    setBrowser({ url: a.url, engineName: "DuckDuckGo" });
   };
 
 
@@ -176,7 +176,7 @@ export default function Research() {
       <div className="space-y-4 max-w-5xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-foreground">AddLogic Research</h1>
-          <p className="text-sm text-muted-foreground">Browse via Opera WebView, earn from your curiosity.</p>
+          <p className="text-sm text-muted-foreground">Browse via DuckDuckGo, earn from your curiosity.</p>
         </div>
 
         <button
@@ -207,7 +207,7 @@ export default function Research() {
         )}
 
         <BrowserPicker
-          onOpenResult={(item) => setBrowser({ url: item.url, engineName: "Opera WebView" })}
+          onOpenResult={(item) => setBrowser({ url: item.url, engineName: "DuckDuckGo" })}
           userLevel={userLevel}
         />
 
