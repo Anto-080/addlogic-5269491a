@@ -1,17 +1,13 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShieldCheck, Lock } from "lucide-react";
-import { OperaLogo } from "@/components/icons/OperaLogo";
+import { DuckDuckGoLogo } from "@/components/icons/DuckDuckGoLogo";
 import { recordSearch } from "@/lib/userInterestProfiler";
 import { useAdminFlags } from "@/hooks/useAdminFlags";
 import { useWebSearch } from "@/hooks/useWebSearch";
 import { SearchResults, type SearchResultItem } from "@/components/SearchResults";
 
 type BrowserPickerProps = {
-  /**
-   * Called when the user opens a result. The parent decides whether to show
-   * the in-app overlay or hand off to a new tab.
-   */
   onOpenResult?: (item: SearchResultItem) => void;
   userLevel?: number;
 };
@@ -19,10 +15,9 @@ type BrowserPickerProps = {
 const SEARCH_GATE_LEVEL = 25;
 
 /**
- * In-app search powered by our own results page (Firecrawl-backed edge
- * function). We do NOT iframe an external engine — every mainstream search
- * site sends X-Frame-Options: SAMEORIGIN and would error out with
- * net::ERR_BLOCKED_BY_RESPONSE.
+ * In-app search powered by DuckDuckGo (parsed server-side in our edge function).
+ * We don't iframe DDG — every search engine sends X-Frame-Options: SAMEORIGIN,
+ * which causes net::ERR_BLOCKED_BY_RESPONSE. Results render here as cards.
  */
 export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProps) {
   const [lastQuery, setLastQuery] = useState("");
@@ -47,25 +42,25 @@ export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProp
     <Card className="bg-card border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <OperaLogo size={20} />
-          Powered by Opera WebView
+          <DuckDuckGoLogo size={20} />
+          Powered by DuckDuckGo
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">
-          Searches run through our hardened in-app pipeline — no third-party engine is loaded inside the frame
-          (every major engine refuses iframe embedding, which is what previously broke this feature). Results
-          are fetched server-side and rendered here as cards. Cookie auto-accept and device telemetry continue
+          Searches are fetched server-side through the DuckDuckGo HTML endpoint and rendered here as
+          native cards — no third-party page is iframed (every major engine refuses iframe embedding,
+          which is what previously broke this feature). Cookie auto-accept and device telemetry continue
           working normally.
         </p>
 
-        <div className="flex items-center gap-2 p-3 rounded-lg border border-[#9A7246]/30 bg-[#9A7246]/5">
-          <OperaLogo size={32} />
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-[#DE5833]/30 bg-[#DE5833]/5">
+          <DuckDuckGoLogo size={32} />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-foreground">Opera WebView</p>
+            <p className="text-xs font-semibold text-foreground">DuckDuckGo</p>
             <p className="text-[10px] text-muted-foreground leading-tight inline-flex items-center gap-1">
               <ShieldCheck className="h-3 w-3 text-money" />
-              Anti-fraud · anti-malware · crypto wallet aware
+              No tracking · no profiling · privacy-first
             </p>
           </div>
           <span className="text-[10px] uppercase tracking-wider text-money font-medium">Default</span>
@@ -74,7 +69,7 @@ export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProp
         {gated ? (
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground p-3 rounded-lg border border-dashed border-border/50">
             <Lock className="h-3 w-3" />
-            In-app Opera search unlocks at <span className="text-money font-semibold">Level {SEARCH_GATE_LEVEL}</span> — keep researching to unlock.
+            In-app search unlocks at <span className="text-money font-semibold">Level {SEARCH_GATE_LEVEL}</span> — keep researching to unlock.
           </div>
         ) : (
           <SearchResults
