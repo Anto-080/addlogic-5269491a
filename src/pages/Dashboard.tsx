@@ -95,7 +95,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
-              <Switch checked={cookieAutoAccept} onCheckedChange={setCookieAutoAccept} data-emerald="true" />
+              <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
             </div>
 
             <div className="border-t border-border/40" />
@@ -128,7 +128,6 @@ export default function Dashboard() {
               <Switch
                 checked={gpsPrecision}
                 onCheckedChange={handleGpsToggle}
-                disabled={requestingGps}
                 data-emerald="true"
               />
             </div>
