@@ -349,6 +349,15 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      <AdBlockConsentSlide
+        open={adBlockSlideOpen}
+        onSatisfied={() => setAdBlockSlideOpen(false)}
+      />
+      <GeoConsentSlide
+        open={geoSlideOpen}
+        onSatisfied={() => { setGpsPrecision(true); setGeoSlideOpen(false); }}
+        onCancel={() => { setGpsPrecision(false); setGeoSlideOpen(false); }}
+      />
     </AppLayout>
   );
 }
