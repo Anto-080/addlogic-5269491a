@@ -168,12 +168,11 @@ export default function Tiers() {
                         </button>
                         {isOpen && (
                           <div className="mt-3 pt-3 border-t border-border/40">
-                            <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {tier.subcategories.map((s) => (
-                                <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/60 text-foreground/80 border border-border/40">{s}</span>
-                              ))}
-                            </div>
+                            <OpenAlexFeed
+                              tierName={tier.name}
+                              subcategories={tier.subcategories}
+                              onOpenUrl={(url) => setBrowser({ url, engineName: "DuckDuckGo" })}
+                            />
                           </div>
                         )}
                       </CardContent>
