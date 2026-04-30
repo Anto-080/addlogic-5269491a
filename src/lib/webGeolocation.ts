@@ -1,18 +1,13 @@
-import { isNative } from "@/lib/operaWebView";
-
-export type Coords = { lat: number; lng: number; accuracy?: number };
+export type Coords = { lat: number; lng: number; accuracy?: number; source?: "gps" | "ip" };
 
 export type GeolocationPermissionState = "granted" | "prompt" | "denied" | "unsupported";
 
 /**
  * Read the current browser geolocation permission state without prompting.
- * Returns "unsupported" on browsers (Safari < 16) that don't expose the
- * Permissions API for geolocation.
  */
 export async function readGeolocationPermission(): Promise<GeolocationPermissionState> {
   if (typeof navigator === "undefined") return "unsupported";
   if (!navigator.geolocation) return "unsupported";
-  // Permissions API isn't universal — when missing, assume "prompt".
   // deno-lint-ignore no-explicit-any
   const perms = (navigator as any).permissions;
   if (!perms?.query) return "prompt";
@@ -25,36 +20,43 @@ export async function readGeolocationPermission(): Promise<GeolocationPermission
 }
 
 /**
- * Request the user's current position. On Capacitor (native) this triggers
- * the OS permission prompt; on the web it triggers the browser prompt.
- * Returns `null` if denied or unavailable.
+ * Standard W3C Geolocation request. Coarse accuracy, 10s timeout, allows
+ * the platform to return a recent cached fix.
  */
-export async function requestWebGeolocation(): Promise<Coords | null> {
-  if (isNative()) {
-    try {
-      const { Geolocation } = await import("@capacitor/geolocation");
-      const perm = await Geolocation.requestPermissions({ permissions: ["location"] });
-      if (perm.location !== "granted") return null;
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10_000,
-      });
-      return {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        accuracy: pos.coords.accuracy,
-      };
-    } catch {
-      return null;
-    }
+export function requestWebGeolocation(): Promise<Coords | null> {
+  if (typeof navigator === "undefined" || !navigator.geolocation) {
+    return Promise.resolve(null);
   }
-
-  if (typeof navigator === "undefined" || !navigator.geolocation) return null;
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
+      (p) => resolve({
+        lat: p.coords.latitude,
+        lng: p.coords.longitude,
+        accuracy: p.coords.accuracy,
+        source: "gps",
+      }),
       () => resolve(null),
-      { enableHighAccuracy: true, maximumAge: 60_000, timeout: 10_000 }
+      { enableHighAccuracy: false, maximumAge: 60_000, timeout: 10_000 },
     );
   });
+}
+
+/**
+ * IP-based fallback (no key, no auth). Used when the browser permission is
+ * denied/unavailable. Accuracy is city-level (~5–25 km).
+ */
+export async function requestIpGeolocation(): Promise<Coords | null> {
+  try {
+    const r = await fetch("https://ipapi.co/json/", {
+      headers: { Accept: "application/json" },
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const lat = Number(j?.latitude);
+    const lng = Number(j?.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng, accuracy: 25_000, source: "ip" };
+  } catch {
+    return null;
+  }
 }
