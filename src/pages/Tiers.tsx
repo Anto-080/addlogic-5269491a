@@ -15,6 +15,8 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import biochemTitle from "@/assets/biochemistry-title.png";
 import { WipTapeBanner } from "@/components/WipTapeBanner";
+import { OpenAlexFeed } from "@/components/OpenAlexFeed";
+import { InAppBrowser } from "@/components/InAppBrowser";
 
 const TOP_TIER_GATE = 35;
 
@@ -31,6 +33,7 @@ function bidStats(id: number, multiplier: number) {
 export default function Tiers() {
   const maxMultiplier = TIERS[0].multiplier;
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [browser, setBrowser] = useState<{ url: string; engineName: string } | null>(null);
   const [params, setParams] = useSearchParams();
   const view = params.get("view") === "sponsors" ? "sponsors" : "tiers";
   const { data: stats } = useUserStats();
