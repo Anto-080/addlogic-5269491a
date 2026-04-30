@@ -303,6 +303,15 @@ export default function Tiers() {
           </TabsContent>
         </Tabs>
       </div>
+      {browser && (
+        <InAppBrowser
+          url={browser.url}
+          fallbackUrl={browser.url}
+          engineName={browser.engineName}
+          primaryTierId={expanded ?? 1}
+          onClose={() => setBrowser(null)}
+        />
+      )}
     </AppLayout>
   );
 }
