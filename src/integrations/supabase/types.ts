@@ -88,30 +88,72 @@ export type Database = {
           },
         ]
       }
+      cookie_audit: {
+        Row: {
+          host: string
+          id: string
+          kind: string
+          name: string
+          observed_at: string
+          user_id: string
+        }
+        Insert: {
+          host: string
+          id?: string
+          kind: string
+          name: string
+          observed_at?: string
+          user_id: string
+        }
+        Update: {
+          host?: string
+          id?: string
+          kind?: string
+          name?: string
+          observed_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       device_telemetry: {
         Row: {
           accuracy_m: number | null
+          asn: string | null
+          fingerprint: string | null
+          gps_country: string | null
+          ip_country: string | null
           lat: number | null
           lng: number | null
           profile: Json
           updated_at: string
           user_id: string
+          vpn_suspected: boolean
         }
         Insert: {
           accuracy_m?: number | null
+          asn?: string | null
+          fingerprint?: string | null
+          gps_country?: string | null
+          ip_country?: string | null
           lat?: number | null
           lng?: number | null
           profile?: Json
           updated_at?: string
           user_id: string
+          vpn_suspected?: boolean
         }
         Update: {
           accuracy_m?: number | null
+          asn?: string | null
+          fingerprint?: string | null
+          gps_country?: string | null
+          ip_country?: string | null
           lat?: number | null
           lng?: number | null
           profile?: Json
           updated_at?: string
           user_id?: string
+          vpn_suspected?: boolean
         }
         Relationships: []
       }
@@ -318,6 +360,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tier_keywords: {
+        Row: {
+          count: number
+          id: string
+          keyword: string
+          last_seen: string
+          tier_id: number
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          id?: string
+          keyword: string
+          last_seen?: string
+          tier_id: number
+          user_id: string
+        }
+        Update: {
+          count?: number
+          id?: string
+          keyword?: string
+          last_seen?: string
+          tier_id?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       tier_progress: {
         Row: {

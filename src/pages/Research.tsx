@@ -11,6 +11,7 @@ import { useOutboundExit } from "@/hooks/useOutboundExit";
 import { TierIcon } from "@/components/TierIcon";
 import { useSettings, XP_PER_LEVEL, consentBonus } from "@/contexts/SettingsContext";
 import { ExperienceBar } from "@/components/ExperienceBar";
+import { OpenAlexFeed } from "@/components/OpenAlexFeed";
 import { toast } from "sonner";
 
 const SEARCH_GATE_LEVEL = 25;
@@ -241,6 +242,17 @@ export default function Research() {
             </Button>
           ))}
         </div>
+
+        {/* OpenAlex scholarly feed — moved here from the Tiers page; now public. */}
+        <Card className="bg-card border-border/50">
+          <CardContent className="p-4">
+            <OpenAlexFeed
+              tierName={selectedTierData.name}
+              subcategories={selectedTierData.subcategories}
+              onOpenUrl={(url) => exit.requestExit(url, primaryTierId)}
+            />
+          </CardContent>
+        </Card>
 
         <Card className="bg-card border-crimson/30">
           <CardContent className="p-4 space-y-3">

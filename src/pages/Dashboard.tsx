@@ -16,6 +16,9 @@ import { useArticles, useMilestones, useUserStats } from "@/hooks/useAppData";
 import { readGeolocationPermission, type GeolocationPermissionState } from "@/lib/webGeolocation";
 import { AdBlockConsentSlide, adBlockSlideAlreadySatisfied } from "@/components/AdBlockConsentSlide";
 import { GeoConsentSlide } from "@/components/GeoConsentSlide";
+import { CookieAuditSlide } from "@/components/CookieAuditSlide";
+import { ResearchChronologyCard } from "@/components/ResearchChronologyCard";
+import { sweepCookies } from "@/lib/cookieAudit";
 
 function AnimatedCounter({ target }: { target: number }) {
   return <span>${target.toFixed(2)}</span>;
@@ -27,6 +30,9 @@ export default function Dashboard() {
   const [permission, setPermission] = useState<GeolocationPermissionState>("prompt");
   const [adBlockSlideOpen, setAdBlockSlideOpen] = useState(false);
   const [geoSlideOpen, setGeoSlideOpen] = useState(false);
+  const [cookieSlideOpen, setCookieSlideOpen] = useState(false);
+  const [cookieCounts, setCookieCounts] = useState<{ first: number; third: number; zero: number } | null>(null);
+  const [cookieSyncedAt, setCookieSyncedAt] = useState<number | null>(null);
   const primaryTier = TIERS[3];
 
   const { data: stats } = useUserStats();
@@ -39,10 +45,32 @@ export default function Dashboard() {
     return () => { cancelled = true; };
   }, []);
 
+  // Re-sweep cookies whenever the toggle is on so the Dashboard reflects reality.
+  useEffect(() => {
+    if (!cookieAutoAccept) {
+      setCookieCounts(null);
+      setCookieSyncedAt(null);
+      return;
+    }
+    const sweep = () => {
+      const a = sweepCookies();
+      setCookieCounts(a.counts);
+      setCookieSyncedAt(a.ts);
+    };
+    sweep();
+    const i = window.setInterval(sweep, 12_000);
+    return () => window.clearInterval(i);
+  }, [cookieAutoAccept]);
+
   const handleCookieToggle = (v: boolean) => {
     setCookieAutoAccept(v);
-    if (v && !adBlockSlideAlreadySatisfied()) {
-      setAdBlockSlideOpen(true);
+    if (v) {
+      if (!adBlockSlideAlreadySatisfied()) {
+        setAdBlockSlideOpen(true);
+      } else {
+        // AdBlock already cleared → go straight to the audit slide.
+        setCookieSlideOpen(true);
+      }
     }
   };
 
@@ -94,6 +122,16 @@ export default function Dashboard() {
                   <p className="text-[11px] mt-1 font-semibold text-crimson">
                     Multiplier x{COOKIE_BONUS} {cookieAutoAccept ? "· active" : "· inactive"}
                   </p>
+                  {cookieAutoAccept && cookieCounts && (
+                    <p className="text-[10px] mt-1 text-muted-foreground">
+                      Reading <span className="text-foreground font-medium">{cookieCounts.first}</span> first-party ·{" "}
+                      <span className="text-crimson font-medium">{cookieCounts.third}</span> third-party · writing{" "}
+                      <span className="text-money font-medium">{cookieCounts.zero}</span> zero-party
+                      {cookieSyncedAt && (
+                        <span className="ml-1 italic">· synced {Math.max(0, Math.floor((Date.now() - cookieSyncedAt) / 1000))}s ago</span>
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
               <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
@@ -219,6 +257,9 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+
+
+        <ResearchChronologyCard />
 
         <Card className="bg-card border-border/50">
           <CardHeader>
@@ -352,7 +393,15 @@ export default function Dashboard() {
 
       <AdBlockConsentSlide
         open={adBlockSlideOpen}
-        onSatisfied={() => setAdBlockSlideOpen(false)}
+        onSatisfied={() => {
+          setAdBlockSlideOpen(false);
+          // Chain into the cookie audit slide so the user sees what was read.
+          setCookieSlideOpen(true);
+        }}
+      />
+      <CookieAuditSlide
+        open={cookieSlideOpen}
+        onSatisfied={() => setCookieSlideOpen(false)}
       />
       <GeoConsentSlide
         open={geoSlideOpen}
