@@ -138,13 +138,6 @@ export default function Investments() {
               </div>
 
               <IdeasLibrary />
-
-                    checked={!!flags?.force_circular_l100}
-                    onCheckedChange={(v) => updateFlags.mutate({ force_circular_l100: v })}
-                    data-emerald="true"
-                  />
-                </div>
-              )}
             </CardContent>
           )}
         </Card>
