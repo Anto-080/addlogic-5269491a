@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { TIERS } from "@/lib/mockData";
 import { useEffect, useState } from "react";
-import { Star, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info } from "lucide-react";
+import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info } from "lucide-react";
 import { ShieldStar } from "@/components/icons/ShieldStar";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
@@ -293,9 +293,9 @@ export default function Dashboard() {
                       <p className="text-sm font-medium text-foreground hover:underline">{item.title}</p>
                       <p className="text-[11px] text-muted-foreground">{item.source}{item.read_time ? ` · ${item.read_time}` : ""}</p>
                       {item.dual_use_warning && item.warning_text && (
-                        <div className="mt-2 flex items-start gap-2 p-2 rounded-md border border-gold/40 bg-gold/10">
-                          <ShieldStar className="h-3.5 w-3.5 text-gold mt-0.5 shrink-0" />
-                          <p className="text-[11px] text-foreground/80">{item.warning_text}</p>
+                        <div className="mt-2 flex items-start gap-2 p-2 rounded-md border border-destructive/40 bg-destructive/10">
+                          <ShieldAlert className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                          <p className="text-[11px] text-destructive-foreground/90">{item.warning_text}</p>
                         </div>
                       )}
                     </div>
