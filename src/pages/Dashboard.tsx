@@ -262,6 +262,9 @@ export default function Dashboard() {
         <ResearchChronologyCard />
 
         <Card className="bg-card border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Newspaper className="h-5 w-5 text-money" />
               Information Desk
             </CardTitle>
           </CardHeader>
