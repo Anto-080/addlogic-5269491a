@@ -16,6 +16,9 @@ import { useArticles, useMilestones, useUserStats } from "@/hooks/useAppData";
 import { readGeolocationPermission, type GeolocationPermissionState } from "@/lib/webGeolocation";
 import { AdBlockConsentSlide, adBlockSlideAlreadySatisfied } from "@/components/AdBlockConsentSlide";
 import { GeoConsentSlide } from "@/components/GeoConsentSlide";
+import { CookieAuditSlide } from "@/components/CookieAuditSlide";
+import { ResearchChronologyCard } from "@/components/ResearchChronologyCard";
+import { sweepCookies } from "@/lib/cookieAudit";
 
 function AnimatedCounter({ target }: { target: number }) {
   return <span>${target.toFixed(2)}</span>;
@@ -27,6 +30,9 @@ export default function Dashboard() {
   const [permission, setPermission] = useState<GeolocationPermissionState>("prompt");
   const [adBlockSlideOpen, setAdBlockSlideOpen] = useState(false);
   const [geoSlideOpen, setGeoSlideOpen] = useState(false);
+  const [cookieSlideOpen, setCookieSlideOpen] = useState(false);
+  const [cookieCounts, setCookieCounts] = useState<{ first: number; third: number; zero: number } | null>(null);
+  const [cookieSyncedAt, setCookieSyncedAt] = useState<number | null>(null);
   const primaryTier = TIERS[3];
 
   const { data: stats } = useUserStats();
@@ -39,10 +45,32 @@ export default function Dashboard() {
     return () => { cancelled = true; };
   }, []);
 
+  // Re-sweep cookies whenever the toggle is on so the Dashboard reflects reality.
+  useEffect(() => {
+    if (!cookieAutoAccept) {
+      setCookieCounts(null);
+      setCookieSyncedAt(null);
+      return;
+    }
+    const sweep = () => {
+      const a = sweepCookies();
+      setCookieCounts(a.counts);
+      setCookieSyncedAt(a.ts);
+    };
+    sweep();
+    const i = window.setInterval(sweep, 12_000);
+    return () => window.clearInterval(i);
+  }, [cookieAutoAccept]);
+
   const handleCookieToggle = (v: boolean) => {
     setCookieAutoAccept(v);
-    if (v && !adBlockSlideAlreadySatisfied()) {
-      setAdBlockSlideOpen(true);
+    if (v) {
+      if (!adBlockSlideAlreadySatisfied()) {
+        setAdBlockSlideOpen(true);
+      } else {
+        // AdBlock already cleared → go straight to the audit slide.
+        setCookieSlideOpen(true);
+      }
     }
   };
 
