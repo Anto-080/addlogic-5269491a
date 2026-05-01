@@ -1,1 +1,4 @@
 project_id = "qkzbevzmplhnwjuregsc"
+
+[functions.classify-interest]
+verify_jwt = false
