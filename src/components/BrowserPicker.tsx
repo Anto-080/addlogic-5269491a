@@ -106,14 +106,37 @@ export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProp
             In-app search unlocks at <span className="text-money font-semibold">Level {SEARCH_GATE_LEVEL}</span> — keep researching to unlock.
           </div>
         ) : (
-          <SearchResults
-            initialQuery={lastQuery}
-            results={results}
-            loading={search.isPending}
-            error={search.error ? (search.error as Error).message : null}
-            onSearch={runSearch}
-            onOpen={(item) => onOpenResult?.(item)}
-          />
+          <>
+            {classified && (
+              <div
+                className={`flex items-center gap-2 text-[11px] p-2 rounded-lg border ${
+                  classified.confidence >= MIN_TIER_CONFIDENCE
+                    ? "border-crimson/40 bg-crimson/5 text-foreground"
+                    : "border-border/40 bg-secondary/30 text-muted-foreground"
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5 text-crimson shrink-0" />
+                <span className="flex-1 min-w-0 truncate">
+                  Magnetic bar locked onto{" "}
+                  <strong style={{ color: TIERS.find((t) => t.id === classified.tierId)?.color }}>
+                    {classified.tierName}
+                  </strong>
+                  {" "}({Math.round(classified.confidence * 100)}% confidence)
+                </span>
+                {classified.confidence < MIN_TIER_CONFIDENCE && (
+                  <span className="text-[10px] italic">below veracity threshold — XP paused</span>
+                )}
+              </div>
+            )}
+            <SearchResults
+              initialQuery={lastQuery}
+              results={results}
+              loading={search.isPending}
+              error={search.error ? (search.error as Error).message : null}
+              onSearch={runSearch}
+              onOpen={(item) => onOpenResult?.(item)}
+            />
+          </>
         )}
       </CardContent>
     </Card>
