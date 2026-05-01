@@ -3,7 +3,8 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { TIERS } from "@/lib/mockData";
 import { useEffect, useState } from "react";
-import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info } from "lucide-react";
+import { Star, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info } from "lucide-react";
+import { ShieldStar } from "@/components/icons/ShieldStar";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
 import { ClockIcon } from "@/components/icons/ClockIcon";
@@ -240,10 +241,10 @@ export default function Dashboard() {
                 href="https://dualuse.mit.edu/defining-dual-use/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block p-3 rounded-lg border border-crimson/40 bg-crimson/5 hover:bg-crimson/10 transition-colors"
+                className="block p-3 rounded-lg border border-gold/40 bg-gold/5 hover:bg-gold/10 transition-colors"
               >
                 <div className="flex items-start gap-2">
-                  <ShieldAlert className="h-4 w-4 text-crimson mt-0.5 shrink-0" />
+                  <ShieldStar className="h-4 w-4 text-gold mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground flex items-center gap-1">
                       Defining Dual Use — MIT
@@ -261,10 +262,10 @@ export default function Dashboard() {
                 href="https://www.technologyreview.com/2016/02/09/71575/top-us-intelligence-official-calls-gene-editing-a-wmd-threat/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block p-3 rounded-lg border border-crimson/40 bg-crimson/5 hover:bg-crimson/10 transition-colors"
+                className="block p-3 rounded-lg border border-gold/40 bg-gold/5 hover:bg-gold/10 transition-colors"
               >
                 <div className="flex items-start gap-2">
-                  <ShieldAlert className="h-4 w-4 text-crimson mt-0.5 shrink-0" />
+                  <ShieldStar className="h-4 w-4 text-gold mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground flex items-center gap-1">
                       Gene editing flagged as a WMD threat — MIT Technology Review
@@ -292,9 +293,9 @@ export default function Dashboard() {
                       <p className="text-sm font-medium text-foreground hover:underline">{item.title}</p>
                       <p className="text-[11px] text-muted-foreground">{item.source}{item.read_time ? ` · ${item.read_time}` : ""}</p>
                       {item.dual_use_warning && item.warning_text && (
-                        <div className="mt-2 flex items-start gap-2 p-2 rounded-md border border-destructive/40 bg-destructive/10">
-                          <ShieldAlert className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
-                          <p className="text-[11px] text-destructive-foreground/90">{item.warning_text}</p>
+                        <div className="mt-2 flex items-start gap-2 p-2 rounded-md border border-gold/40 bg-gold/10">
+                          <ShieldStar className="h-3.5 w-3.5 text-gold mt-0.5 shrink-0" />
+                          <p className="text-[11px] text-foreground/80">{item.warning_text}</p>
                         </div>
                       )}
                     </div>
