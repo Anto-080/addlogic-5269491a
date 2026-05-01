@@ -197,6 +197,42 @@ export type Database = {
           },
         ]
       }
+      outbound_visits: {
+        Row: {
+          dwell_seconds: number | null
+          host: string | null
+          id: string
+          opened_at: string
+          returned_at: string | null
+          sponsor_id: string | null
+          tier_id: number | null
+          url: string
+          user_id: string
+        }
+        Insert: {
+          dwell_seconds?: number | null
+          host?: string | null
+          id?: string
+          opened_at?: string
+          returned_at?: string | null
+          sponsor_id?: string | null
+          tier_id?: number | null
+          url: string
+          user_id: string
+        }
+        Update: {
+          dwell_seconds?: number | null
+          host?: string | null
+          id?: string
+          opened_at?: string
+          returned_at?: string | null
+          sponsor_id?: string | null
+          tier_id?: number | null
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -220,6 +256,27 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sponsor_ratings: {
+        Row: {
+          rated_at: string
+          sponsor_id: string
+          stars: number
+          user_id: string
+        }
+        Insert: {
+          rated_at?: string
+          sponsor_id: string
+          stars: number
+          user_id: string
+        }
+        Update: {
+          rated_at?: string
+          sponsor_id?: string
+          stars?: number
           user_id?: string
         }
         Relationships: []
@@ -261,6 +318,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tier_progress: {
+        Row: {
+          fingerprint: string | null
+          multiplier_bonus: number
+          seconds_active: number
+          tier_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          fingerprint?: string | null
+          multiplier_bonus?: number
+          seconds_active?: number
+          tier_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          fingerprint?: string | null
+          multiplier_bonus?: number
+          seconds_active?: number
+          tier_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       tiers: {
         Row: {

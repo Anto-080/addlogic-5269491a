@@ -6,7 +6,8 @@ import { TIERS } from "@/lib/mockData";
 import { useArticles, useUserStats, useCurateNews, type LiveArticle } from "@/hooks/useAppData";
 import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink, Sparkles, RefreshCw, Loader2 } from "lucide-react";
 import { BrowserPicker } from "@/components/BrowserPicker";
-import { InAppBrowser } from "@/components/InAppBrowser";
+import { ExitInterstitial } from "@/components/ExitInterstitial";
+import { useOutboundExit } from "@/hooks/useOutboundExit";
 import { TierIcon } from "@/components/TierIcon";
 import { useSettings, XP_PER_LEVEL, consentBonus } from "@/contexts/SettingsContext";
 import { ExperienceBar } from "@/components/ExperienceBar";
@@ -99,7 +100,7 @@ export default function Research() {
   const [sessionEarnings, setSessionEarnings] = useState(0);
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [articleCount, setArticleCount] = useState(0);
-  const [browser, setBrowser] = useState<{ url: string; engineName: string } | null>(null);
+  const exit = useOutboundExit();
   const [showSponsoredVideos, setShowSponsoredVideos] = useState(false);
   const { topInterestTiers, cookieAutoAccept, gpsPrecision } = useSettings();
   const { data: stats } = useUserStats();
@@ -167,7 +168,7 @@ export default function Research() {
   };
 
   const handleOpenLive = (a: LiveArticle) => {
-    setBrowser({ url: a.url, engineName: "DuckDuckGo" });
+    exit.requestExit(a.url, a.tier_id ?? primaryTierId);
   };
 
 
@@ -207,7 +208,7 @@ export default function Research() {
         )}
 
         <BrowserPicker
-          onOpenResult={(item) => setBrowser({ url: item.url, engineName: "DuckDuckGo" })}
+          onOpenResult={(item) => exit.requestExit(item.url, primaryTierId)}
           userLevel={userLevel}
         />
 
@@ -379,15 +380,15 @@ export default function Research() {
       </div>
 
       {showInterstitial && <InterstitialAd onClose={() => setShowInterstitial(false)} />}
-      {browser && (
-        <InAppBrowser
-          url={browser.url}
-          fallbackUrl={browser.url}
-          engineName={browser.engineName}
-          primaryTierId={primaryTierId}
-          onClose={() => setBrowser(null)}
-        />
-      )}
+      <ExitInterstitial
+        open={exit.state.open}
+        url={exit.state.url}
+        host={exit.state.host}
+        tierId={exit.state.tierId}
+        ad={exit.state.ad}
+        onConfirm={exit.confirm}
+        onCancel={exit.cancel}
+      />
     </AppLayout>
   );
 }
