@@ -16,7 +16,9 @@
 
 const COOKIE_PREFIX = "rr_zero_";
 const ONE_YEAR = 60 * 60 * 24 * 365;
-export const SECONDS_PER_BUMP = 8 * 60 * 60; // 8h
+// 1 hour of validated active research = +1 permanent multiplier (lifetime,
+// no upper cap — modeled on the reward you get from real-world practice).
+export const SECONDS_PER_BUMP = 60 * 60;
 
 function setCookie(name: string, value: string) {
   try {
@@ -107,8 +109,8 @@ export function bumpInterestSignal(tierId: number, seconds: number): {
   return { totalSeconds: next, multiplierBonus: earnedBumps, newlyGranted };
 }
 
-/** XP per cosmetic level inside a tier ExperienceBar (10 000 points = 1 lvl). */
-export const TIER_XP_PER_LEVEL = 10_000;
+/** XP per cosmetic level inside a tier ExperienceBar (1 000 points = 1 lvl). */
+export const TIER_XP_PER_LEVEL = 1_000;
 
 /**
  * 1 second of research → 1 XP (multiplied by tier multiplier elsewhere).
