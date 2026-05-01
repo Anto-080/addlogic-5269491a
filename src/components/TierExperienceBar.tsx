@@ -3,28 +3,35 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTierProgress, useUpdateTierProgress } from "@/hooks/useTierProgress";
 import { bumpInterestSignal, tierLevelFromSeconds, TIER_XP_PER_LEVEL } from "@/lib/zeroPartyCookies";
 import { useSettings, consentBonus } from "@/contexts/SettingsContext";
+import { useResearchSession } from "@/contexts/ResearchSessionContext";
 
 type Props = {
   tierId: number;
   tierMultiplier: number;
-  /** When true, accumulate 1 sec per real second. */
-  active: boolean;
-  /** Optional color for the level number (defaults to gold). */
+  /**
+   * Reserved — historically toggled by "card open". Kept for API stability,
+   * but the bar now only ticks when the global ResearchSession matches this tier.
+   */
+  active?: boolean;
 };
 
+const HEARTBEAT_MS = 15_000;
+
 /**
- * Per-tier lifetime experience bar.
- * - 1 second of active research = 1 XP.
- * - Every 10 000 XP = +1 cosmetic level (no upper cap).
- * - Every 8 hours (28 800s) of cumulative seconds = permanent multiplier +1
- *   (also no cap — lifetime field experience).
- * - The XP fluid is colored by tier rank: pale-pea-green at the bottom
- *   (Adult Content) → deep emerald at top (Biological Systems).
- * - Level number is rendered in gold to the right of the bar label.
+ * Per-tier lifetime experience bar. XP only accumulates while the global
+ * ResearchSession active.tierId === this tier (i.e. the user is *actually*
+ * researching it: typing in the search bar, OR has an open outbound visit).
+ *
+ * - 1 validated second of research = 1 XP (no per-tier multiplier on XP).
+ * - Every TIER_XP_PER_LEVEL XP = +1 cosmetic level (no upper cap).
+ * - Every SECONDS_PER_BUMP cumulative seconds = permanent multiplier +1.
+ * - Pingback every HEARTBEAT_MS — if the tab was hidden in between, those
+ *   seconds are discarded.
  */
-export function TierExperienceBar({ tierId, tierMultiplier, active }: Props) {
+export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
   const { user } = useAuth();
   const { cookieAutoAccept, gpsPrecision } = useSettings();
+  const { active: session } = useResearchSession();
   const { data: row } = useTierProgress(tierId);
   const update = useUpdateTierProgress();
 
@@ -35,18 +42,23 @@ export function TierExperienceBar({ tierId, tierMultiplier, active }: Props) {
   const lastTickRef = useRef(Date.now());
   const [, force] = useState(0);
 
+  const isActiveForThisTier = session?.tierId === tierId;
+
   useEffect(() => {
-    if (!active) return;
+    if (!isActiveForThisTier) return;
     lastTickRef.current = Date.now();
+
     const tick = window.setInterval(() => {
       const now = Date.now();
       const dt = (now - lastTickRef.current) / 1000;
       lastTickRef.current = now;
-      if (!document.hidden && dt < 60) {
+      // Discard the interval if the tab was hidden or the gap is unreasonable
+      // (machine sleep, throttled background tab, etc.).
+      if (!document.hidden && dt < HEARTBEAT_MS / 1000 + 5) {
         accRef.current += dt;
         force((n) => n + 1);
       }
-    }, 1000);
+    }, 1_000);
 
     const flush = window.setInterval(() => {
       const gained = Math.floor(accRef.current);
@@ -54,7 +66,6 @@ export function TierExperienceBar({ tierId, tierMultiplier, active }: Props) {
       accRef.current -= gained;
       const totalSeconds = baseSeconds + gained;
       const { multiplierBonus } = bumpInterestSignal(tierId, gained);
-      // Persist to Supabase (RLS-protected own row).
       if (user) {
         update.mutate({
           tier_id: tierId,
@@ -62,7 +73,7 @@ export function TierExperienceBar({ tierId, tierMultiplier, active }: Props) {
           multiplier_bonus: Math.max(baseBonus, multiplierBonus),
         });
       }
-    }, 15000);
+    }, HEARTBEAT_MS);
 
     return () => {
       window.clearInterval(tick);
@@ -82,18 +93,19 @@ export function TierExperienceBar({ tierId, tierMultiplier, active }: Props) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, tierId, baseSeconds, baseBonus, user]);
+  }, [isActiveForThisTier, tierId, baseSeconds, baseBonus, user]);
 
-  const liveSeconds = baseSeconds + (active ? accRef.current : 0);
+  const liveSeconds = baseSeconds + (isActiveForThisTier ? accRef.current : 0);
   const { level, xpInLevel, percent } = tierLevelFromSeconds(liveSeconds);
-  const liveBonus = Math.max(baseBonus, Math.floor(liveSeconds / (8 * 3600)));
+  // 1h of validated research = +1 permanent multiplier (lifetime).
+  const liveBonus = Math.max(baseBonus, Math.floor(liveSeconds / 3600));
   const activeMultiplier = tierMultiplier + liveBonus + consentBonus(cookieAutoAccept, gpsPrecision);
 
   // Color spectrum: tier 1 (top) = deep emerald, tier 17 (bottom) = pale pea green.
   const ramp = Math.max(0, Math.min(1, (tierId - 1) / 16));
   const hue = 150;
-  const lightness = 22 + ramp * 45; // 22% (deep) → 67% (pale)
-  const saturation = 70 - ramp * 25; // 70% → 45%
+  const lightness = 22 + ramp * 45;
+  const saturation = 70 - ramp * 25;
   const fillColor = `hsl(${hue} ${saturation}% ${lightness}%)`;
 
   return (
@@ -103,6 +115,11 @@ export function TierExperienceBar({ tierId, tierMultiplier, active }: Props) {
           <span className="text-muted-foreground">
             Field Experience · <span className="text-foreground/90 font-medium">Lv </span>
             <span className="font-bold" style={{ color: "hsl(45 90% 55%)" }}>{level}</span>
+            {isActiveForThisTier && (
+              <span className="ml-1.5 inline-flex items-center gap-1 text-[10px]" style={{ color: "hsl(140 60% 55%)" }}>
+                <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> live
+              </span>
+            )}
           </span>
           <span className="text-foreground/80 font-medium">
             {xpInLevel.toLocaleString()} / {TIER_XP_PER_LEVEL.toLocaleString()} XP
@@ -124,6 +141,12 @@ export function TierExperienceBar({ tierId, tierMultiplier, active }: Props) {
           x{activeMultiplier.toFixed(2)}
         </span>
       </div>
+
+      {!isActiveForThisTier && (
+        <p className="text-[10px] text-muted-foreground italic">
+          XP grows only while you actively research this tier — search for it in DuckDuckGo or open an outbound link from this tier.
+        </p>
+      )}
     </div>
   );
 }
