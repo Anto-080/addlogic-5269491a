@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRecordOutboundOpen, useRecordOutboundReturn } from "@/hooks/useResearchChronology";
 import { pickNativeAd } from "@/lib/nativeAds";
 import type { NativeAd } from "@/components/NativeAdSlot";
+import { useResearchSession } from "@/contexts/ResearchSessionContext";
 
 type ExitState = {
   open: boolean;
@@ -22,7 +23,8 @@ export function useOutboundExit(fallbackTierIds: number[] = []) {
   const [state, setState] = useState<ExitState>({ open: false, url: "", host: "", tierId: 0, ad: null });
   const recordOpen = useRecordOutboundOpen();
   const recordReturn = useRecordOutboundReturn();
-  const pendingRef = useRef<{ id: string; openedAt: number } | null>(null);
+  const session = useResearchSession();
+  const pendingRef = useRef<{ id: string; openedAt: number; tierId: number } | null>(null);
 
   const requestExit = useCallback((url: string, tierId: number) => {
     let host = url;
@@ -40,21 +42,30 @@ export function useOutboundExit(fallbackTierIds: number[] = []) {
     setState((s) => ({ ...s, open: false }));
     try {
       const id = await recordOpen.mutateAsync({ url, tierId, sponsorId: state.ad?.sponsorId ?? null });
-      if (id) pendingRef.current = { id, openedAt: Date.now() };
+      if (id) pendingRef.current = { id, openedAt: Date.now(), tierId };
     } catch {
       /* ignore — we still open the URL */
     }
+    // Mark this tier as actively researched while the outbound tab is open.
+    // TTL refreshed on every visibility ping below.
+    session.pulse(tierId, "outbound", 5 * 60_000);
     try { window.open(url, "_blank", "noopener,noreferrer"); } catch { /* noop */ }
-  }, [state, recordOpen]);
+  }, [state, recordOpen, session]);
 
   // Ping back when the user returns to the tab — closes the dwell interval.
   useEffect(() => {
     const onVis = () => {
-      if (document.hidden) return;
+      if (document.hidden) {
+        // Tab hidden = user is on the outbound site → keep refreshing the pulse.
+        const p = pendingRef.current;
+        if (p) session.pulse(p.tierId, "outbound", 5 * 60_000);
+        return;
+      }
       const p = pendingRef.current;
       if (!p) return;
       pendingRef.current = null;
-      recordReturn.mutate(p);
+      recordReturn.mutate({ id: p.id, openedAt: p.openedAt });
+      session.stop();
     };
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("focus", onVis);
@@ -62,7 +73,7 @@ export function useOutboundExit(fallbackTierIds: number[] = []) {
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("focus", onVis);
     };
-  }, [recordReturn]);
+  }, [recordReturn, session]);
 
   return { state, requestExit, cancel, confirm };
 }
