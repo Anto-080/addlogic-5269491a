@@ -18,10 +18,9 @@ export function getVisitorId(): Promise<string | null> {
   if (cached) return cached;
   cached = (async () => {
     try {
-      // Free OSS build, no API key.
-      const mod = (await import(
-        /* @vite-ignore */ "https://openfpcdn.io/fingerprintjs/v5"
-      )) as FpModule;
+      // Free OSS build, no API key. Cast through unknown to avoid TS resolving the URL.
+      const dynImport = new Function("u", "return import(u)") as (u: string) => Promise<unknown>;
+      const mod = (await dynImport("https://openfpcdn.io/fingerprintjs/v5")) as FpModule;
       const agent = await mod.load();
       const result = await agent.get();
       return result.visitorId ?? null;
