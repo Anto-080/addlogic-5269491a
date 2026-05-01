@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShieldCheck, Lock } from "lucide-react";
 import { DuckDuckGoLogo } from "@/components/icons/DuckDuckGoLogo";
 import { recordSearch } from "@/lib/userInterestProfiler";
-import { useAdminFlags } from "@/hooks/useAdminFlags";
+import { bumpSearchCount } from "@/lib/zeroPartyCookies";
 import { useWebSearch } from "@/hooks/useWebSearch";
 import { SearchResults, type SearchResultItem } from "@/components/SearchResults";
 
@@ -23,13 +23,13 @@ export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProp
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const search = useWebSearch();
-  const { data: flags } = useAdminFlags();
-  const gated = userLevel < SEARCH_GATE_LEVEL && !flags?.force_opera_search;
+  const gated = userLevel < SEARCH_GATE_LEVEL;
 
   const runSearch = async (query: string) => {
     if (gated) return;
     setLastQuery(query);
     recordSearch(query);
+    bumpSearchCount();
     try {
       const r = await search.mutateAsync(query);
       setResults(r);

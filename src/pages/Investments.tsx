@@ -1,13 +1,10 @@
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { TrendingUp, Shield, Users, ChevronDown } from "lucide-react";
 import workInProgressImg from "@/assets/work-in-progress.png";
 import circularSeal from "@/assets/circular-economy-seal.jpg";
 import infinityLoop from "@/assets/infinity-loop.jpg";
 import { useUserStats } from "@/hooks/useAppData";
-import { useIsAdmin } from "@/hooks/useAdmin";
-import { useAdminFlags, useUpdateAdminFlags } from "@/hooks/useAdminFlags";
 import { IdeasLibrary } from "@/components/IdeasLibrary";
 
 const CIRCULAR_UNLOCK = 100;
@@ -15,12 +12,9 @@ const INVESTMENT_UNLOCK = 50;
 
 export default function Investments() {
   const { data: stats } = useUserStats();
-  const { data: isAdmin } = useIsAdmin();
-  const { data: flags } = useAdminFlags();
-  const updateFlags = useUpdateAdminFlags();
   const userLevel = stats?.level ?? 1;
-  const investmentUnlocked = userLevel >= INVESTMENT_UNLOCK || (isAdmin && !!flags?.force_investment_l50);
-  const circularUnlocked = userLevel >= CIRCULAR_UNLOCK || (isAdmin && !!flags?.force_circular_l100);
+  const investmentUnlocked = userLevel >= INVESTMENT_UNLOCK;
+  const circularUnlocked = userLevel >= CIRCULAR_UNLOCK;
   const circularPct = Math.min(100, (userLevel / CIRCULAR_UNLOCK) * 100);
   const investPct = Math.min(100, (userLevel / INVESTMENT_UNLOCK) * 100);
   // No inline color overrides — the single rule in index.css ([data-circular-card])
@@ -58,15 +52,6 @@ export default function Investments() {
                 className="mx-auto mt-4 rounded-lg w-full max-w-sm object-contain"
                 loading="lazy"
               />
-            )}
-            {isAdmin && (
-              <div className="flex items-center justify-between text-xs px-1 pt-3 border-t border-border/40">
-                <span className="text-muted-foreground">Admin: Simulate Level {INVESTMENT_UNLOCK}</span>
-                <Switch
-                  checked={!!flags?.force_investment_l50}
-                  onCheckedChange={(v) => updateFlags.mutate({ force_investment_l50: v })}
-                />
-              </div>
             )}
           </CardContent>
         </Card>
@@ -117,16 +102,7 @@ export default function Investments() {
                  Currently {userLevel} / {CIRCULAR_UNLOCK} ({circularPct.toFixed(0)}%). The ∞ Circular Economy
                 activates when the user reaches Level {CIRCULAR_UNLOCK}.
               </p>
-              <div className="flex items-center justify-between text-xs px-1">
-                <span className="text-muted-foreground">{isAdmin ? "Admin: Simulate Level 100" : "Locked — keep researching to unlock"}</span>
-                {isAdmin && (
-                  <Switch
-                    checked={!!flags?.force_circular_l100}
-                    onCheckedChange={(v) => updateFlags.mutate({ force_circular_l100: v })}
-                    data-emerald="true"
-                  />
-                )}
-              </div>
+              <p className="text-xs text-muted-foreground px-1">Locked — keep researching to unlock.</p>
             </CardContent>
           ) : (
             <CardContent className="space-y-5">
@@ -163,10 +139,6 @@ export default function Investments() {
 
               <IdeasLibrary />
 
-              {isAdmin && (
-                <div className="flex items-center justify-between text-xs px-1 pt-2 border-t" style={{ borderColor: "hsl(var(--circular-economy-foreground))" }}>
-                  <span style={{ color: "hsl(var(--circular-economy-foreground))" }}>Admin: Simulate Level 100</span>
-                  <Switch
                     checked={!!flags?.force_circular_l100}
                     onCheckedChange={(v) => updateFlags.mutate({ force_circular_l100: v })}
                     data-emerald="true"
