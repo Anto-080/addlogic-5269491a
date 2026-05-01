@@ -243,6 +243,17 @@ export default function Research() {
           ))}
         </div>
 
+        {/* OpenAlex scholarly feed — moved here from the Tiers page; now public. */}
+        <Card className="bg-card border-border/50">
+          <CardContent className="p-4">
+            <OpenAlexFeed
+              tierName={selectedTierData.name}
+              subcategories={selectedTierData.subcategories}
+              onOpenUrl={(url) => exit.requestExit(url, primaryTierId)}
+            />
+          </CardContent>
+        </Card>
+
         <Card className="bg-card border-crimson/30">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
