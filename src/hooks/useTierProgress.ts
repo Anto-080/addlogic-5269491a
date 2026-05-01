@@ -42,12 +42,17 @@ export function useUpdateTierProgress() {
       fingerprint?: string | null;
     }) => {
       if (!user) return null;
+      // Defense-in-depth: clamp client-supplied values to the same bounds
+      // enforced by CHECK constraints in the database, so a tampered client
+      // gets a clean rejection rather than a Postgres error.
+      const safeSeconds = Math.max(0, Math.min(31_536_000, Math.floor(patch.seconds_active || 0)));
+      const safeBonus = Math.max(0, Math.min(100, Math.floor(patch.multiplier_bonus || 0)));
       const { error } = await supabase.from("tier_progress").upsert(
         {
           user_id: user.id,
           tier_id: patch.tier_id,
-          seconds_active: patch.seconds_active,
-          multiplier_bonus: patch.multiplier_bonus,
+          seconds_active: safeSeconds,
+          multiplier_bonus: safeBonus,
           fingerprint: patch.fingerprint ?? null,
           updated_at: new Date().toISOString(),
         },
