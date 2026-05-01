@@ -16,7 +16,9 @@ import { toast } from "@/hooks/use-toast";
 import biochemTitle from "@/assets/biochemistry-title.png";
 import { WipTapeBanner } from "@/components/WipTapeBanner";
 import { OpenAlexFeed } from "@/components/OpenAlexFeed";
-import { InAppBrowser } from "@/components/InAppBrowser";
+import { TierExperienceBar } from "@/components/TierExperienceBar";
+import { ExitInterstitial } from "@/components/ExitInterstitial";
+import { useOutboundExit } from "@/hooks/useOutboundExit";
 
 const TOP_TIER_GATE = 35;
 
@@ -33,7 +35,7 @@ function bidStats(id: number, multiplier: number) {
 export default function Tiers() {
   const maxMultiplier = TIERS[0].multiplier;
   const [expanded, setExpanded] = useState<number | null>(null);
-  const [browser, setBrowser] = useState<{ url: string; engineName: string } | null>(null);
+  const exit = useOutboundExit();
   const [params, setParams] = useSearchParams();
   const view = params.get("view") === "sponsors" ? "sponsors" : "tiers";
   const { data: stats } = useUserStats();
@@ -168,10 +170,11 @@ export default function Tiers() {
                         </button>
                         {isOpen && (
                           <div className="mt-3 pt-3 border-t border-border/40">
+                            <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} active={isOpen} />
                             <OpenAlexFeed
                               tierName={tier.name}
                               subcategories={tier.subcategories}
-                              onOpenUrl={(url) => setBrowser({ url, engineName: "DuckDuckGo" })}
+                              onOpenUrl={(url) => exit.requestExit(url, tier.id)}
                             />
                           </div>
                         )}
@@ -226,6 +229,7 @@ export default function Tiers() {
                       </button>
                       {isOpen && (
                         <div className="mt-3 pt-3 border-t border-border/40">
+                          <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} active={isOpen} />
                           <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
                           <div className="flex flex-wrap gap-2">
                             {tier.subcategories.map((s) => (
@@ -303,15 +307,15 @@ export default function Tiers() {
           </TabsContent>
         </Tabs>
       </div>
-      {browser && (
-        <InAppBrowser
-          url={browser.url}
-          fallbackUrl={browser.url}
-          engineName={browser.engineName}
-          primaryTierId={expanded ?? 1}
-          onClose={() => setBrowser(null)}
-        />
-      )}
+      <ExitInterstitial
+        open={exit.state.open}
+        url={exit.state.url}
+        host={exit.state.host}
+        tierId={exit.state.tierId}
+        ad={exit.state.ad}
+        onConfirm={exit.confirm}
+        onCancel={exit.cancel}
+      />
     </AppLayout>
   );
 }
