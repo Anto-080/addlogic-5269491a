@@ -122,6 +122,16 @@ export default function Dashboard() {
                   <p className="text-[11px] mt-1 font-semibold text-crimson">
                     Multiplier x{COOKIE_BONUS} {cookieAutoAccept ? "· active" : "· inactive"}
                   </p>
+                  {cookieAutoAccept && cookieCounts && (
+                    <p className="text-[10px] mt-1 text-muted-foreground">
+                      Reading <span className="text-foreground font-medium">{cookieCounts.first}</span> first-party ·{" "}
+                      <span className="text-crimson font-medium">{cookieCounts.third}</span> third-party · writing{" "}
+                      <span className="text-money font-medium">{cookieCounts.zero}</span> zero-party
+                      {cookieSyncedAt && (
+                        <span className="ml-1 italic">· synced {Math.max(0, Math.floor((Date.now() - cookieSyncedAt) / 1000))}s ago</span>
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
               <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
@@ -380,7 +390,15 @@ export default function Dashboard() {
 
       <AdBlockConsentSlide
         open={adBlockSlideOpen}
-        onSatisfied={() => setAdBlockSlideOpen(false)}
+        onSatisfied={() => {
+          setAdBlockSlideOpen(false);
+          // Chain into the cookie audit slide so the user sees what was read.
+          setCookieSlideOpen(true);
+        }}
+      />
+      <CookieAuditSlide
+        open={cookieSlideOpen}
+        onSatisfied={() => setCookieSlideOpen(false)}
       />
       <GeoConsentSlide
         open={geoSlideOpen}
