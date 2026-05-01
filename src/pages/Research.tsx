@@ -11,6 +11,7 @@ import { useOutboundExit } from "@/hooks/useOutboundExit";
 import { TierIcon } from "@/components/TierIcon";
 import { useSettings, XP_PER_LEVEL, consentBonus } from "@/contexts/SettingsContext";
 import { ExperienceBar } from "@/components/ExperienceBar";
+import { OpenAlexFeed } from "@/components/OpenAlexFeed";
 import { toast } from "sonner";
 
 const SEARCH_GATE_LEVEL = 25;
