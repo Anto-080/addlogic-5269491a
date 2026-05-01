@@ -15,7 +15,7 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import biochemTitle from "@/assets/biochemistry-title.png";
 import { WipTapeBanner } from "@/components/WipTapeBanner";
-import { OpenAlexFeed } from "@/components/OpenAlexFeed";
+// OpenAlexFeed moved to Research page (above the Anthropic curator).
 import { TierExperienceBar } from "@/components/TierExperienceBar";
 import { ExitInterstitial } from "@/components/ExitInterstitial";
 import { useOutboundExit } from "@/hooks/useOutboundExit";
@@ -170,12 +170,7 @@ export default function Tiers() {
                         </button>
                         {isOpen && (
                           <div className="mt-3 pt-3 border-t border-border/40">
-                            <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} active={isOpen} />
-                            <OpenAlexFeed
-                              tierName={tier.name}
-                              subcategories={tier.subcategories}
-                              onOpenUrl={(url) => exit.requestExit(url, tier.id)}
-                            />
+                            <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
                           </div>
                         )}
                       </CardContent>
@@ -229,7 +224,7 @@ export default function Tiers() {
                       </button>
                       {isOpen && (
                         <div className="mt-3 pt-3 border-t border-border/40">
-                          <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} active={isOpen} />
+                          <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
                           <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
                           <div className="flex flex-wrap gap-2">
                             {tier.subcategories.map((s) => (
