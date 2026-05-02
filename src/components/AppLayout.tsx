@@ -22,10 +22,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { data: stats } = useUserStats();
   const location = useLocation();
   const vaultBalance = stats?.earnings_all_time ?? 0;
+  const { cookieAutoAccept } = useSettings();
+  // Re-probe every 5s while cookies are on; if blocker active → mount the gate.
+  const blocked = useAdBlockDetector(cookieAutoAccept ? 5000 : 0);
+  const [gateDismissed, setGateDismissed] = useState(false);
+  const showAdBlockGate = cookieAutoAccept && blocked === true && !gateDismissed;
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
+
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 flex items-center justify-between border-b border-border px-2 sm:px-4 bg-card/50 backdrop-blur-sm gap-2">
