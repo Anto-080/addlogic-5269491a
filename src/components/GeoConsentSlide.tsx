@@ -41,6 +41,7 @@ export function GeoConsentSlide({ open, onSatisfied, onCancel }: Props) {
   const [ipInfo, setIpInfo] = useState<IpInfo | null>(null);
   const [fp, setFp] = useState<string | null>(null);
   const [gpsCountry, setGpsCountry] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
