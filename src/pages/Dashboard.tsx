@@ -19,9 +19,15 @@ import { GeoConsentSlide } from "@/components/GeoConsentSlide";
 import { CookieAuditSlide } from "@/components/CookieAuditSlide";
 import { ResearchChronologyCard } from "@/components/ResearchChronologyCard";
 import { sweepCookies } from "@/lib/cookieAudit";
+import { TimeCoinGlyph } from "@/components/icons/TimeCoinGlyph";
 
 function AnimatedCounter({ target }: { target: number }) {
-  return <span>${target.toFixed(2)}</span>;
+  return (
+    <span className="inline-flex items-center gap-1">
+      <TimeCoinGlyph size={16} />
+      <span>${target.toFixed(2)}</span>
+    </span>
+  );
 }
 
 export default function Dashboard() {
