@@ -28,6 +28,9 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
       <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
         Scholarly feed (OpenAlex) · choose a sub-interest
       </p>
+      <p className="text-[10px] text-muted-foreground italic">
+        Opens in the in-app browser — PDFs are filtered out so your session keeps tracking.
+      </p>
       <div className="flex flex-wrap gap-1.5">
         {subcategories.map((s) => {
           const sel = s === active;
@@ -77,10 +80,7 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
 
       <div className="space-y-2">
         {works.map((w: OpenAlexWork) => {
-          const paperUrl =
-            w.open_access_url ||
-            w.landing_page_url ||
-            (w.doi ? `https://doi.org/${w.doi.replace(/^https?:\/\/doi\.org\//, "")}` : null);
+          const paperUrl = w.safe_url;
           return (
             <div key={w.id} className="rounded-lg border border-border/50 bg-secondary/20 p-3 space-y-2">
               <p className="text-sm font-medium text-foreground leading-snug">{w.title}</p>
