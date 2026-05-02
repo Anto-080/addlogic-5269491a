@@ -97,5 +97,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
         onSatisfied={() => setGateDismissed(true)}
       />
     </SidebarProvider>
+    </VpnGuard>
   );
 }
