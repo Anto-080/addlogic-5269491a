@@ -14,7 +14,7 @@ import { ExperienceBar } from "@/components/ExperienceBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useArticles, useMilestones, useUserStats } from "@/hooks/useAppData";
 import { readGeolocationPermission, type GeolocationPermissionState } from "@/lib/webGeolocation";
-import { AdBlockConsentSlide, adBlockSlideAlreadySatisfied } from "@/components/AdBlockConsentSlide";
+import { AdBlockConsentSlide } from "@/components/AdBlockConsentSlide";
 import { GeoConsentSlide } from "@/components/GeoConsentSlide";
 import { CookieAuditSlide } from "@/components/CookieAuditSlide";
 import { ResearchChronologyCard } from "@/components/ResearchChronologyCard";
