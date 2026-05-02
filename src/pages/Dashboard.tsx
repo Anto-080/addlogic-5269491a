@@ -65,12 +65,10 @@ export default function Dashboard() {
   const handleCookieToggle = (v: boolean) => {
     setCookieAutoAccept(v);
     if (v) {
-      if (!adBlockSlideAlreadySatisfied()) {
-        setAdBlockSlideOpen(true);
-      } else {
-        // AdBlock already cleared → go straight to the audit slide.
-        setCookieSlideOpen(true);
-      }
+      // Always re-run the AdBlock gate when the user enables cookies — no
+      // "satisfied" short-circuit, since the user may have toggled the blocker
+      // back on between sessions.
+      setAdBlockSlideOpen(true);
     }
   };
 
