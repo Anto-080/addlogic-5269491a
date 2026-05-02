@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MapPin, Loader2, CheckCircle2, Info, Globe, ShieldAlert, Fingerprint } from "lucide-react";
+import { MapPin, Loader2, CheckCircle2, Info, Globe, ShieldAlert, Fingerprint, ChevronDown, ChevronUp } from "lucide-react";
 import {
   readGeolocationPermission,
   requestWebGeolocation,
@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchIpInfo, reverseGeocodeCountry, type IpInfo } from "@/lib/vpnDetection";
 import { getVisitorId } from "@/lib/fingerprint";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 
 type Props = {
