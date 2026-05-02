@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useAdBlockDetector } from "@/hooks/useAdBlockDetector";
 import { AdBlockConsentSlide } from "@/components/AdBlockConsentSlide";
+import { VpnGuard } from "@/components/VpnGuard";
 
 const QUICK_LINKS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -29,6 +30,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const showAdBlockGate = cookieAutoAccept && blocked === true && !gateDismissed;
 
   return (
+    <VpnGuard>
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
 
