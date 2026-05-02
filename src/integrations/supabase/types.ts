@@ -38,6 +38,36 @@ export type Database = {
         }
         Relationships: []
       }
+      anonymous_research_analytics: {
+        Row: {
+          bucket_week: string
+          created_at: string
+          host: string | null
+          id: string
+          tier_id: number | null
+          total_dwell_seconds: number
+          visit_count: number
+        }
+        Insert: {
+          bucket_week: string
+          created_at?: string
+          host?: string | null
+          id?: string
+          tier_id?: number | null
+          total_dwell_seconds?: number
+          visit_count?: number
+        }
+        Update: {
+          bucket_week?: string
+          created_at?: string
+          host?: string | null
+          id?: string
+          tier_id?: number | null
+          total_dwell_seconds?: number
+          visit_count?: number
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           created_at: string
@@ -606,6 +636,7 @@ export type Database = {
       }
     }
     Functions: {
+      anonymize_outbound_visits: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
