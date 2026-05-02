@@ -9,6 +9,8 @@ import { RoundVault } from "@/components/icons/RoundVault";
 import { StablecoinWithdraw } from "@/components/StablecoinWithdraw";
 import { TierIcon } from "@/components/TierIcon";
 import { NavLink } from "react-router-dom";
+import { TimeCoinGlyph } from "@/components/icons/TimeCoinGlyph";
+import timeCoinMedallion from "@/assets/time-coin-medallion.jpeg";
 
 const VAULT_GOLD = "#B0903D";
 
