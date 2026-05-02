@@ -88,7 +88,7 @@ export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProp
         </p>
 
         <div className="flex items-center gap-2 p-3 rounded-lg border border-[#DE5833]/30 bg-[#DE5833]/5">
-          <DuckDuckGoLogo size={56} />
+          <DuckDuckGoLogo size={72} />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground">DuckDuckGo</p>
             <p className="text-[10px] text-muted-foreground leading-tight inline-flex items-center gap-1">
