@@ -82,8 +82,9 @@ Deno.serve(async (req) => {
       .in("id", tierIds);
 
     if (tiersError || !tiers || tiers.length === 0) {
+      if (tiersError) console.error("curate-news: tiers query failed", tiersError);
       return new Response(
-        JSON.stringify({ error: "No matching tiers found", details: tiersError?.message }),
+        JSON.stringify({ error: "No matching tiers found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
