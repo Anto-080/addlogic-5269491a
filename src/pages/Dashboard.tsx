@@ -14,14 +14,20 @@ import { ExperienceBar } from "@/components/ExperienceBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useArticles, useMilestones, useUserStats } from "@/hooks/useAppData";
 import { readGeolocationPermission, type GeolocationPermissionState } from "@/lib/webGeolocation";
-import { AdBlockConsentSlide, adBlockSlideAlreadySatisfied } from "@/components/AdBlockConsentSlide";
+import { AdBlockConsentSlide } from "@/components/AdBlockConsentSlide";
 import { GeoConsentSlide } from "@/components/GeoConsentSlide";
 import { CookieAuditSlide } from "@/components/CookieAuditSlide";
 import { ResearchChronologyCard } from "@/components/ResearchChronologyCard";
 import { sweepCookies } from "@/lib/cookieAudit";
+import { TimeCoinGlyph } from "@/components/icons/TimeCoinGlyph";
 
 function AnimatedCounter({ target }: { target: number }) {
-  return <span>${target.toFixed(2)}</span>;
+  return (
+    <span className="inline-flex items-center gap-1">
+      <TimeCoinGlyph size={16} />
+      <span>${target.toFixed(2)}</span>
+    </span>
+  );
 }
 
 export default function Dashboard() {
@@ -65,12 +71,10 @@ export default function Dashboard() {
   const handleCookieToggle = (v: boolean) => {
     setCookieAutoAccept(v);
     if (v) {
-      if (!adBlockSlideAlreadySatisfied()) {
-        setAdBlockSlideOpen(true);
-      } else {
-        // AdBlock already cleared → go straight to the audit slide.
-        setCookieSlideOpen(true);
-      }
+      // Always re-run the AdBlock gate when the user enables cookies — no
+      // "satisfied" short-circuit, since the user may have toggled the blocker
+      // back on between sessions.
+      setAdBlockSlideOpen(true);
     }
   };
 

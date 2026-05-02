@@ -1,101 +1,113 @@
+## Plan
 
-# Real consent, real fingerprinting, real research signal
+Five focused changes. All UI lives in existing files; one new asset, one new table for anonymized analytics, one tiny mutation hook.
 
-Six related fixes — they share the same data pipeline (fingerprint + tier-classifier + chronology), so they ship together.
+---
 
-## 1. Cookie toggle — actually do something visible
+### 1. Fix OpenAlex "Browse this topic" — open the actual paper URL, not a DDG search
 
-Today the cookie toggle just sets a localStorage flag. Make it concrete:
+**File:** `src/components/OpenAlexFeed.tsx`
 
-- On enable, sweep `document.cookie`, group entries by domain (= "third-party / first-party / zero-party `rr_zero_*`"), and surface the count in the Dashboard card itself ("Reading 12 first-party · 4 third-party · writing 3 zero-party").
-- After the AdBlock slide is satisfied, open a second slide **`CookieAuditSlide`** that lists the cookies just enumerated (host, name, type), then commits them to a new `cookie_audit` table (user-scoped, RLS) so the sweep persists. This is the visible proof the toggle did something.
-- Re-sweep on every Dashboard mount while the toggle is on; show a small "last synced 12s ago" line.
+Today the secondary "Browse this topic" button opens a DuckDuckGo News search built from the paper title. That's the "Text → Search → Outbound" overshoot you described.
 
-## 2. GPS toggle — real geolocation + FingerprintJS + VPN detection
+- Remove the secondary "Browse this topic" button entirely from each result card.
+- Keep only the **"Open paper"** button — clicking it sends `paperUrl` (OA mirror → landing page → DOI) directly through `onOpenUrl` → `useOutboundExit` → in-app outbound browser as a new group-tab.
+- Keep the per-subcategory "Browse all on DuckDuckGo" chip at the top (that one is *meant* to be a topic search, not a paper).
 
-Add **FingerprintJS v5 OSS** (free CDN ESM build, no key) and use the visitorId as the device fingerprint persisted on `device_telemetry.fingerprint` and `tier_progress.fingerprint`. New file `src/lib/fingerprint.ts` wrapping `import('https://openfpcdn.io/fingerprintjs/v5')` with one cached promise.
+---
 
-In `GeoConsentSlide`:
-- Always run FingerprintJS on open (even before the user picks GPS vs IP).
-- Run an IP/VPN check via `https://ipapi.co/json/` and inspect `org`/`asn` against a small built-in list of known datacenter/VPN ASNs (DigitalOcean, OVH, M247, Mullvad, NordVPN, ExpressVPN, etc.) plus the `proxy`/`hosting` fields. If detected, show a blocking **"VPN/Datacenter IP detected"** state with copy explaining why it must be turned off (region-fraud / Asian-botfarm protection); the slide cannot be satisfied until both a real GPS fix *and* a residential IP are present, OR until the user explicitly accepts a "low-trust mode" that disables the GPS multiplier bonus.
-- Cross-check that the IP-derived country and the GPS-derived reverse-geocoded country (via `https://geocode.maps.co/reverse` — keyless) agree. Mismatch → same low-trust path.
-- Persist `fingerprint`, `ip_country`, `gps_country`, `vpn_suspected`, `asn` on `device_telemetry` (migration adds these columns).
-- Server-side, the multiplier bonus from GPS only applies when `vpn_suspected = false` AND countries agree.
+### 2. Personal Research Chronology — collapsible + erasable + anonymized retention
 
-On Capacitor (Android wrap), the existing `requestGeolocation()` already triggers the OS prompt — keep it as the preferred path; the web `requestWebGeolocation` is the fallback.
+**Files:** `src/components/ResearchChronologyCard.tsx`, `src/hooks/useResearchChronology.ts`, new migration.
 
-## 3. Move OpenAlex to Research, above the Anthropic card
+- Wrap the chronology body in a `<Collapsible>` (default **closed**) so it doesn't dominate the Dashboard. Header shows count + chevron.
+- Add a small **"Erase chronology"** button (trash icon) inside the open panel, with a confirm `AlertDialog`.
+- New mutation `useEraseChronology()` that calls a Supabase RPC `anonymize_outbound_visits()` (security-definer). The RPC, in a single transaction:
+  1. Inserts one aggregated row per `(tier_id, host)` into a new public table `**anonymous_research_analytics**` with: `tier_id`, `host`, `visit_count`, `total_dwell_seconds`, `bucket_week` (truncated to ISO week). **No `user_id`, no URL paths, no timestamps finer than week** → non-PII.
+  2. Deletes the user's rows from `outbound_visits`.
+- New table `anonymous_research_analytics` is **insert-only by authenticated**, **select for `service_role` only** (no per-user select); used internally for "for-profit analytical purposes" exactly as the cookie/data consent already covers.
+- The existing zero-party cookie tier-seconds and bumps remain untouched — only the chronological row-level history is erased and folded into the anonymous aggregate.
 
-Remove the `<OpenAlexFeed>` block from each expanded tier card in `src/pages/Tiers.tsx`. Mount one shared `<OpenAlexFeed>` in `src/pages/Research.tsx` directly above the "Live news from Claude" card. Its sub-interest chips are sourced from the currently-selected tier's `subcategories` (or, when "All" is selected, from the user's top zero-party tier). Make the OpenAlex query fully public — already keyless, so just remove any auth gating.
+---
 
-## 4. Tier XP must come from real research, not from opening a card
+### 3. Cookie auto-accept slide — replace placeholder lines, make AdBlock a hard gate
 
-Today `<TierExperienceBar active={isOpen} />` ticks just because the card is expanded. Replace with two real signals — XP only accumulates while **both** are true:
+**File:** `src/components/CookieAuditSlide.tsx` (text), `src/pages/Dashboard.tsx` (gating order), `src/components/AdBlockConsentSlide.tsx` (button gating + copy).
 
-1. **Outbound dwell** — the user has an active `outbound_visits` row (opened, not yet returned) for that tier, OR the user is actively typing in the in-app DuckDuckGo search bar for that tier.
-2. **Pingback** — every 15s (was 30s) the tab fires a visibility/heartbeat ping; if the tab has been hidden for ≥ that interval since the last ping, the seconds in between are discarded.
+- **Remove** the unhelpful sample lines that show up in the audit list (`sidebar:state`, `__dpl`, `session-id`, etc.). Replace the inline cookie-name list with a friendly summary: "We swept N cookies on this device — X first-party, Y third-party, Z written by AddLogic. Tap Continue when ready." Drop the raw entry list entirely (we still log them server-side via `persistAudit`, just hidden from the UI).
+- **AdBlock gating becomes mandatory and persistent**, not just a one-time satisfied flag:
+  - In `Dashboard.tsx` `handleCookieToggle`: when the user enables the cookie toggle, **always** open `AdBlockConsentSlide` first — drop the `adBlockSlideAlreadySatisfied()` short-circuit so the gate re-checks every session enable.
+  - On every page load, if `cookieAutoAccept === true`, run an AdBlock probe (existing `useAdBlockDetector` polling 5s). If blocked → re-open the AdBlock slide as a hard overlay. User cannot interact with the rest of the app until the probe goes green.
+  - The slide's "Continue" button stays disabled (dark, uncklickable) until `blocked === false`; when the detector flips to false, button enables, the slide closes, the cookie audit slide opens. (Most of this is already wired — we're just removing the "satisfied" memory and re-running the probe app-wide.)
+- **Restore the motivation copy** on the AdBlock slide:
+  > "Ad-blockers stop more than 60% of impressions, which depletes the redistributed research-grant pool. Whitelist AddLogic (or close your ad-blocker) so the rewards engine can credit your time and other researchers' work."
 
-New hook `useActiveResearchTracker(tierId)` owns the heartbeat and reads from a new `ResearchSessionContext` populated by:
-- `useOutboundExit` (sets active tier on `requestExit`, clears on return)
-- `BrowserPicker` (sets active tier on each search submit, clears after 90s of no further input)
+---
 
-`<TierExperienceBar>` no longer self-ticks; it just renders the persisted total + the live delta from the context. Opening/closing a tier card has zero effect on XP.
+### 4. GPS toggle — friendlier copy, keep the anti-fraud teeth
 
-## 5. Rebalanced timing
+**File:** `src/components/GeoConsentSlide.tsx` (copy + collapsing the technical block).
 
-In `src/lib/zeroPartyCookies.ts`:
-- `TIER_XP_PER_LEVEL`: `10_000` → **`1_000`**
-- `SECONDS_PER_BUMP`: `8 * 60 * 60` → **`60 * 60`** (1h per +1 multiplier)
+- Keep the FingerprintJS + IP/ASN + GPS-vs-IP-country checks (those are what stop bot farms — required).
+- Hide the technical fingerprint/IP/ASN dump behind a `<Collapsible>` "Show anti-fraud details" link. Default closed.
+- Rewrite the headline copy: "Share your approximate location to unlock regional ads and the location multiplier. We never see your address, contacts, or browsing history." Two big buttons: "Use precise (GPS)" and "Use approximate (IP)" stay.
+- Same VPN/mismatch low-trust behaviour, just expressed as a small "Reduced trust mode — multiplier withheld" line instead of red walls of text.
 
-In `src/components/TierExperienceBar.tsx`:
-- Flush interval: `15000` ms stays
-- Live-bonus formula: `Math.floor(liveSeconds / 3600)` (was `/ 8 / 3600`)
-- Tick interval already 1s — keep.
+---
 
-No upper cap remains (lifetime achievement, as requested).
+### 5. Currency reframe — Time-Coins, Franklin quote, time-coin glyph next to `$`
 
-## 6. HuggingFace zero-shot tier classifier (interest "magnetic bar")
+**Asset prep:**
 
-Add an edge function `classify-interest` that proxies HuggingFace `facebook/bart-large-mnli` zero-shot classification. The HF token lives as a **Lovable Cloud secret** (`HUGGINGFACE_API_KEY`) — I'll request it via `add_secret` before coding. Candidate labels = the 17 tier names; the function returns the top tier id + confidence + the user's raw query (for subcategory mining).
+- Save uploaded `download.jpeg` (silver/blue infinity-hourglass medallion) as `src/assets/time-coin-medallion.jpeg` — used full-size on the Vault page.
+- Save uploaded `Duck-ai-image-2026-05-01-20-27.jpeg` (mono hourglass coin) as `src/assets/time-coin-glyph.jpeg` — used as a small inline icon next to every `$` counter.
 
-Client wiring:
-- `BrowserPicker.runSearch()` calls the function on every submit. The detected tier is recorded into `ResearchSessionContext` (drives §4) AND into a new `tier_keywords` table (`user_id, tier_id, keyword, count, last_seen`) — every noun/adjective from the query lands as a subcategory candidate (cheap stopword strip, no NLP lib needed). Top-N keywords per tier surface as live "Discovered subcategories" chips in the Tiers card.
-- On every outbound exit (`useOutboundExit.requestExit`), classify the destination URL's title (best-effort fetch via existing `web-search` edge function or just the visible card title) so the tier attached to the visit reflects the link content, not the tier the user happened to be browsing.
+**New tiny component:** `src/components/icons/TimeCoinGlyph.tsx` — `<img>` with `borderRadius:9999px`, default size 14, configurable.
 
-Veracity rule: tier XP only accumulates for `tierId` when `classify-interest` confidence ≥ 0.4 OR the user explicitly picked that tier in the picker. This is the "veridicity" gate — combined with the §4 pingback it prevents passive idle XP.
+**Vault & Earnings page (`src/pages/Earnings.tsx`):**
 
-## 7. Personal Research Chronology (Dashboard)
+- Replace the page subtitle and the in-app vault paragraph with the Time-Coins explanation:
+  > "**AddLogic** doesn't pay per click or per ads watched — it pays for Your **Time&Experience**. Ads' revenue across all tiers is Pooled and redistributed by tier importance into **Time-Coins**, your *in-app tokenised balance*. Withdraw at any time, by redeeming Time-Coins & Experience Gained while Researching, for *Stablecoins* via your **MiniPay**. You can also convert to your local currency trough your **Google Wallet**.
+  >
+  > (*Small Operational Fees for Conversion*)
+  >
+  > &nbsp;
+  >
+  > -**W**e Encourage you to test the withdrawal functions for *Small Transactions*, while you're building Up Your Time-Coins Credits Alongside your Main Experience Bar.                    From Level **25** you'll be Provided with Experience-Based '**Research Grants**' Without the Need of Depleting the Advancement Bar you worked so hard for Filling.                      When you'll reach *Investment Level*, you'll be Aided with *Tailored Plans* for making **Zero-Risks** Automated **Passive Earnings** over the Sum of All of what you've Earned with your Time while you were Researching-                         *Keep on Searching your Favourite Interests* ! *A.*"
+  &nbsp;
+- Keep the Kiln link as-is.
+- **Below the Kiln pill**, insert the medallion image (`time-coin-medallion.jpeg`, max-w 280px, centered, rounded), and underneath in italics:
+  > *"Time Is Money"* — *Benjamin Franklin ·         The Free Thinker ·*
+- In the four summary cards (Today / This Week / All Time / Streak Bonus) and in the Withdraw card, render `<TimeCoinGlyph size={18} />` immediately to the left of the `$` value.
 
-Add a `<ResearchChronologyCard>` to `src/pages/Dashboard.tsx` (above "Information Desk"). Backed by the existing `useResearchChronology()` hook + `outbound_visits` table — already wired, just never rendered. Shows: tier icon, host, title (from URL), opened-at, dwell seconds, with a "Browse again" action that re-opens via `useOutboundExit`. Filter pill row by tier across the top.
+**Dashboard (`src/pages/Dashboard.tsx`):**
 
-## Files
+- In the three earnings summary cards (`Today`, `This Week`, `All Time`), render `<TimeCoinGlyph size={16} />` immediately to the left of the `${value}` produced by `AnimatedCounter`.
 
-```text
-NEW   src/lib/fingerprint.ts                        FingerprintJS v5 wrapper
-NEW   src/lib/vpnDetection.ts                       ASN list + ipapi parser
-NEW   src/lib/cookieAudit.ts                        Sweep + categorize cookies
-NEW   src/components/CookieAuditSlide.tsx           Post-AdBlock cookie list
-NEW   src/components/ResearchChronologyCard.tsx     Dashboard chronology
-NEW   src/contexts/ResearchSessionContext.tsx       Active tier + heartbeat
-NEW   src/hooks/useActiveResearchTracker.ts         Real XP tick source
-NEW   src/hooks/useClassifyInterest.ts              Calls HF edge function
-NEW   supabase/functions/classify-interest/index.ts HF zero-shot proxy
-EDIT  src/components/TierExperienceBar.tsx          Read from context, new timings
-EDIT  src/components/GeoConsentSlide.tsx            Fingerprint + VPN gate
-EDIT  src/components/AdBlockConsentSlide.tsx        Chains into CookieAuditSlide
-EDIT  src/pages/Dashboard.tsx                       Cookie counts, chronology
-EDIT  src/pages/Research.tsx                        Mount OpenAlexFeed
-EDIT  src/pages/Tiers.tsx                           Remove OpenAlexFeed, no auto-tick
-EDIT  src/components/BrowserPicker.tsx              Classify on submit
-EDIT  src/lib/zeroPartyCookies.ts                   New constants (1000 / 1h)
-EDIT  src/lib/userInterestProfiler.ts               Pull from tier_keywords
-MIGR  device_telemetry: + fingerprint, ip_country, gps_country, vpn_suspected, asn
-MIGR  cookie_audit (user_id, host, name, kind, observed_at) + RLS
-MIGR  tier_keywords (user_id, tier_id, keyword, count, last_seen) + RLS unique
-```
+**Wording sweep (no logic change, just copy) to avoid AdSense pay-per-click flags:**
 
-## Secrets required
+- Remove "withdraw anytime" framing where it suggests instant per-action payout. The new vault copy already does this.
+- Leave the actual Withdraw button working — only the *narrative* changes from "you earned $X, withdraw" to "you've earned X Time-Coins (≈ $X), redeem to withdraw".
 
-- **`HUGGINGFACE_API_KEY`** — your `hf_KbEKSK…` token. Will request via `add_secret` once you approve.
+---
 
-FingerprintJS OSS, ipapi.co, geocode.maps.co, OpenAlex are all keyless.
+### Technical notes
+
+- New table SQL (concept):
+  ```sql
+  create table public.anonymous_research_analytics (
+    id uuid primary key default gen_random_uuid(),
+    tier_id integer,
+    host text,
+    visit_count integer not null default 0,
+    total_dwell_seconds integer not null default 0,
+    bucket_week date not null,
+    created_at timestamptz not null default now()
+  );
+  alter table public.anonymous_research_analytics enable row level security;
+  -- no select policy for authenticated; insert via security-definer RPC only
+  ```
+  Plus `create or replace function public.anonymize_outbound_visits() returns void language plpgsql security definer set search_path = public as $$ ... $$;` that aggregates and deletes inside one transaction, scoped to `auth.uid()`.
+- AdBlock app-wide gate: lightweight wrapper inside `AppLayout` that, when `cookieAutoAccept` is on and the detector returns `true`, mounts `AdBlockConsentSlide` over the children (no route change).
+- Outbound flow already routes through `useOutboundExit` → `ExitInterstitial` → `InAppBrowser`; OpenAlex change is purely removing the redundant button. New tab grouping is already handled by `useOutboundExit`.
+- No edge function changes; no auth flow changes; no DB types regen needed beyond the new table.
