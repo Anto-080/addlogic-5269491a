@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +7,9 @@ import { Search, Layers, LayoutDashboard } from "lucide-react";
 import { RoundVault } from "@/components/icons/RoundVault";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/contexts/SettingsContext";
+import { useAdBlockDetector } from "@/hooks/useAdBlockDetector";
+import { AdBlockConsentSlide } from "@/components/AdBlockConsentSlide";
 
 const QUICK_LINKS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
