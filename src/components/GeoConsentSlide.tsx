@@ -55,7 +55,9 @@ export function GeoConsentSlide({ open, onSatisfied, onCancel }: Props) {
 
   const countryMismatch =
     !!gpsCountry && !!ipInfo?.country_code && gpsCountry !== ipInfo.country_code;
-  const lowTrust = (ipInfo?.vpn_suspected ?? false) || countryMismatch;
+  // VPN/proxy is hard-blocked app-wide by VpnGuard before we ever reach
+  // this slide — only the GPS↔IP country mismatch is treated as soft trust here.
+  const lowTrust = countryMismatch;
 
   const finalize = async (c: Coords) => {
     setCoords(c);
@@ -138,13 +140,11 @@ export function GeoConsentSlide({ open, onSatisfied, onCancel }: Props) {
         </div>
 
         {/* High-signal alerts stay visible */}
-        {(ipInfo?.vpn_suspected || countryMismatch) && (
+        {countryMismatch && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive flex items-start gap-2">
             <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>
-              Reduced-trust mode — location multiplier withheld.
-              {ipInfo?.vpn_suspected && " VPN / datacenter IP detected."}
-              {countryMismatch && " GPS country doesn't match IP country."}
+              Reduced-trust mode — location multiplier withheld. GPS country doesn't match IP country.
             </span>
           </div>
         )}
