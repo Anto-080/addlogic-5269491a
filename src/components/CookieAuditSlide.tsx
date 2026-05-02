@@ -11,9 +11,8 @@ type Props = {
 
 /**
  * Shown right after AdBlock check passes. Reads `document.cookie`,
- * categorizes each entry, persists them into `cookie_audit`, and shows the
- * user the visible result of enabling the toggle. This is the proof the
- * cookie switch actually does something.
+ * categorizes each entry, persists them into `cookie_audit` server-side, and
+ * shows the user a clean summary (no raw cookie names — those were noise).
  */
 export function CookieAuditSlide({ open, onSatisfied }: Props) {
   const { user } = useAuth();
@@ -32,6 +31,8 @@ export function CookieAuditSlide({ open, onSatisfied }: Props) {
 
   if (!open) return null;
 
+  const total = audit ? audit.counts.first + audit.counts.third + audit.counts.zero : 0;
+
   return (
     <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur flex items-center justify-center p-4 overflow-y-auto">
       <div className="max-w-md w-full bg-card border border-[hsl(var(--cookie-chip))]/40 rounded-2xl p-6 space-y-4 shadow-2xl my-8">
@@ -43,8 +44,11 @@ export function CookieAuditSlide({ open, onSatisfied }: Props) {
         <div className="text-center space-y-2">
           <h2 className="text-lg font-bold text-foreground">Cookie sync complete</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            We swept this device's cookies, categorized them, and logged the audit so you
-            can see exactly what consent unlocked.
+            We swept <span className="text-foreground font-semibold">{total}</span> cookie{total === 1 ? "" : "s"} on this
+            device — <span className="text-foreground">{audit?.counts.first ?? 0}</span> first-party,{" "}
+            <span className="text-crimson">{audit?.counts.third ?? 0}</span> third-party, and we wrote{" "}
+            <span className="text-money">{audit?.counts.zero ?? 0}</span> zero-party of our own.
+            Tap <strong>Continue</strong> when you're ready.
           </p>
         </div>
 
@@ -57,24 +61,6 @@ export function CookieAuditSlide({ open, onSatisfied }: Props) {
               </p>
             </div>
           ))}
-        </div>
-
-        <div className="rounded-lg border border-border/40 bg-secondary/20 p-3 max-h-40 overflow-y-auto text-[11px] space-y-1">
-          {(audit?.entries ?? []).slice(0, 30).map((e) => (
-            <div key={`${e.host}-${e.name}`} className="flex justify-between gap-2 truncate">
-              <code className="text-foreground/90 truncate">{e.name}</code>
-              <span
-                className={`shrink-0 ${
-                  e.kind === "zero" ? "text-money" : e.kind === "third" ? "text-crimson" : "text-muted-foreground"
-                }`}
-              >
-                {e.kind}
-              </span>
-            </div>
-          ))}
-          {!audit?.entries.length && (
-            <p className="text-muted-foreground italic text-center">No cookies visible from this origin.</p>
-          )}
         </div>
 
         <div className="flex items-center justify-center gap-2 text-xs">
