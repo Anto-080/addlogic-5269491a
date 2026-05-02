@@ -76,7 +76,6 @@ export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProp
     <Card className="bg-card border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <DuckDuckGoLogo size={32} />
           Powered by DuckDuckGo
         </CardTitle>
       </CardHeader>
