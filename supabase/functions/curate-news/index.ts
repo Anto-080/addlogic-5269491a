@@ -65,7 +65,10 @@ Deno.serve(async (req) => {
     }
 
     const body = (await req.json().catch(() => ({}))) as RequestBody;
-    const tierIds = Array.isArray(body.tierIds) ? body.tierIds.filter((n) => Number.isFinite(n)) : [];
+    const tierIds = (Array.isArray(body.tierIds)
+      ? body.tierIds.filter((n) => Number.isFinite(n))
+      : []
+    ).slice(0, 10);
     const count = Math.min(Math.max(body.count ?? 6, 1), 12);
 
     if (tierIds.length === 0) {

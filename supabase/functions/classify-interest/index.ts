@@ -63,6 +63,12 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+    if (text.length > 500) {
+      return new Response(
+        JSON.stringify({ error: "'text' must be 500 characters or fewer" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     const token = Deno.env.get("HUGGINGFACE_API_KEY");
     if (!token) {
