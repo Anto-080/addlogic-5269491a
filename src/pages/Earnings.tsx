@@ -57,24 +57,37 @@ export default function Earnings() {
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <RoundVault size={26} style={{ color: VAULT_GOLD }} /> Vault & Earnings
+            <RoundVault size={26} style={{ color: VAULT_GOLD }} /> Vault &amp; Earnings
           </h1>
-          <p className="text-sm text-muted-foreground">Earnings accumulate securely in-app — withdraw anytime to MiniPay or Google Wallet.</p>
+          <p className="text-sm text-muted-foreground">
+            AddLogic doesn't pay per click or per ad watched — it pays for your <strong>time and experience</strong>.
+          </p>
         </div>
 
-        {/* Vault explainer */}
+        {/* Vault explainer — Time-Coins narrative */}
         <Card className="bg-card border-border/50 glow-amber">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start gap-3">
               <RoundVault size={26} style={{ color: VAULT_GOLD }} className="mt-0.5 shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">In-app Vault</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Your ad revenue is stored securely in-app and protected from third-party threats. Withdraw to MiniPay or Google Wallet
-                  at any moment. In later phases, the Vault enables an automatic restake loop:
+              <div className="flex-1 space-y-2">
+                <p className="text-sm font-semibold text-foreground">In-app Vault &amp; Time-Coins</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Ad revenue across all tiers is pooled and redistributed by tier importance into{" "}
+                  <strong className="text-foreground">Time-Coins</strong> — your in-app tokenised balance
+                  earned for the time you spend researching. Withdraw at any time by redeeming Time-Coins
+                  for stablecoins via <strong className="text-foreground">MiniPay</strong>, then to local
+                  currency via <strong className="text-foreground">Google Wallet</strong>. A small operating
+                  fee covers conversion.
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed italic">
+                  Test the withdrawal flow with small transactions while you build your Time-Coin balance
+                  alongside your main Experience bar. From <strong className="not-italic text-foreground">Level 25</strong>{" "}
+                  you'll be granted experience-based research grants without depleting the bar you worked
+                  for. At Investment Level, tailored zero-risk passive plans let your earnings compound on
+                  their own. — <em>Keep researching what you love.</em>
                 </p>
                 <pre className="mt-2 text-[11px] bg-secondary/40 rounded-md p-2 text-foreground/80 overflow-x-auto">
-{`Ads → Stake → Yield → Stablecoin ↺`}
+{`Ads → Time-Coins → Stake → Yield → Stablecoin ↺`}
                 </pre>
               </div>
             </div>
@@ -86,6 +99,25 @@ export default function Earnings() {
             >
               <ShieldCheck className="h-3 w-3" /> Secured by Kiln Vault Provider
             </a>
+
+            {/* Time-Coin medallion + Franklin quote */}
+            <div className="flex flex-col items-center gap-2 pt-3">
+              <img
+                src={timeCoinMedallion}
+                alt="Time-Coin medallion"
+                className="rounded-full shadow-lg"
+                style={{ maxWidth: 240, width: "100%", height: "auto" }}
+                draggable={false}
+              />
+              <p
+                className="text-sm text-foreground/90 text-center"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic" }}
+              >
+                "Time Is Money"
+                <br />
+                <span className="text-xs text-muted-foreground">— Benjamin Franklin · The Free Thinker</span>
+              </p>
+            </div>
           </CardContent>
         </Card>
 
