@@ -132,7 +132,10 @@ export default function Earnings() {
             <Card key={item.label} className="bg-card border-border/50">
               <CardContent className="p-3 text-center">
                 <p className="text-[10px] text-muted-foreground">{item.label}</p>
-                <p className="text-xl font-bold text-money">${item.value.toFixed(2)}</p>
+                <p className="text-xl font-bold text-money inline-flex items-center gap-1 justify-center">
+                  <TimeCoinGlyph size={18} />
+                  <span>${item.value.toFixed(2)}</span>
+                </p>
               </CardContent>
             </Card>
           ))}
