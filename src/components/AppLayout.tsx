@@ -90,6 +90,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </main>
         </div>
       </div>
+      <AdBlockConsentSlide
+        open={showAdBlockGate}
+        onSatisfied={() => setGateDismissed(true)}
+      />
     </SidebarProvider>
   );
 }
