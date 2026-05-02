@@ -1,12 +1,16 @@
 // Zero-shot classification proxy for facebook/bart-large-mnli.
 // Maps free-form research queries onto our 17 interest tiers.
 // Uses HUGGINGFACE_API_KEY (Lovable Cloud secret).
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 // Tier names — kept in sync with src/lib/mockData.ts (TIERS).
 const TIER_LABELS: { id: number; name: string }[] = [
@@ -33,6 +37,25 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // ---- Auth gate: require a valid signed-in user. ----
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: authError } = await userClient.auth.getUser();
+    if (authError || !userData?.user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const { text } = (await req.json()) as { text?: string };
     if (!text || typeof text !== "string" || text.trim().length < 2) {
       return new Response(
@@ -69,8 +92,9 @@ Deno.serve(async (req) => {
 
     if (!r.ok) {
       const body = await r.text();
+      console.error("classify-interest: HF error", r.status, body.slice(0, 400));
       return new Response(
-        JSON.stringify({ error: `HF ${r.status}`, detail: body.slice(0, 400) }),
+        JSON.stringify({ error: "Upstream classification error" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -90,8 +114,9 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
+    console.error("classify-interest error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "unknown" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
