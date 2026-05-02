@@ -129,60 +129,66 @@ export function GeoConsentSlide({ open, onSatisfied, onCancel }: Props) {
           </div>
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-lg font-bold text-foreground">Geolocation &amp; anti-fraud check</h2>
+          <h2 className="text-lg font-bold text-foreground">Share approximate location</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Unlocks regional ads + the location multiplier. To protect the reward pool from
-            botfarms and VPN-spoofed regions, we run three checks first.
+            Unlocks regional ads and the location multiplier. We never see your address,
+            contacts, or browsing history. Light anti-fraud checks run in the background
+            to keep bot farms from draining the regional reward pool.
           </p>
         </div>
 
-        <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-[11px] text-foreground/90 space-y-2">
-          <div className="flex items-start gap-2">
-            <Fingerprint className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color: fp ? "hsl(var(--money))" : "hsl(var(--muted-foreground))" }} />
+        {/* High-signal alerts stay visible */}
+        {(ipInfo?.vpn_suspected || countryMismatch) && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive flex items-start gap-2">
+            <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>
-              <strong>Browser fingerprint</strong>:{" "}
-              {fp ? <code className="text-[10px]">{fp.slice(0, 12)}…</code> : "computing…"}
+              Reduced-trust mode — location multiplier withheld.
+              {ipInfo?.vpn_suspected && " VPN / datacenter IP detected."}
+              {countryMismatch && " GPS country doesn't match IP country."}
             </span>
           </div>
-          <div className="flex items-start gap-2">
-            <Globe className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${ipInfo ? "text-money" : "text-muted-foreground"}`} />
-            <span className="flex-1 min-w-0">
-              <strong>IP / ASN</strong>:{" "}
-              {ipInfo ? (
-                <>
-                  {ipInfo.country_name ?? "?"} · {ipInfo.org ?? ipInfo.asn ?? "unknown"}
-                </>
-              ) : "checking…"}
-            </span>
-          </div>
-          {ipInfo?.vpn_suspected && (
-            <div className="flex items-start gap-2 pt-2 border-t border-destructive/30">
-              <ShieldAlert className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
-              <span className="text-destructive">
-                <strong>VPN / datacenter IP detected.</strong> {ipInfo.reason}.
-                Disable your VPN to earn the full GPS multiplier; otherwise the location
-                bonus is withheld and you continue in <em>low-trust mode</em>.
-              </span>
+        )}
+
+        {/* Anti-fraud details collapsed by default */}
+        <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <CollapsibleTrigger asChild>
+            <button type="button" className="w-full flex items-center justify-between text-[11px] text-muted-foreground hover:text-foreground">
+              <span>Show anti-fraud details</span>
+              {detailsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 mt-2 text-[11px] text-foreground/90 space-y-2">
+              <div className="flex items-start gap-2">
+                <Fingerprint className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color: fp ? "hsl(var(--money))" : "hsl(var(--muted-foreground))" }} />
+                <span>
+                  <strong>Browser fingerprint</strong>:{" "}
+                  {fp ? <code className="text-[10px]">{fp.slice(0, 12)}…</code> : "computing…"}
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Globe className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${ipInfo ? "text-money" : "text-muted-foreground"}`} />
+                <span className="flex-1 min-w-0">
+                  <strong>IP / ASN</strong>:{" "}
+                  {ipInfo ? (
+                    <>
+                      {ipInfo.country_name ?? "?"} · {ipInfo.org ?? ipInfo.asn ?? "unknown"}
+                    </>
+                  ) : "checking…"}
+                </span>
+              </div>
+              <div className="flex items-start gap-2 pt-1 border-t border-border/40">
+                <CheckCircle2 className="h-3.5 w-3.5 text-money mt-0.5 shrink-0" />
+                <span><strong>Coarse geolocation</strong> via your phone GPS (or IP fallback).</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                <span className="text-muted-foreground">No contacts, no IMEI, no browsing history, no name.</span>
+              </div>
             </div>
-          )}
-          {countryMismatch && (
-            <div className="flex items-start gap-2 pt-2 border-t border-destructive/30">
-              <ShieldAlert className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
-              <span className="text-destructive">
-                GPS country (<code>{gpsCountry}</code>) doesn't match IP country
-                (<code>{ipInfo?.country_code}</code>) — low-trust mode.
-              </span>
-            </div>
-          )}
-          <div className="flex items-start gap-2 pt-1 border-t border-border/40">
-            <CheckCircle2 className="h-3.5 w-3.5 text-money mt-0.5 shrink-0" />
-            <span><strong>Coarse geolocation</strong> via your phone GPS (or IP fallback).</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-            <span className="text-muted-foreground">No contacts, no IMEI, no browsing history, no name.</span>
-          </div>
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
+
 
         {permission === "denied" && !coords && (
           <p className="text-[11px] text-destructive flex items-start gap-1">
