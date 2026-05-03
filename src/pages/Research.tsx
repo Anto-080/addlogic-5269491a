@@ -303,24 +303,6 @@ export default function Research() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-2 gap-2">
-          <BannerAd position="top" />
-          <BannerAd position="top" />
-        </div>
-
-        {selectedTier && (
-          <Card className="bg-card border-primary/30 glow-amber">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Rewarded Video Available</p>
-                <p className="text-xs text-muted-foreground">Watch 15s to earn $2.50 bonus + x2 XP for 10 min</p>
-              </div>
-              <Button size="sm" onClick={handleWatchVideo} className="gap-1">
-                <Play className="h-3 w-3" /> Watch
-              </Button>
-            </CardContent>
-          </Card>
-        )}
 
         <div className="space-y-3">
           {filteredArticles.map((article) => {
