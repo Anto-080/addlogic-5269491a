@@ -336,11 +336,6 @@ export default function Research() {
           })}
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <BannerAd position="bottom" />
-          <BannerAd position="bottom" />
-        </div>
-
         <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur border-t border-border px-4 py-3 z-40">
           <div className="max-w-5xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
