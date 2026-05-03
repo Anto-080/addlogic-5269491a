@@ -16,29 +16,6 @@ import { toast } from "sonner";
 
 const TOP_TIER_GATE = 35;
 
-function StarRating({ onRate }: { onRate: (n: number) => void }) {
-  const [hover, setHover] = useState(0);
-  const [rating, setRating] = useState(0);
-  return (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <Star
-          key={n}
-          className={`h-5 w-5 cursor-pointer transition-colors ${n <= (hover || rating) ? "text-gold fill-gold" : "text-muted-foreground"}`}
-          onMouseEnter={() => setHover(n)}
-          onMouseLeave={() => setHover(0)}
-          onClick={() => {
-            setRating(n);
-            onRate(n);
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-
-
 export default function Research() {
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
   const [sessionEarnings, setSessionEarnings] = useState(0);
