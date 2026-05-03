@@ -19,10 +19,8 @@ const TOP_TIER_GATE = 35;
 export default function Research() {
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
   const [sessionEarnings, setSessionEarnings] = useState(0);
-  const [showInterstitial, setShowInterstitial] = useState(false);
   const [articleCount, setArticleCount] = useState(0);
   const exit = useOutboundExit();
-  const [showSponsoredVideos, setShowSponsoredVideos] = useState(false);
   const { topInterestTiers, cookieAutoAccept, gpsPrecision } = useSettings();
   const { data: stats } = useUserStats();
   const { data: liveArticles = [] } = useArticles();
