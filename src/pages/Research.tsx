@@ -38,16 +38,6 @@ function StarRating({ onRate }: { onRate: (n: number) => void }) {
   );
 }
 
-function BannerAd({ position }: { position: "top" | "bottom" }) {
-  return (
-    <div className="bg-secondary/30 border border-border/30 rounded-lg p-3 text-center">
-      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Sponsored</p>
-      <div className="h-12 flex items-center justify-center text-xs text-muted-foreground">
-        Banner Ad — {position === "top" ? "Above" : "Below"} Feed
-      </div>
-    </div>
-  );
-}
 
 function InterstitialAd({ onClose }: { onClose: () => void }) {
   const [countdown, setCountdown] = useState(5);
