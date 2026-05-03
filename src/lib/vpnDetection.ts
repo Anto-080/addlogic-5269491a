@@ -62,29 +62,54 @@ export function evaluateBlock(info: IpInfo | null): BlockEvaluation {
 }
 
 export async function fetchIpInfo(): Promise<IpInfo | null> {
+  // Try ipwho.is first (no auth, returns connection.isp + asn + reliable type),
+  // then fall back to ipapi.co.
   try {
-    const r = await fetch("https://ipapi.co/json/", {
+    const r = await fetch("https://ipwho.is/?fields=ip,success,country,country_code,connection,security", {
       headers: { Accept: "application/json" },
     });
+    if (r.ok) {
+      const j = await r.json();
+      if (j?.success !== false) {
+        const org = String(j?.connection?.org ?? j?.connection?.isp ?? "").toLowerCase();
+        const asn = String(j?.connection?.asn ?? "");
+        const lcAsn = asn.toLowerCase();
+        const matchHost = VPN_HOSTS.find((h) => org.includes(h) || lcAsn.includes(h));
+        const matchGeneric = GENERIC_TOKENS.find((h) => org.includes(h));
+        let reason: string | null = null;
+        if (matchHost) reason = `Datacenter / VPN ASN match: ${matchHost}`;
+        else if (matchGeneric) reason = `Non-residential network token: "${matchGeneric.trim()}"`;
+        return {
+          ip: String(j?.ip ?? ""),
+          country_code: j?.country_code ?? null,
+          country_name: j?.country ?? null,
+          asn,
+          org: j?.connection?.org ?? j?.connection?.isp ?? null,
+          vpn_suspected: !!reason,
+          reason,
+        };
+      }
+    }
+  } catch { /* fall through */ }
+
+  try {
+    const r = await fetch("https://ipapi.co/json/", { headers: { Accept: "application/json" } });
     if (!r.ok) return null;
     const j = await r.json();
     const org = String(j?.org ?? "").toLowerCase();
     const asn = String(j?.asn ?? "");
     const lcAsn = asn.toLowerCase();
     const matchHost = VPN_HOSTS.find((h) => org.includes(h) || lcAsn.includes(h));
-
-    // ipapi.co occasionally returns these boolean signals in their richer
-    // payloads. Treat any of them as suspect.
+    const matchGeneric = GENERIC_TOKENS.find((h) => org.includes(h));
     const flagProxy = j?.proxy === true;
     const flagHosting = j?.hosting === true;
     const flagVpn = j?.security?.vpn === true || j?.vpn === true;
-
     let reason: string | null = null;
     if (matchHost) reason = `Datacenter / VPN ASN match: ${matchHost}`;
+    else if (matchGeneric) reason = `Non-residential network token: "${matchGeneric.trim()}"`;
     else if (flagVpn) reason = "VPN flag from IP intelligence";
     else if (flagProxy) reason = "Proxy flag from IP intelligence";
     else if (flagHosting) reason = "Hosting / datacenter IP";
-
     return {
       ip: String(j?.ip ?? ""),
       country_code: j?.country_code ?? null,
