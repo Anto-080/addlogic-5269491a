@@ -64,15 +64,7 @@ export default function Research() {
   const handleReadArticle = (earnings: number, tier: number) => {
     if (tier <= 3 && userLevel < TOP_TIER_GATE) return;
     setSessionEarnings((s) => s + earnings);
-    setArticleCount((c) => {
-      const next = c + 1;
-      if (next % 5 === 0) setShowInterstitial(true);
-      return next;
-    });
-  };
-
-  const handleWatchVideo = () => {
-    setSessionEarnings((s) => s + 2.5);
+    setArticleCount((c) => c + 1);
   };
 
   const handleFetchLive = async () => {
