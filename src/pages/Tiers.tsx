@@ -1,18 +1,12 @@
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
-} from "@/components/ui/dialog";
 import { TIERS } from "@/lib/mockData";
 import { useUserStats } from "@/hooks/useAppData";
 import { TierIcon } from "@/components/TierIcon";
-import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye, ExternalLink } from "lucide-react";
+import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, ExternalLink } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
 import biochemTitle from "@/assets/biochemistry-title.png";
 import { WipTapeBanner } from "@/components/WipTapeBanner";
 // OpenAlexFeed moved to Research page (above the Anthropic curator).
