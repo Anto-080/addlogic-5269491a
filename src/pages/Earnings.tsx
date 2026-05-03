@@ -38,19 +38,8 @@ export default function Earnings() {
     return out;
   })();
 
-  // Live redistribution split: derive proportionally from a user's all-time earnings
-  // across their top tiers. With no real per-tier ledger yet, approximate using the
-  // public tier multipliers so percentages stay deterministic.
-  const tierEarnings = TIERS.slice(0, 6).map((t) => {
-    const share = (earningsAllTime * t.multiplier) / TIERS.slice(0, 6).reduce((s, x) => s + x.multiplier, 0);
-    return {
-      tierId: t.id,
-      color: t.color,
-      tier: t.name,
-      earned: share,
-      redistribution: share * 0.18,
-    };
-  });
+  // Per-tier earnings ledger is not wired yet; show real data only when present.
+  const tierEarnings: { tierId: number; color: string; tier: string; earned: number; redistribution: number }[] = [];
 
   return (
     <AppLayout>
