@@ -252,53 +252,12 @@ export default function Tiers() {
               </div>
             </Card>
 
-            <div className="space-y-3">
-              {TIERS.map((tier) => {
-                const stats = bidStats(tier.id, tier.multiplier);
-                return (
-                  <Card key={tier.id} className="bg-card border-border/50" style={{ borderLeft: `3px solid ${tier.color}` }}>
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span style={{ color: tier.color }}><TierIcon tierId={tier.id} size={26} /></span>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate">{tier.name}</p>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-base font-bold text-money">${stats.topBid.toFixed(2)}</p>
-                          <p className="text-[10px] text-muted-foreground">top bid / impression</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-4 gap-2 text-center bg-secondary/30 rounded-lg p-2">
-                        <div>
-                          <Users className="h-3 w-3 mx-auto text-muted-foreground" />
-                          <p className="text-xs font-semibold text-foreground">{stats.bidders}</p>
-                          <p className="text-[9px] text-muted-foreground">bidders</p>
-                        </div>
-                        <div>
-                          <TrendingUp className="h-3 w-3 mx-auto text-muted-foreground" />
-                          <p className="text-xs font-semibold text-foreground">{stats.traffic.toLocaleString()}</p>
-                          <p className="text-[9px] text-muted-foreground">traffic</p>
-                        </div>
-                        <div>
-                          <Eye className="h-3 w-3 mx-auto text-muted-foreground" />
-                          <p className="text-xs font-semibold text-foreground">{stats.engagement}</p>
-                          <p className="text-[9px] text-muted-foreground">engagement</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold" style={{ color: tier.color }}>x{tier.multiplier}</p>
-                          <p className="text-[9px] text-muted-foreground">user/inv mult.</p>
-                        </div>
-                      </div>
-
-                      <BidDialog tier={tier} topBid={stats.topBid} />
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            <Card className="bg-card border-border/50 p-6 text-center">
+              <p className="text-sm font-semibold text-foreground">No live bids yet</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Sponsor auctions open once verified advertisers come online. Real bid data will appear here.
+              </p>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
