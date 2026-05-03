@@ -20,8 +20,8 @@ let cachedClean: IpInfo | null = null; // session-cached PASS only
 
 export function VpnGuard({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
-  const [info, setInfo] = useState<IpInfo | null>(cachedClean);
-  const [checking, setChecking] = useState(!cachedClean);
+  const [info, setInfo] = useState<IpInfo | null>(null);
+  const [checking, setChecking] = useState(true);
   const [fp, setFp] = useState<string | null>(null);
 
   const runCheck = useCallback(async () => {
@@ -30,9 +30,7 @@ export function VpnGuard({ children }: { children: ReactNode }) {
     setFp(visitorId);
     setInfo(next);
     const { block } = evaluateBlock(next);
-    if (!block && next) cachedClean = next; // never cache a block
     if (block && user) {
-      // Best-effort persist for admin visibility; ignore failures.
       try {
         await supabase
           .from("device_telemetry")
@@ -47,16 +45,22 @@ export function VpnGuard({ children }: { children: ReactNode }) {
             },
             { onConflict: "user_id" }
           );
-      } catch {
-        /* ignore */
-      }
+      } catch { /* ignore */ }
     }
     setChecking(false);
   }, [user]);
 
   useEffect(() => {
-    if (cachedClean) return;
     runCheck();
+    // Re-check every 60s and whenever the tab regains focus, so a user who
+    // turns on a VPN mid-session is caught without needing a reload.
+    const onFocus = () => runCheck();
+    window.addEventListener("focus", onFocus);
+    const interval = window.setInterval(runCheck, 60_000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(interval);
+    };
   }, [runCheck]);
 
   const { block, reason } = evaluateBlock(info);
