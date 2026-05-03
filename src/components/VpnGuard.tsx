@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
  * suspect IP triggers the screen.
  */
 
-let cachedClean: IpInfo | null = null; // session-cached PASS only
+
 
 export function VpnGuard({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
