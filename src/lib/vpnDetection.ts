@@ -17,20 +17,28 @@ export type IpInfo = {
   reason: string | null;
 };
 
-// Lightweight ASN/org substring blocklist. Hosting/VPN providers only — we
-// deliberately don't include carrier ASNs.
+// Named blocklist (substring match against ASN/org).
 const VPN_HOSTS = [
   // Consumer VPNs
-  "nordvpn", "expressvpn", "mullvad", "protonvpn", "surfshark", "private internet access",
-  "pia", "windscribe", "cyberghost", "tunnelbear", "ivpn", "azirevpn", "perfect privacy",
-  "hide.me", "hidemyass", "purevpn", "vyprvpn", "torguard", "cloudflare warp", "warp",
+  "nordvpn", "nord ", "expressvpn", "express vpn", "mullvad", "protonvpn", "proton ag",
+  "surfshark", "private internet access", "pia ", "windscribe", "cyberghost",
+  "tunnelbear", "ivpn", "azirevpn", "perfect privacy", "hide.me", "hidemyass",
+  "purevpn", "vyprvpn", "torguard", "cloudflare warp", " warp ", "mysterium",
   // Hosting / VPS / cloud
   "digitalocean", "ovh", "hetzner", "linode", "vultr", "leaseweb", "m247",
   "amazon", "aws", "google cloud", "microsoft azure", "alibaba", "tencent",
-  "oracle cloud", "ibm cloud", "gcore", "g-core",
-  "choopa", "datacamp", "psychz", "constant", "contabo", "scaleway", "hostwinds",
-  "quadranet", "colocrossing", "worldstream", "serverius", "host europe", "hostinger",
-  "namecheap", "godaddy", "kamatera", "upcloud", "fastly", "akamai",
+  "oracle cloud", "ibm cloud", "gcore", "g-core", "choopa", "datacamp", "psychz",
+  "constant", "contabo", "scaleway", "hostwinds", "quadranet", "colocrossing",
+  "worldstream", "serverius", "host europe", "hostinger", "namecheap", "godaddy",
+  "kamatera", "upcloud", "fastly", "akamai", "stackpath", "limestone", "hivelocity",
+  "psychz", "pacificrack", "frantech", "buyvm", "bitlaunch", "racknerd",
+];
+
+// Generic tokens — if an org/ASN string contains any of these, it's almost
+// certainly hosting/datacenter/VPN, not a residential ISP.
+const GENERIC_TOKENS = [
+  "vpn", "proxy", "hosting", "datacenter", "data center", "data-center",
+  "cloud", "server", "colocation", "colo ", "anonymizer", "tor exit", "exit node",
 ];
 
 export type BlockEvaluation = {
