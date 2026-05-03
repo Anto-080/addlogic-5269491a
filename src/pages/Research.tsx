@@ -39,52 +39,6 @@ function StarRating({ onRate }: { onRate: (n: number) => void }) {
 }
 
 
-function InterstitialAd({ onClose }: { onClose: () => void }) {
-  const [countdown, setCountdown] = useState(5);
-  const [ratingShown, setRatingShown] = useState(false);
-
-  useEffect(() => {
-    const i = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(i);
-          setRatingShown(true);
-          return 0;
-        }
-        return c - 1;
-      });
-    }, 1000);
-    return () => clearInterval(i);
-  }, []);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-background/95 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-4 text-center">
-        <div className="bg-card rounded-xl p-8 border border-border/50 space-y-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">Sponsored Content</p>
-          <div className="h-48 bg-secondary/50 rounded-lg flex items-center justify-center text-muted-foreground">
-            Full Screen Ad Placeholder
-          </div>
-          {!ratingShown ? (
-            <p className="text-sm text-muted-foreground">Closing in {Math.max(0, countdown)}s...</p>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm text-foreground">Rate this ad</p>
-              <div className="flex justify-center">
-                <StarRating onRate={() => setTimeout(onClose, 500)} />
-              </div>
-            </div>
-          )}
-          {ratingShown && (
-            <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4 inline mr-1" />Skip
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function Research() {
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
