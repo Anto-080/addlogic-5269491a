@@ -22,15 +22,6 @@ import { useOutboundExit } from "@/hooks/useOutboundExit";
 
 const TOP_TIER_GATE = 35;
 
-// Deterministic mock bid stats per tier
-function bidStats(id: number, multiplier: number) {
-  const seed = id * 7;
-  const topBid = Math.max(0.2, multiplier * 0.42 + (seed % 5) * 0.15);
-  const bidders = 3 + (seed % 11);
-  const traffic = (multiplier * 1800 + seed * 137).toFixed(0);
-  const engagement = ((multiplier * 0.9 + (seed % 4)) % 9).toFixed(1);
-  return { topBid, bidders, traffic: Number(traffic), engagement };
-}
 
 export default function Tiers() {
   const maxMultiplier = TIERS[0].multiplier;
