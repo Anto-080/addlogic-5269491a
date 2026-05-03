@@ -38,19 +38,8 @@ export default function Earnings() {
     return out;
   })();
 
-  // Live redistribution split: derive proportionally from a user's all-time earnings
-  // across their top tiers. With no real per-tier ledger yet, approximate using the
-  // public tier multipliers so percentages stay deterministic.
-  const tierEarnings = TIERS.slice(0, 6).map((t) => {
-    const share = (earningsAllTime * t.multiplier) / TIERS.slice(0, 6).reduce((s, x) => s + x.multiplier, 0);
-    return {
-      tierId: t.id,
-      color: t.color,
-      tier: t.name,
-      earned: share,
-      redistribution: share * 0.18,
-    };
-  });
+  // Per-tier earnings ledger is not wired yet; show real data only when present.
+  const tierEarnings: { tierId: number; color: string; tier: string; earned: number; redistribution: number }[] = [];
 
   return (
     <AppLayout>
@@ -168,7 +157,11 @@ export default function Earnings() {
             <p className="text-xs text-muted-foreground">
               Lower-tier ad revenue partially flows to higher-tier researchers. Even casual browsing supports life-saving research.
             </p>
-            {tierEarnings.map((t, i) => (
+            {tierEarnings.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">
+                No redistribution data yet — start researching to populate your per-tier ledger.
+              </p>
+            ) : tierEarnings.map((t, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="w-8 flex justify-center" style={{ color: t.color }}><TierIcon tierId={t.tierId} size={20} /></span>
                 <div className="flex-1">

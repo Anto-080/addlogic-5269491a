@@ -1,18 +1,12 @@
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
-} from "@/components/ui/dialog";
 import { TIERS } from "@/lib/mockData";
 import { useUserStats } from "@/hooks/useAppData";
 import { TierIcon } from "@/components/TierIcon";
-import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, Users, TrendingUp, Eye, ExternalLink } from "lucide-react";
+import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, ExternalLink } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
 import biochemTitle from "@/assets/biochemistry-title.png";
 import { WipTapeBanner } from "@/components/WipTapeBanner";
 // OpenAlexFeed moved to Research page (above the Anthropic curator).
@@ -22,15 +16,6 @@ import { useOutboundExit } from "@/hooks/useOutboundExit";
 
 const TOP_TIER_GATE = 35;
 
-// Deterministic mock bid stats per tier
-function bidStats(id: number, multiplier: number) {
-  const seed = id * 7;
-  const topBid = Math.max(0.2, multiplier * 0.42 + (seed % 5) * 0.15);
-  const bidders = 3 + (seed % 11);
-  const traffic = (multiplier * 1800 + seed * 137).toFixed(0);
-  const engagement = ((multiplier * 0.9 + (seed % 4)) % 9).toFixed(1);
-  return { topBid, bidders, traffic: Number(traffic), engagement };
-}
 
 export default function Tiers() {
   const maxMultiplier = TIERS[0].multiplier;
@@ -252,53 +237,12 @@ export default function Tiers() {
               </div>
             </Card>
 
-            <div className="space-y-3">
-              {TIERS.map((tier) => {
-                const stats = bidStats(tier.id, tier.multiplier);
-                return (
-                  <Card key={tier.id} className="bg-card border-border/50" style={{ borderLeft: `3px solid ${tier.color}` }}>
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span style={{ color: tier.color }}><TierIcon tierId={tier.id} size={26} /></span>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate">{tier.name}</p>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-base font-bold text-money">${stats.topBid.toFixed(2)}</p>
-                          <p className="text-[10px] text-muted-foreground">top bid / impression</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-4 gap-2 text-center bg-secondary/30 rounded-lg p-2">
-                        <div>
-                          <Users className="h-3 w-3 mx-auto text-muted-foreground" />
-                          <p className="text-xs font-semibold text-foreground">{stats.bidders}</p>
-                          <p className="text-[9px] text-muted-foreground">bidders</p>
-                        </div>
-                        <div>
-                          <TrendingUp className="h-3 w-3 mx-auto text-muted-foreground" />
-                          <p className="text-xs font-semibold text-foreground">{stats.traffic.toLocaleString()}</p>
-                          <p className="text-[9px] text-muted-foreground">traffic</p>
-                        </div>
-                        <div>
-                          <Eye className="h-3 w-3 mx-auto text-muted-foreground" />
-                          <p className="text-xs font-semibold text-foreground">{stats.engagement}</p>
-                          <p className="text-[9px] text-muted-foreground">engagement</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold" style={{ color: tier.color }}>x{tier.multiplier}</p>
-                          <p className="text-[9px] text-muted-foreground">user/inv mult.</p>
-                        </div>
-                      </div>
-
-                      <BidDialog tier={tier} topBid={stats.topBid} />
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            <Card className="bg-card border-border/50 p-6 text-center">
+              <p className="text-sm font-semibold text-foreground">No live bids yet</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Sponsor auctions open once verified advertisers come online. Real bid data will appear here.
+              </p>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
@@ -315,43 +259,3 @@ export default function Tiers() {
   );
 }
 
-function BidDialog({ tier, topBid }: { tier: typeof TIERS[number]; topBid: number }) {
-  const [bid, setBid] = useState((topBid + 0.05).toFixed(2));
-  const [sub, setSub] = useState(tier.subcategories[0] ?? "");
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="secondary" className="w-full gap-1">
-          <Gavel className="h-3 w-3" /> Place Bid
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2" style={{ color: tier.color }}>
-            <TierIcon tierId={tier.id} size={20} /> Bid on {tier.name}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Sponsors out-bidding the current top bid (${topBid.toFixed(2)}) lock the tier slot for the next session.
-          </p>
-          <label className="text-xs text-muted-foreground">Sub-interest</label>
-          <select
-            value={sub}
-            onChange={(e) => setSub(e.target.value)}
-            className="w-full bg-secondary/50 rounded-md px-3 py-2 text-sm border border-border"
-          >
-            {tier.subcategories.map((s) => <option key={s}>{s}</option>)}
-          </select>
-          <label className="text-xs text-muted-foreground">Bid ($ / impression)</label>
-          <Input type="number" step="0.01" value={bid} onChange={(e) => setBid(e.target.value)} className="bg-secondary/50" />
-        </div>
-        <DialogFooter>
-          <Button onClick={() => toast({ title: "Bid placed (mock)", description: `$${bid} on ${sub} · ${tier.name}` })}>
-            Confirm Bid
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
