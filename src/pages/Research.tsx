@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TIERS } from "@/lib/mockData";
 import { useArticles, useUserStats, useCurateNews, type LiveArticle } from "@/hooks/useAppData";
-import { Star, Play, X, Clock, DollarSign, Video, Lock, ExternalLink, Sparkles, RefreshCw, Loader2 } from "lucide-react";
+import { Clock, DollarSign, Lock, ExternalLink, Sparkles, RefreshCw, Loader2 } from "lucide-react";
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { ExitInterstitial } from "@/components/ExitInterstitial";
 import { useOutboundExit } from "@/hooks/useOutboundExit";
@@ -14,7 +14,6 @@ import { ExperienceBar } from "@/components/ExperienceBar";
 import { OpenAlexFeed } from "@/components/OpenAlexFeed";
 import { toast } from "sonner";
 
-const SEARCH_GATE_LEVEL = 25;
 const TOP_TIER_GATE = 35;
 
 function StarRating({ onRate }: { onRate: (n: number) => void }) {
