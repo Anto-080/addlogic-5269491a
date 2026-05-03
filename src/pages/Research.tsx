@@ -286,7 +286,7 @@ export default function Research() {
         <div className="h-20" />
       </div>
 
-      {showInterstitial && <InterstitialAd onClose={() => setShowInterstitial(false)} />}
+      
       <ExitInterstitial
         open={exit.state.open}
         url={exit.state.url}
