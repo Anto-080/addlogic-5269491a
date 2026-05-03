@@ -157,7 +157,11 @@ export default function Earnings() {
             <p className="text-xs text-muted-foreground">
               Lower-tier ad revenue partially flows to higher-tier researchers. Even casual browsing supports life-saving research.
             </p>
-            {tierEarnings.map((t, i) => (
+            {tierEarnings.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic">
+                No redistribution data yet — start researching to populate your per-tier ledger.
+              </p>
+            ) : tierEarnings.map((t, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="w-8 flex justify-center" style={{ color: t.color }}><TierIcon tierId={t.tierId} size={20} /></span>
                 <div className="flex-1">
