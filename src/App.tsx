@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { ResearchSessionProvider } from "@/contexts/ResearchSessionContext";
+import { VpnGuard } from "@/components/VpnGuard";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
@@ -41,6 +42,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <VpnGuard>
         <AuthProvider>
           <SettingsProvider>
             <ResearchSessionProvider>
@@ -67,6 +69,7 @@ const App = () => (
             </ResearchSessionProvider>
           </SettingsProvider>
         </AuthProvider>
+        </VpnGuard>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
