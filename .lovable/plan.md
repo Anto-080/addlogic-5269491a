@@ -1,69 +1,73 @@
-# Two critical fixes: VPN hard-block & OpenAlex PDF opt-out
+## Goals
 
-## 1. VPN / Proxy hard-block (app-wide, not just the GPS slide)
+1. Replace the current free-tier IP intelligence (ipwho.is + ipapi.co) with **Abstract API IP Intelligence** as the primary VPN/proxy/datacenter detector, keeping ipwho.is as a fallback.
+2. Optionally use **Abstract API Geolocation** for reverse-geocoding country (replacing geocode.maps.co).
+3. Fix the Vault explainer card: re-center the medallion/quote block, restore the "Experience + Time-Coins" wording, tweak two tagline strings, and **move** the `Ads → … ↺` flow line out of the Vault card and into the "Stake your Stablecoins Safely" CTA card with new wording.
 
-**Current behavior (broken):**
-- VPN detection runs only inside `GeoConsentSlide`, which only opens when the user toggles GPS on.
-- A detected VPN merely shows a yellow "low-trust mode" warning — the user keeps full access.
-- Users on a VPN with the GPS toggle OFF are never even checked.
+## 1. Abstract API integration (VPN detection)
 
-**New behavior:**
-The VPN/proxy check becomes a **mandatory app-wide gate**, independent of GPS or cookie toggles. A user with a suspected VPN/datacenter ASN cannot use the app until they disconnect.
+The user shared an API key in chat. Storing API keys in source is unsafe even when the endpoint is "public" — Abstract counts requests against that key and it would be visible in the bundled JS. We'll store it as a Lovable Cloud secret and call Abstract from a tiny edge function that the browser hits.
 
-### What to build
+**New edge function**: `supabase/functions/ip-intelligence/index.ts`
 
-**New file: `src/components/VpnGuard.tsx`** — a full-screen blocking overlay.
-- On mount: call `fetchIpInfo()` and `getVisitorId()` in parallel.
-- Decision:
-  - `vpn_suspected === true` → show **block screen**.
-  - Network/lookup error → soft warn but allow (avoid breaking offline users); retry button.
-- Block screen UI (matches existing dark/amber theme):
-  - `ShieldAlert` icon, title "Unusual traffic detected".
-  - Body: "We've detected your connection is routed through a VPN, proxy, or datacenter network ({org/ASN}). To protect the reward pool from bot farms, ResearchRewards is unavailable on these connections. Please disable your VPN/proxy and reload."
-  - Shows the detected ASN/org and visitor fingerprint (small mono).
-  - Buttons: **"Re-check connection"** (re-runs `fetchIpInfo`, no caching) and **"Sign out"**.
-  - No "continue anyway" / no dismiss.
-- Persist the block event to `device_telemetry` (set `vpn_suspected = true`, `asn`, `fingerprint`) when the user is authenticated, so admins can see attempts.
-- Cache the **passing** result in memory for the session (avoid hammering ipapi.co); never cache a fail (force re-check).
+- Reads `ABSTRACT_IP_API_KEY` (and optional `ABSTRACT_GEO_API_KEY`) from env.
+- Accepts `GET /ip-intelligence` (no body) and optionally `?lat=&lng=` for the geolocation lookup.
+- Calls `https://ip-intelligence.abstractapi.com/v1/?api_key=…` using the caller's IP (read from `x-forwarded-for`, falling back to letting Abstract auto-detect when called server-side without an IP param).
+- Normalises the response into the existing `IpInfo` shape:
+  - `vpn_suspected` = `security.is_vpn || security.is_proxy || security.is_tor || security.is_hosting || security.is_relay`
+  - `reason` = first matching flag, e.g. `"VPN flag from Abstract"` / `"Hosting / datacenter IP"`
+  - `org` = `company.name`, `asn` = `asn.asn`, `country_code` = `location.country_code`
+- CORS enabled, `verify_jwt = false` (called before login on the consent slide and by VpnGuard).
+- Add it to `supabase/config.toml` with `verify_jwt = false`.
 
-**Mount point: `src/components/AppLayout.tsx`** — wrap `<main>` content. The guard renders nothing when the IP is clean, so authenticated routes work as before. We mount it inside `AppLayout` so public auth pages remain reachable (a blocked user can still sign out).
+**Secret**: prompt the user to paste `ABSTRACT_IP_API_KEY` (and optionally `ABSTRACT_GEO_API_KEY`) via the secrets tool. The key shared in chat will be discarded — please re-enter it in the secret prompt so it's not stored in source/history.
 
-**Strengthen `src/lib/vpnDetection.ts`:**
-- Add a few more well-known VPN/proxy/hosting tokens currently missing (e.g. `cloudflare warp`, `mullvad`, `oracle cloud`, `ibm cloud`, `gcore`, `quadranet`, `colocrossing`, `worldstream`, `serverius`).
-- Add a second free signal: treat `j.proxy === true`, `j.hosting === true`, or `j.security?.vpn === true` as suspect when ipapi.co returns them.
-- Export an explicit `evaluateBlock(info: IpInfo | null): { block: boolean; reason: string | null }` so `VpnGuard` and `GeoConsentSlide` share one source of truth.
+`**src/lib/vpnDetection.ts` rewrite**:
 
-**Update `GeoConsentSlide`:**
-- Remove the "low-trust mode, continue anyway" path for VPN cases — if `VpnGuard` is in front, the slide will never see a VPN user. Keep only the GPS↔IP country mismatch warning here (that one stays soft).
+- `fetchIpInfo()` now calls the edge function first (`supabase.functions.invoke('ip-intelligence')`).
+- Falls back to the existing ipwho.is path on network/edge failure (offline-friendly: still returns `null`, which `evaluateBlock` treats as "do not block").
+- Keep `VPN_HOSTS` / `GENERIC_TOKENS` as a secondary check layered on top of Abstract's flags so a generic "datacenter" string still trips the gate even if Abstract misses.
+- `reverseGeocodeCountry()` updated to optionally call the edge function with `?lat=&lng=` if `ABSTRACT_GEO_API_KEY` is present, otherwise keep the geocode.maps.co fallback.
 
-**Memory note:** add a project rule that VPN/proxy/datacenter IPs are blocked app-wide regardless of toggles.
+No changes needed to `VpnGuard.tsx` or `GeoConsentSlide.tsx` — they consume `fetchIpInfo()` / `evaluateBlock()` and stay as-is.
 
-## 2. OpenAlex PDF opt-out
+[The Main Objective Here is Denying the Access to Users with Open VPN on their Mobile or Desktop:
 
-**Current behavior (broken):** "Open paper" picks `open_access_url` first, which OpenAlex frequently returns as a direct `.pdf`. PDFs open in the device's native viewer (or Chrome's PDF handler), leaving our in-app browser and breaking the polling/chronology system.
+ If VPN detected→Block Access to Site→Leave a Friendly Message Suggesting Deactivate VPN and Reload.]
 
-**New behavior:** never serve a PDF link from OpenAlex. Always route users to an HTML landing page so the in-app outbound browser can track dwell time.
+## 2. Vault page copy + layout (`src/pages/Earnings.tsx`)
 
-### What to change
+**Top tagline** under the "Vault & Earnings" heading — change to:
 
-**`src/hooks/useOpenAlex.ts`:**
-- Add a small helper `isPdfLike(url)` — true if URL ends in `.pdf` (case-insensitive, ignoring query string) or contains `/pdf/` segment.
-- When mapping each work, **drop** `open_access_url` if it's PDF-like; **drop** `landing_page_url` if it's PDF-like.
-- New computed field `safe_url: string | null` = first non-PDF candidate among:
-  1. `landing_page_url` (HTML)
-  2. `open_access_url` (HTML)
-  3. `https://doi.org/<doi>` (always HTML — DOI resolves to publisher's landing page)
-  4. The OpenAlex work page itself: `https://openalex.org/<workId>` (guaranteed HTML fallback).
-- Add OpenAlex API filters to reduce PDF results upstream: append `&filter=has_doi:true` to the query so works without a DOI (often pure PDF preprints) drop out.
+> AddLogic doesn't pay per click or per ad watched — it rewards you for your **Time & Experience**.
 
-**`src/components/OpenAlexFeed.tsx`:**
-- Replace the inline URL-picking logic with `w.safe_url`.
-- Disable the "Open paper" button only when `safe_url` is null (extremely rare now).
-- Add a tiny info hint under the feed header: "Opens in the in-app browser — PDFs are filtered out so your session keeps tracking."
+**Vault explainer paragraph** — restore the dual-track (Experience + Time-Coins) wording and update the withdraw sentence:
 
-No DB or edge-function changes required for either fix.
+> Ad revenue across all tiers is pooled and redistributed by tier importance into **Time-Coins** *and* **Experience** — your in-app tokenised balance and progression earned for the time you spend researching. **Withdraw at any Time** by redeeming **Time-Coins & Experience** for Stablecoins via **MiniPay**, or convert to local currency via **Google Wallet.** 
 
-## Technical summary
-- Files created: `src/components/VpnGuard.tsx`
-- Files edited: `src/components/AppLayout.tsx`, `src/lib/vpnDetection.ts`, `src/components/GeoConsentSlide.tsx`, `src/hooks/useOpenAlex.ts`, `src/components/OpenAlexFeed.tsx`
-- Memory: append VPN-block invariant to `mem://index.md` Core
+**Remove** the `<pre>Ads → Time-Coins → Stake → Yield → Stablecoin ↺</pre>` block from this card.
+
+**Center the medallion + Franklin quote block**: the wrapper currently uses `flex flex-col items-center` but its parent `flex items-start gap-3` row gives it a left icon column that throws off optical centering. Move the medallion block out of the inner flex row (make it a sibling of the inner `flex items-start gap-3` div) so it spans the full card width and centers cleanly.
+
+**"Stake your Stablecoins Safely" CTA card** — add the flow line as a third row above/below the existing copy:
+
+```text
+Research Your Interests → Earn Time-Coins → In-Vault Staking → Yield Stablecoin ↺
+```
+
+Render it as the same `<pre>` styling that previously lived in the Vault card (monospace, secondary background, rounded), so the visual signature follows the concept to its new home.
+
+## 3. Files touched
+
+- New: `supabase/functions/ip-intelligence/index.ts`
+- Edit: `supabase/config.toml` (add `[functions.ip-intelligence] verify_jwt = false`)
+- Edit: `src/lib/vpnDetection.ts` (Abstract-first lookup, edge function call, reverse-geocode update)
+- Edit: `src/pages/Earnings.tsx` (copy changes, layout centering, move flow line to CTA card)
+- Memory: update `mem://` to record Abstract API as the primary IP-intel source
+
+## Risks / notes
+
+- Abstract free tier is ~1 req/sec; `VpnGuard`'s 60-second polling + focus re-check will stay well under that for a single user. If quota becomes an issue we can raise the polling interval.
+- If the edge function or Abstract is down, we fall back to ipwho.is so the app still works (and still blocks obvious datacenter ASNs via the local list).
+  [Now is not Doing it so we would need to Remove [IPwho.is](http://IPwho.is) or Checking its functions because you'd didn't achieved nothing in the last sessions]
+- The API key shared in chat should be considered burned — please re-enter it via the secret prompt and rotate it in the Abstract dashboard at your convenience.
