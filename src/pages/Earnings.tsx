@@ -200,10 +200,17 @@ export default function Earnings() {
                 </NavLink>
               </Button>
             </div>
-            <div className="text-[11px] bg-secondary/40 rounded-md p-2 text-foreground/80 break-words leading-relaxed text-center font-mono">
-              Research Your Interests <span className="text-money">→</span> Earn Time-Coins{" "}
-              <span className="text-money">→</span> In-Vault Staking{" "}
-              <span className="text-money">→</span> Yield Stablecoin <span className="text-money">↺</span>
+            <div className="text-[11px] bg-secondary/40 rounded-md px-3 py-2 text-foreground/80 leading-relaxed text-center font-mono">
+              <span className="inline-flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 max-w-full">
+                <span>Research Your Interests</span>
+                <span className="text-money">→</span>
+                <span>Earn Time-Coins</span>
+                <span className="text-money">→</span>
+                <span>In-Vault Staking</span>
+                <span className="text-money">→</span>
+                <span>Yield Stablecoin</span>
+                <span className="text-money">↺</span>
+              </span>
             </div>
           </CardContent>
         </Card>

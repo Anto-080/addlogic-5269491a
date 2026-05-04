@@ -28,6 +28,25 @@ type AbstractResp = {
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const cache = new Map<string, { at: number; payload: unknown }>();
 
+function firstIp(value: string | null): string | null {
+  if (!value) return null;
+  for (const part of value.split(",")) {
+    const ip = part.trim().replace(/^::ffff:/, "");
+    if (!ip || ip.toLowerCase() === "unknown") continue;
+    return ip;
+  }
+  return null;
+}
+
+function getCallerIp(req: Request): string | null {
+  return (
+    firstIp(req.headers.get("cf-connecting-ip")) ??
+    firstIp(req.headers.get("x-real-ip")) ??
+    firstIp(req.headers.get("x-forwarded-for")) ??
+    firstIp(req.headers.get("x-forwarded-client-ip"))
+  );
+}
+
 function shape(j: AbstractResp, callerIp: string) {
   const sec = j.security ?? {};
   const flags: { key: keyof NonNullable<AbstractResp["security"]>; reason: string }[] = [
@@ -73,8 +92,13 @@ Deno.serve(async (req) => {
     );
   }
 
-  const fwd = req.headers.get("x-forwarded-for") ?? "";
-  const callerIp = fwd.split(",")[0]?.trim() || "anon";
+  const callerIp = getCallerIp(req);
+  if (!callerIp) {
+    return new Response(
+      JSON.stringify({ error: "client ip unavailable", fallback: true }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 
   // Serve from cache when fresh.
   const hit = cache.get(callerIp);
@@ -87,7 +111,7 @@ Deno.serve(async (req) => {
 
   const url = new URL("https://ip-intelligence.abstractapi.com/v1/");
   url.searchParams.set("api_key", apiKey);
-  if (callerIp !== "anon") url.searchParams.set("ip_address", callerIp);
+  url.searchParams.set("ip_address", callerIp);
 
   try {
     const r = await fetch(url.toString(), { headers: { Accept: "application/json" } });

@@ -75,6 +75,8 @@ function applyLocalBlocklist(info: IpInfo): IpInfo {
 
 type EdgePayload = Partial<IpInfo> & { error?: string; fallback?: boolean };
 
+const UNVERIFIED_CACHE_MS = 8_000;
+
 async function callAbstract(): Promise<{ info: IpInfo | null; degraded: string | null }> {
   try {
     const { data, error } = await supabase.functions.invoke("ip-intelligence", { method: "GET" });
@@ -111,7 +113,10 @@ let cached: { at: number; verdict: IpVerdict } | null = null;
 const CLIENT_TTL_MS = 5 * 60 * 1000;
 
 export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
-  if (!force && cached && Date.now() - cached.at < CLIENT_TTL_MS) return cached.verdict;
+  if (!force && cached) {
+    const ttl = cached.verdict.status === "unverified" ? UNVERIFIED_CACHE_MS : CLIENT_TTL_MS;
+    if (Date.now() - cached.at < ttl) return cached.verdict;
+  }
   if (!force && inflight) return inflight;
 
   inflight = (async () => {
@@ -137,6 +142,11 @@ export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
 export async function fetchIpInfo(): Promise<IpInfo | null> {
   const v = await fetchIpVerdict();
   return v.info;
+}
+
+export function clearIpVerdictCache() {
+  cached = null;
+  inflight = null;
 }
 
 /**
