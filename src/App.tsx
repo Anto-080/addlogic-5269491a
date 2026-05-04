@@ -42,34 +42,34 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <VpnGuard>
         <AuthProvider>
-          <SettingsProvider>
-            <ResearchSessionProvider>
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/login" element={<AuthRoute><Auth /></AuthRoute>} />
-                {/* Legacy /auth path kept as a redirect so old links still work. */}
-                <Route path="/auth" element={<Navigate to="/login" replace />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/research" element={<ProtectedRoute><Research /></ProtectedRoute>} />
-                <Route path="/tiers" element={<ProtectedRoute><Tiers /></ProtectedRoute>} />
-                <Route path="/earnings" element={<ProtectedRoute><Earnings /></ProtectedRoute>} />
-                <Route path="/sponsors" element={<Navigate to="/tiers?view=sponsors" replace />} />
-                <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
-                <Route path="/investments" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/offers" element={<ProtectedRoute><Offers /></ProtectedRoute>} />
-                {import.meta.env.DEV && (
-                  <Route path="/dev/vault-diff" element={<VaultDiff />} />
-                )}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </ResearchSessionProvider>
-          </SettingsProvider>
+          <VpnGuard>
+            <SettingsProvider>
+              <ResearchSessionProvider>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/login" element={<AuthRoute><Auth /></AuthRoute>} />
+                  {/* Legacy /auth path kept as a redirect so old links still work. */}
+                  <Route path="/auth" element={<Navigate to="/login" replace />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/research" element={<ProtectedRoute><Research /></ProtectedRoute>} />
+                  <Route path="/tiers" element={<ProtectedRoute><Tiers /></ProtectedRoute>} />
+                  <Route path="/earnings" element={<ProtectedRoute><Earnings /></ProtectedRoute>} />
+                  <Route path="/sponsors" element={<Navigate to="/tiers?view=sponsors" replace />} />
+                  <Route path="/connections" element={<ProtectedRoute><Connections /></ProtectedRoute>} />
+                  <Route path="/investments" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
+                  <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                  <Route path="/offers" element={<ProtectedRoute><Offers /></ProtectedRoute>} />
+                  {import.meta.env.DEV && (
+                    <Route path="/dev/vault-diff" element={<VaultDiff />} />
+                  )}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </ResearchSessionProvider>
+            </SettingsProvider>
+          </VpnGuard>
         </AuthProvider>
-        </VpnGuard>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
