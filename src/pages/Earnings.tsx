@@ -49,24 +49,26 @@ export default function Earnings() {
             <RoundVault size={26} style={{ color: VAULT_GOLD }} /> Vault &amp; Earnings
           </h1>
           <p className="text-sm text-muted-foreground">
-            AddLogic doesn't pay per click or per ad watched — it pays for your <strong>time and experience</strong>.
+            AddLogic doesn't pay per click or per ad watched — it rewards you for your <strong>Time &amp; Experience</strong>.
           </p>
         </div>
 
         {/* Vault explainer — Time-Coins narrative */}
         <Card className="bg-card border-border/50 glow-amber">
-          <CardContent className="p-4 space-y-3">
+          <CardContent className="p-4 space-y-4">
             <div className="flex items-start gap-3">
               <RoundVault size={26} style={{ color: VAULT_GOLD }} className="mt-0.5 shrink-0" />
               <div className="flex-1 space-y-2">
-                <p className="text-sm font-semibold text-foreground">In-app Vault &amp; Time-Coins</p>
+                <p className="text-sm font-semibold text-foreground">In-app Vault, Time-Coins &amp; Experience</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Ad revenue across all tiers is pooled and redistributed by tier importance into{" "}
-                  <strong className="text-foreground">Time-Coins</strong> — your in-app tokenised balance
-                  earned for the time you spend researching. Withdraw at any time by redeeming Time-Coins
-                  for stablecoins via <strong className="text-foreground">MiniPay</strong>, then to local
-                  currency via <strong className="text-foreground">Google Wallet</strong>. A small operating
-                  fee covers conversion.
+                  <strong className="text-foreground">Time-Coins</strong> <em>and</em>{" "}
+                  <strong className="text-foreground">Experience</strong> — your in-app tokenised balance
+                  and progression earned for the time you spend researching.{" "}
+                  <strong className="text-foreground">Withdraw at any Time</strong> by redeeming{" "}
+                  <strong className="text-foreground">Time-Coins &amp; Experience</strong> for Stablecoins
+                  via <strong className="text-foreground">MiniPay</strong>, or convert to local currency
+                  via <strong className="text-foreground">Google Wallet</strong>.
                 </p>
                 <p className="text-[11px] text-muted-foreground leading-relaxed italic">
                   Test the withdrawal flow with small transactions while you build your Time-Coin balance
@@ -75,22 +77,22 @@ export default function Earnings() {
                   for. At Investment Level, tailored zero-risk passive plans let your earnings compound on
                   their own. — <em>Keep researching what you love.</em>
                 </p>
-                <pre className="mt-2 text-[11px] bg-secondary/40 rounded-md p-2 text-foreground/80 overflow-x-auto">
-{`Ads → Time-Coins → Stake → Yield → Stablecoin ↺`}
-                </pre>
               </div>
             </div>
-            <a
-              href="https://www.kiln.fi/post/kiln-powers-stablecoin-earn-product-for-minipay-users-on-celo-targeting-1-3b-unbanked-globally"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-full bg-secondary/60 border border-border/40 text-foreground/80 hover:text-primary hover:border-primary/40 transition-colors"
-            >
-              <ShieldCheck className="h-3 w-3" /> Secured by Kiln Vault Provider
-            </a>
 
-            {/* Time-Coin medallion + Franklin quote */}
-            <div className="flex flex-col items-center gap-2 pt-3">
+            <div className="flex justify-center">
+              <a
+                href="https://www.kiln.fi/post/kiln-powers-stablecoin-earn-product-for-minipay-users-on-celo-targeting-1-3b-unbanked-globally"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-full bg-secondary/60 border border-border/40 text-foreground/80 hover:text-primary hover:border-primary/40 transition-colors"
+              >
+                <ShieldCheck className="h-3 w-3" /> Secured by Kiln Vault Provider
+              </a>
+            </div>
+
+            {/* Time-Coin medallion + Franklin quote — full-width centered */}
+            <div className="flex flex-col items-center justify-center gap-2 pt-1 w-full">
               <img
                 src={timeCoinMedallion}
                 alt="Time-Coin medallion"
@@ -183,19 +185,24 @@ export default function Earnings() {
 
         {/* Investments CTA — placed BEFORE the Withdraw card */}
         <Card className="bg-card border-border/50 glow-amber">
-          <CardContent className="p-6 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <TrendingUp className="h-7 w-7 shrink-0" style={{ color: VAULT_GOLD }} />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">Stake your Stablecoins Safely</p>
-                <p className="text-xs text-muted-foreground">Multiply your earnings passively while your Vault sleeps.</p>
+          <CardContent className="p-6 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <TrendingUp className="h-7 w-7 shrink-0" style={{ color: VAULT_GOLD }} />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Stake your Stablecoins Safely</p>
+                  <p className="text-xs text-muted-foreground">Multiply your earnings passively while your Vault sleeps.</p>
+                </div>
               </div>
+              <Button asChild className="bg-money hover:bg-money/90 text-white shrink-0 gap-2">
+                <NavLink to="/investments">
+                  Invest <ArrowUpRight className="h-4 w-4" />
+                </NavLink>
+              </Button>
             </div>
-            <Button asChild className="bg-money hover:bg-money/90 text-white shrink-0 gap-2">
-              <NavLink to="/investments">
-                Invest <ArrowUpRight className="h-4 w-4" />
-              </NavLink>
-            </Button>
+            <pre className="text-[11px] bg-secondary/40 rounded-md p-2 text-foreground/80 overflow-x-auto">
+{`Research Your Interests → Earn Time-Coins → In-Vault Staking → Yield Stablecoin ↺`}
+            </pre>
           </CardContent>
         </Card>
 
