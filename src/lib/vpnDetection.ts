@@ -77,8 +77,10 @@ async function fetchFromAbstract(): Promise<IpInfo | null> {
     const { data, error } = await supabase.functions.invoke("ip-intelligence", {
       method: "GET",
     });
-    if (error || !data || (data as { error?: string }).error) return null;
-    const d = data as Partial<IpInfo>;
+    if (error || !data) return null;
+    const d = data as Partial<IpInfo> & { error?: string; fallback?: boolean };
+    // Edge function asked us to fall back (rate-limited, missing key, etc.)
+    if (d.fallback || d.error) return null;
     const info: IpInfo = {
       ip: d.ip ?? "",
       country_code: d.country_code ?? null,
@@ -117,10 +119,24 @@ async function fetchFromIpwho(): Promise<IpInfo | null> {
   }
 }
 
+// Dedupe concurrent callers (VpnGuard + GeoConsentSlide both fire on first
+// paint) and cache the result for 5 min so we stay well under the
+// Abstract free-tier 1-req/sec limit.
+let inflight: Promise<IpInfo | null> | null = null;
+let cached: { at: number; info: IpInfo | null } | null = null;
+const CLIENT_TTL_MS = 5 * 60 * 1000;
+
 export async function fetchIpInfo(): Promise<IpInfo | null> {
-  const primary = await fetchFromAbstract();
-  if (primary) return primary;
-  return fetchFromIpwho();
+  if (cached && Date.now() - cached.at < CLIENT_TTL_MS) return cached.info;
+  if (inflight) return inflight;
+  inflight = (async () => {
+    const primary = await fetchFromAbstract();
+    const result = primary ?? (await fetchFromIpwho());
+    cached = { at: Date.now(), info: result };
+    inflight = null;
+    return result;
+  })();
+  return inflight;
 }
 
 /**
