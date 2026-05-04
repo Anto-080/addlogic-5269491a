@@ -1,36 +1,36 @@
 import { ReactNode, useCallback, useEffect, useState } from "react";
-import { ShieldAlert, Loader2, RefreshCw, LogOut } from "lucide-react";
+import { ShieldAlert, Loader2, RefreshCw, LogOut, ShieldQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchIpInfo, evaluateBlock, type IpInfo } from "@/lib/vpnDetection";
+import { fetchIpVerdict, type IpVerdict } from "@/lib/vpnDetection";
 import { getVisitorId } from "@/lib/fingerprint";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
  * App-wide hard gate: any user routed through a VPN, proxy, or datacenter
- * IP is blocked from the app entirely (regardless of GPS / cookie toggles).
- * This is the primary defense against bot farms draining the regional reward
- * pool. There is no "continue anyway" — the user must disconnect their VPN.
+ * IP is blocked from the entire site (regardless of GPS / cookie toggles,
+ * regardless of auth state). This is the primary defense against bot farms
+ * draining the regional reward pool. There is no "continue anyway" — the
+ * user must disconnect their VPN.
  *
- * Network/lookup failures are NOT a block (offline-friendly); only a clearly
- * suspect IP triggers the screen.
+ * Verification source: Abstract API only (see src/lib/vpnDetection.ts).
+ * If Abstract is unreachable / rate-limited we show an "unverified" screen
+ * with a Retry button — we do NOT silently let traffic through, and we do
+ * NOT downgrade to a weaker provider for the block decision.
  */
-
-
 
 export function VpnGuard({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
-  const [info, setInfo] = useState<IpInfo | null>(null);
+  const [verdict, setVerdict] = useState<IpVerdict | null>(null);
   const [checking, setChecking] = useState(true);
   const [fp, setFp] = useState<string | null>(null);
 
-  const runCheck = useCallback(async () => {
+  const runCheck = useCallback(async (force = false) => {
     setChecking(true);
-    const [next, visitorId] = await Promise.all([fetchIpInfo(), getVisitorId()]);
+    const [next, visitorId] = await Promise.all([fetchIpVerdict(force), getVisitorId()]);
     setFp(visitorId);
-    setInfo(next);
-    const { block } = evaluateBlock(next);
-    if (block && user) {
+    setVerdict(next);
+    if (next.status === "blocked" && user) {
       try {
         await supabase
           .from("device_telemetry")
@@ -38,9 +38,9 @@ export function VpnGuard({ children }: { children: ReactNode }) {
             {
               user_id: user.id,
               vpn_suspected: true,
-              asn: next?.asn ?? null,
+              asn: next.info?.asn ?? null,
               fingerprint: visitorId,
-              ip_country: next?.country_code ?? null,
+              ip_country: next.info?.country_code ?? null,
               profile: {},
             },
             { onConflict: "user_id" }
@@ -63,50 +63,88 @@ export function VpnGuard({ children }: { children: ReactNode }) {
     };
   }, [runCheck]);
 
-  const { block, reason } = evaluateBlock(info);
+  // While we're doing the very first check, render a small full-screen
+  // splash so we don't flash the app to a VPN user.
+  if (!verdict && checking) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-4">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Verifying connection…
+        </div>
+      </div>
+    );
+  }
 
-  if (!block) return <>{children}</>;
+  if (verdict?.status === "ok") return <>{children}</>;
+
+  const blocked = verdict?.status === "blocked";
+  const unverified = verdict?.status === "unverified";
+  const info = verdict?.info ?? null;
 
   return (
     <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur flex items-center justify-center p-4 overflow-y-auto">
-      <div className="max-w-md w-full bg-card border border-destructive/50 rounded-2xl p-6 space-y-4 shadow-2xl">
+      <div className={`max-w-md w-full bg-card border ${blocked ? "border-destructive/50" : "border-border/60"} rounded-2xl p-6 space-y-4 shadow-2xl`}>
         <div className="flex justify-center">
-          <div className="h-14 w-14 rounded-full bg-destructive/15 flex items-center justify-center">
-            <ShieldAlert className="h-7 w-7 text-destructive" />
+          <div className={`h-14 w-14 rounded-full flex items-center justify-center ${blocked ? "bg-destructive/15" : "bg-secondary/60"}`}>
+            {blocked ? (
+              <ShieldAlert className="h-7 w-7 text-destructive" />
+            ) : (
+              <ShieldQuestion className="h-7 w-7 text-muted-foreground" />
+            )}
           </div>
         </div>
+
         <div className="text-center space-y-2">
-          <h2 className="text-lg font-bold text-foreground">Unusual traffic detected</h2>
+          <h2 className="text-lg font-bold text-foreground">
+            {blocked ? "VPN or proxy detected" : "Connection not verified"}
+          </h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Your connection appears to be routed through a VPN, proxy, or datacenter network.
-            To protect the regional reward pool from bot farms, ResearchRewards is unavailable
-            on these connections. Please disable your VPN or proxy and re-check.
+            {blocked ? (
+              <>
+                Your connection is routed through a <strong>VPN, proxy, or datacenter</strong> network.
+                To protect the regional reward pool from bot farms, AddLogic is unavailable on these
+                connections. <strong>Please disable your VPN or proxy</strong>, then re-check.
+              </>
+            ) : (
+              <>
+                We couldn't verify your network is residential. AddLogic is only available once your
+                connection has been verified as not being a VPN/proxy. Please retry.
+              </>
+            )}
           </p>
         </div>
 
-        <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-[11px] text-foreground/90 space-y-1">
-          <div>
-            <strong>Network</strong>: {info?.org ?? info?.asn ?? "unknown"}
-          </div>
-          {info?.country_name && (
+        {(blocked || unverified) && (
+          <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-[11px] text-foreground/90 space-y-1">
             <div>
-              <strong>Country</strong>: {info.country_name}
+              <strong>Network</strong>: {info?.org ?? info?.asn ?? "unknown"}
             </div>
-          )}
-          {reason && (
-            <div className="text-destructive">
-              <strong>Reason</strong>: {reason}
-            </div>
-          )}
-          {fp && (
-            <div className="text-muted-foreground">
-              <strong>Device</strong>: <code className="text-[10px]">{fp.slice(0, 12)}…</code>
-            </div>
-          )}
-        </div>
+            {info?.country_name && (
+              <div>
+                <strong>Country</strong>: {info.country_name}
+              </div>
+            )}
+            {blocked && verdict?.info?.reason && (
+              <div className="text-destructive">
+                <strong>Reason</strong>: {verdict.info.reason}
+              </div>
+            )}
+            {unverified && verdict?.unverifiedReason && (
+              <div className="text-muted-foreground">
+                <strong>Status</strong>: {verdict.unverifiedReason}
+              </div>
+            )}
+            {fp && (
+              <div className="text-muted-foreground">
+                <strong>Device</strong>: <code className="text-[10px]">{fp.slice(0, 12)}…</code>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
-          <Button onClick={runCheck} disabled={checking} className="w-full gap-2">
+          <Button onClick={() => runCheck(true)} disabled={checking} className="w-full gap-2">
             {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Re-check connection
           </Button>

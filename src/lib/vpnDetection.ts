@@ -1,13 +1,17 @@
 /**
  * VPN / datacenter / proxy detection.
  *
- * Primary source: Abstract API IP Intelligence, proxied through our
+ * Single source of truth: Abstract API IP Intelligence, proxied through our
  * `ip-intelligence` edge function (so the API key is never bundled).
- * Fallback: ipwho.is keyless lookup if the edge function is unreachable.
  *
  * Why: AddLogic's reward pool is region-priced. A user in a low-cost region
  * can otherwise spoof a high-CPM region (e.g. US/EU) via VPN and drain the
  * pool. Suspect IPs are hard-blocked app-wide by VpnGuard.
+ *
+ * Design rule: this module ONLY uses Abstract for the access-control
+ * verdict. We deliberately do not mix in weaker keyless providers
+ * (e.g. ipwho.is) for the block decision — that would let attackers
+ * downgrade to a provider that doesn't flag their VPN.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -22,9 +26,19 @@ export type IpInfo = {
   reason: string | null;
 };
 
+export type VerdictStatus = "ok" | "blocked" | "unverified";
+
+export type IpVerdict = {
+  status: VerdictStatus;
+  info: IpInfo | null;
+  // Only set when status === "unverified" — explains why we couldn't decide.
+  unverifiedReason?: string;
+};
+
 // Local secondary blocklist (substring match against ASN/org) — layered on
 // top of Abstract's flags so a generic "datacenter" string still trips the
-// gate even if the upstream provider misses it.
+// gate even if the upstream provider misses it. This NEVER unblocks; it
+// can only escalate an Abstract "ok" to "blocked".
 const VPN_HOSTS = [
   "nordvpn", "nord ", "expressvpn", "express vpn", "mullvad", "protonvpn", "proton ag",
   "surfshark", "private internet access", "pia ", "windscribe", "cyberghost",
@@ -41,21 +55,8 @@ const VPN_HOSTS = [
 
 const GENERIC_TOKENS = [
   "vpn", "proxy", "hosting", "datacenter", "data center", "data-center",
-  "cloud", "server", "colocation", "colo ", "anonymizer", "tor exit", "exit node",
+  "colocation", "colo ", "anonymizer", "tor exit", "exit node",
 ];
-
-export type BlockEvaluation = {
-  block: boolean;
-  reason: string | null;
-};
-
-export function evaluateBlock(info: IpInfo | null): BlockEvaluation {
-  if (!info) return { block: false, reason: null };
-  if (info.vpn_suspected) {
-    return { block: true, reason: info.reason ?? "VPN / datacenter / proxy connection" };
-  }
-  return { block: false, reason: null };
-}
 
 function applyLocalBlocklist(info: IpInfo): IpInfo {
   if (info.vpn_suspected) return info;
@@ -72,15 +73,21 @@ function applyLocalBlocklist(info: IpInfo): IpInfo {
   return info;
 }
 
-async function fetchFromAbstract(): Promise<IpInfo | null> {
+type EdgePayload = Partial<IpInfo> & { error?: string; fallback?: boolean };
+
+async function callAbstract(): Promise<{ info: IpInfo | null; degraded: string | null }> {
   try {
-    const { data, error } = await supabase.functions.invoke("ip-intelligence", {
-      method: "GET",
-    });
-    if (error || !data) return null;
-    const d = data as Partial<IpInfo> & { error?: string; fallback?: boolean };
-    // Edge function asked us to fall back (rate-limited, missing key, etc.)
-    if (d.fallback || d.error) return null;
+    const { data, error } = await supabase.functions.invoke("ip-intelligence", { method: "GET" });
+    if (error || !data) {
+      return { info: null, degraded: error?.message ?? "edge function unreachable" };
+    }
+    const d = data as EdgePayload;
+    if (d.fallback || d.error) {
+      // Edge says it couldn't get a verdict from Abstract (rate limit,
+      // missing key, upstream 5xx). We do NOT silently substitute another
+      // provider — caller decides what to show.
+      return { info: null, degraded: d.error ?? "abstract unavailable" };
+    }
     const info: IpInfo = {
       ip: d.ip ?? "",
       country_code: d.country_code ?? null,
@@ -90,53 +97,46 @@ async function fetchFromAbstract(): Promise<IpInfo | null> {
       vpn_suspected: !!d.vpn_suspected,
       reason: d.reason ?? null,
     };
-    return applyLocalBlocklist(info);
-  } catch {
-    return null;
+    return { info: applyLocalBlocklist(info), degraded: null };
+  } catch (e) {
+    return { info: null, degraded: e instanceof Error ? e.message : "network error" };
   }
 }
 
-async function fetchFromIpwho(): Promise<IpInfo | null> {
-  try {
-    const r = await fetch("https://ipwho.is/?fields=ip,success,country,country_code,connection,security", {
-      headers: { Accept: "application/json" },
-    });
-    if (!r.ok) return null;
-    const j = await r.json();
-    if (j?.success === false) return null;
-    const info: IpInfo = {
-      ip: String(j?.ip ?? ""),
-      country_code: j?.country_code ?? null,
-      country_name: j?.country ?? null,
-      asn: String(j?.connection?.asn ?? ""),
-      org: j?.connection?.org ?? j?.connection?.isp ?? null,
-      vpn_suspected: false,
-      reason: null,
-    };
-    return applyLocalBlocklist(info);
-  } catch {
-    return null;
-  }
-}
-
-// Dedupe concurrent callers (VpnGuard + GeoConsentSlide both fire on first
-// paint) and cache the result for 5 min so we stay well under the
-// Abstract free-tier 1-req/sec limit.
-let inflight: Promise<IpInfo | null> | null = null;
-let cached: { at: number; info: IpInfo | null } | null = null;
+// Dedupe concurrent callers (anything that needs the verdict) and cache the
+// result for 5 min so we stay well under the Abstract free-tier 1-req/sec
+// limit. Single shared check across the app.
+let inflight: Promise<IpVerdict> | null = null;
+let cached: { at: number; verdict: IpVerdict } | null = null;
 const CLIENT_TTL_MS = 5 * 60 * 1000;
 
-export async function fetchIpInfo(): Promise<IpInfo | null> {
-  if (cached && Date.now() - cached.at < CLIENT_TTL_MS) return cached.info;
-  if (inflight) return inflight;
+export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
+  if (!force && cached && Date.now() - cached.at < CLIENT_TTL_MS) return cached.verdict;
+  if (!force && inflight) return inflight;
+
   inflight = (async () => {
-    const primary = await fetchFromAbstract();
-    const result = primary ?? (await fetchFromIpwho());
-    cached = { at: Date.now(), info: result };
+    const { info, degraded } = await callAbstract();
+    let verdict: IpVerdict;
+    if (info) {
+      verdict = { status: info.vpn_suspected ? "blocked" : "ok", info };
+    } else {
+      verdict = { status: "unverified", info: null, unverifiedReason: degraded ?? "verification failed" };
+    }
+    cached = { at: Date.now(), verdict };
     inflight = null;
-    return result;
+    return verdict;
   })();
   return inflight;
+}
+
+/**
+ * Backwards-compatible helper for callers that just want the IpInfo
+ * (e.g. the geo consent slide showing the user their detected country/ASN).
+ * This does NOT make access-control decisions — VpnGuard owns that.
+ */
+export async function fetchIpInfo(): Promise<IpInfo | null> {
+  const v = await fetchIpVerdict();
+  return v.info;
 }
 
 /**
