@@ -114,14 +114,14 @@ export function VpnGuard({ children }: { children: ReactNode }) {
                 To protect the regional reward pool from bot farms, AddLogic is unavailable on these
                 connections. <strong>Please disable your VPN or proxy</strong>, then re-check.
               </>
+            ) : clear ? (
+              <>
+                Your connection has been verified. Continue to re-enter the site.
+              </>
             ) : (
               <>
                 We couldn't verify your network is residential. AddLogic is only available once your
                 connection has been verified as not being a VPN/proxy. Please retry.
-              </>
-            ) : (
-              <>
-                Your connection has been verified. Continue to re-enter the site.
               </>
             )}
           </p>
