@@ -2,3 +2,6 @@ project_id = "qkzbevzmplhnwjuregsc"
 
 [functions.classify-interest]
 verify_jwt = false
+
+[functions.ip-intelligence]
+verify_jwt = false
