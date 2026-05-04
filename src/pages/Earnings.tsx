@@ -200,9 +200,11 @@ export default function Earnings() {
                 </NavLink>
               </Button>
             </div>
-            <pre className="text-[11px] bg-secondary/40 rounded-md p-2 text-foreground/80 overflow-x-auto">
-{`Research Your Interests → Earn Time-Coins → In-Vault Staking → Yield Stablecoin ↺`}
-            </pre>
+            <div className="text-[11px] bg-secondary/40 rounded-md p-2 text-foreground/80 break-words leading-relaxed text-center font-mono">
+              Research Your Interests <span className="text-money">→</span> Earn Time-Coins{" "}
+              <span className="text-money">→</span> In-Vault Staking{" "}
+              <span className="text-money">→</span> Yield Stablecoin <span className="text-money">↺</span>
+            </div>
           </CardContent>
         </Card>
 
