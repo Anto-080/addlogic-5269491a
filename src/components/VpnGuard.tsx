@@ -1,7 +1,7 @@
 import { ReactNode, useCallback, useEffect, useState } from "react";
 import { ShieldAlert, Loader2, RefreshCw, LogOut, ShieldQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchIpVerdict, type IpVerdict } from "@/lib/vpnDetection";
+import { clearIpVerdictCache, fetchIpVerdict, type IpVerdict } from "@/lib/vpnDetection";
 import { getVisitorId } from "@/lib/fingerprint";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,12 +24,15 @@ export function VpnGuard({ children }: { children: ReactNode }) {
   const [verdict, setVerdict] = useState<IpVerdict | null>(null);
   const [checking, setChecking] = useState(true);
   const [fp, setFp] = useState<string | null>(null);
+  const [continueReady, setContinueReady] = useState(false);
 
   const runCheck = useCallback(async (force = false) => {
     setChecking(true);
+    if (force) clearIpVerdictCache();
     const [next, visitorId] = await Promise.all([fetchIpVerdict(force), getVisitorId()]);
     setFp(visitorId);
     setVerdict(next);
+    setContinueReady(next.status === "ok");
     if (next.status === "blocked" && user) {
       try {
         await supabase
@@ -147,6 +150,14 @@ export function VpnGuard({ children }: { children: ReactNode }) {
           <Button onClick={() => runCheck(true)} disabled={checking} className="w-full gap-2">
             {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Re-check connection
+          </Button>
+          <Button
+            disabled={!continueReady || checking}
+            onClick={() => runCheck(true)}
+            variant="secondary"
+            className="w-full"
+          >
+            {continueReady ? "Continue" : blocked ? "Waiting for VPN to be disabled…" : "Waiting for verification…"}
           </Button>
           {user && (
             <Button onClick={signOut} variant="secondary" className="w-full gap-2">
