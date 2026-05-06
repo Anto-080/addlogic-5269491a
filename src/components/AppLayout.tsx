@@ -11,6 +11,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { useAdBlockDetector } from "@/hooks/useAdBlockDetector";
 import { AdBlockConsentSlide } from "@/components/AdBlockConsentSlide";
 import { VpnConsentSlide } from "@/components/VpnConsentSlide";
+import { useVpnDetector } from "@/hooks/useVpnDetector";
 
 const QUICK_LINKS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
