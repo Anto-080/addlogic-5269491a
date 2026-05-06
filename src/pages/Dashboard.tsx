@@ -20,6 +20,9 @@ import { CookieAuditSlide } from "@/components/CookieAuditSlide";
 import { ResearchChronologyCard } from "@/components/ResearchChronologyCard";
 import { sweepCookies } from "@/lib/cookieAudit";
 import { TimeCoinGlyph } from "@/components/icons/TimeCoinGlyph";
+import { supabase } from "@/integrations/supabase/client";
+
+type PromoCoupon = { id?: string | number; title?: string; description?: string; code?: string; store?: string; merchant?: string; brand?: string; url?: string; link?: string };
 
 function AnimatedCounter({ target }: { target: number }) {
   return (
@@ -39,6 +42,26 @@ export default function Dashboard() {
   const [cookieSlideOpen, setCookieSlideOpen] = useState(false);
   const [cookieCounts, setCookieCounts] = useState<{ first: number; third: number; zero: number } | null>(null);
   const [cookieSyncedAt, setCookieSyncedAt] = useState<number | null>(null);
+  const [promos, setPromos] = useState<PromoCoupon[] | null>(null);
+  const [promosLoading, setPromosLoading] = useState(false);
+  const [promosError, setPromosError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!gpsPrecision || !couponsOpen || promos !== null) return;
+    let cancelled = false;
+    setPromosLoading(true);
+    setPromosError(null);
+    supabase.functions.invoke("promo-codes", { method: "GET" })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) { setPromosError(error.message); return; }
+        const raw = (data as { data?: unknown; results?: unknown; coupons?: unknown }) ?? {};
+        const list = (raw.data ?? raw.results ?? raw.coupons ?? data) as PromoCoupon[];
+        setPromos(Array.isArray(list) ? list.slice(0, 12) : []);
+      })
+      .finally(() => { if (!cancelled) setPromosLoading(false); });
+    return () => { cancelled = true; };
+  }, [gpsPrecision, couponsOpen, promos]);
   const primaryTier = TIERS[3];
 
   const { data: stats } = useUserStats();
@@ -197,21 +220,41 @@ export default function Dashboard() {
                     </button>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {[
-                        { brand: "GreenLeaf Café", offer: "20% off espresso", dist: "0.4 km" },
-                        { brand: "MetroBooks", offer: "Buy 2 get 1 free — science", dist: "1.1 km" },
-                        { brand: "EcoMart", offer: "$5 off bulk produce", dist: "2.0 km" },
-                        { brand: "FitLab Gym", offer: "First week free trial", dist: "2.6 km" },
-                      ].map((c) => (
-                        <div key={c.brand} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{c.brand}</p>
-                            <p className="text-xs text-muted-foreground">{c.offer}</p>
-                          </div>
-                          <span className="text-[10px] text-money font-medium">{c.dist}</span>
-                        </div>
-                      ))}
+                    <div className="pt-3 space-y-2">
+                      {promosLoading && (
+                        <p className="text-xs text-muted-foreground italic">Loading live promo codes…</p>
+                      )}
+                      {promosError && (
+                        <p className="text-xs text-destructive">Couldn't load promos: {promosError}</p>
+                      )}
+                      {!promosLoading && !promosError && promos && promos.length === 0 && (
+                        <p className="text-xs text-muted-foreground italic">No promo codes returned right now.</p>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {promos?.map((c, i) => {
+                          const brand = c.store ?? c.merchant ?? c.brand ?? "Offer";
+                          const offer = c.title ?? c.description ?? "Promo code";
+                          const link = c.url ?? c.link;
+                          const Inner = (
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">{brand}</p>
+                                <p className="text-xs text-muted-foreground truncate">{offer}</p>
+                              </div>
+                              {c.code && (
+                                <span className="text-[10px] font-mono px-2 py-1 rounded bg-money/15 text-money shrink-0">
+                                  {c.code}
+                                </span>
+                              )}
+                            </div>
+                          );
+                          return (
+                            <div key={c.id ?? `${brand}-${i}`} className="p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
+                              {link ? <a href={link} target="_blank" rel="noopener noreferrer">{Inner}</a> : Inner}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
