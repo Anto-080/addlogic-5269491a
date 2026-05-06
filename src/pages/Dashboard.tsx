@@ -55,7 +55,16 @@ export default function Dashboard() {
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) { setPromosError(error.message); return; }
-        const raw = (data as { data?: unknown; results?: unknown; coupons?: unknown }) ?? {};
+        const raw = (data as { data?: unknown; results?: unknown; coupons?: unknown; error?: string; upstreamStatus?: number }) ?? {};
+        if (raw.error === "upstream") {
+          setPromosError(
+            raw.upstreamStatus === 403
+              ? "Promo provider not subscribed yet (RapidAPI 403). Subscribe to the 'Get Promo Codes' API to activate."
+              : `Provider returned ${raw.upstreamStatus ?? "error"}.`,
+          );
+          setPromos([]);
+          return;
+        }
         const list = (raw.data ?? raw.results ?? raw.coupons ?? data) as PromoCoupon[];
         setPromos(Array.isArray(list) ? list.slice(0, 12) : []);
       })
