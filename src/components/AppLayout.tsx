@@ -23,11 +23,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { data: stats } = useUserStats();
   const location = useLocation();
   const vaultBalance = stats?.earnings_all_time ?? 0;
-  const { cookieAutoAccept } = useSettings();
+  const { cookieAutoAccept, gpsPrecision } = useSettings();
   // Re-probe every 5s while cookies are on; if blocker active → mount the gate.
   const blocked = useAdBlockDetector(cookieAutoAccept ? 5000 : 0);
   const [gateDismissed, setGateDismissed] = useState(false);
   const showAdBlockGate = cookieAutoAccept && blocked === true && !gateDismissed;
+  const [vpnGateDismissed, setVpnGateDismissed] = useState(false);
+  const showVpnGate = gpsPrecision && !vpnGateDismissed;
 
   return (
     <SidebarProvider>
