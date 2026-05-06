@@ -101,6 +101,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
         open={showAdBlockGate}
         onSatisfied={() => setGateDismissed(true)}
       />
+      <VpnConsentSlide
+        open={showVpnGate}
+        onSatisfied={() => setVpnGateDismissed(true)}
+      />
     </SidebarProvider>
   );
 }
+
+// Note: VpnGuard at the App root handles the unauthenticated/site-wide
+// hard block. This in-layout slide is the GPS-toggle-bound mirror of
+// AdBlockConsentSlide, so toggling GPS on while behind a VPN immediately
+// surfaces a full-screen card the same way AdBlock+Cookies does.
