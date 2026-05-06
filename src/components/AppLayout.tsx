@@ -29,8 +29,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const blocked = useAdBlockDetector(cookieAutoAccept ? 5000 : 0);
   const [gateDismissed, setGateDismissed] = useState(false);
   const showAdBlockGate = cookieAutoAccept && blocked === true && !gateDismissed;
+  // Poll IP verdict whenever GPS precision is on so toggling on a VPN
+  // mid-session triggers the gate (matches AdBlock+Cookies behavior).
+  const vpnStatus = useVpnDetector(gpsPrecision ? 5000 : 0);
   const [vpnGateDismissed, setVpnGateDismissed] = useState(false);
-  const showVpnGate = gpsPrecision && !vpnGateDismissed;
+  const showVpnGate = gpsPrecision && vpnStatus === "blocked" && !vpnGateDismissed;
 
   return (
     <SidebarProvider>
