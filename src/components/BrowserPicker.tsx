@@ -80,6 +80,8 @@ export function BrowserPicker({ onOpenResult, linkedInSlot }: BrowserPickerProps
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {linkedInSlot}
+
         <p className="text-xs text-muted-foreground">
           Searches are fetched server-side through the DuckDuckGo HTML endpoint and rendered here as
           native cards — no third-party page is iframed (every major engine refuses iframe embedding,
