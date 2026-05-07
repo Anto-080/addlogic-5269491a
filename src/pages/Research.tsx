@@ -92,10 +92,11 @@ export default function Research() {
         </div>
 
 
-        <Card className="bg-card border-border/60 glow-amber">
-          <CardContent className="p-4 space-y-3">
-            {userLevel < TOP_TIER_GATE && (
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <BrowserPicker
+          onOpenResult={(item) => exit.requestExit(item.url, primaryTierId)}
+          linkedInSlot={
+            userLevel < TOP_TIER_GATE ? (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border border-border/50 bg-secondary/20">
                 <p className="text-xs text-muted-foreground">
                   Connect with LinkedIn — <span className="text-foreground font-medium">For Biochemical Researchers Only</span>
                 </p>
@@ -103,8 +104,12 @@ export default function Research() {
                   <ExternalLink className="h-3 w-3" /> Connect with LinkedIn
                 </Button>
               </div>
-            )}
+            ) : null
+          }
+        />
 
+        <Card className="bg-card border-border/60 glow-amber">
+          <CardContent className="p-4 space-y-3">
             <ExperienceBar baseMultiplier={baseForBar} earning />
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
