@@ -79,7 +79,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 title="Vault"
               >
                 <RoundVault size={16} style={{ color: "#B0903D" }} />
-                <span className="text-xs sm:text-sm font-semibold text-money">${vaultBalance.toFixed(2)}</span>
+                <span className="text-xs sm:text-sm font-semibold text-money">T${vaultBalance.toFixed(2)}</span>
               </NavLink>
 
               <NavLink

@@ -19,7 +19,6 @@ import { GeoConsentSlide } from "@/components/GeoConsentSlide";
 import { CookieAuditSlide } from "@/components/CookieAuditSlide";
 import { ResearchChronologyCard } from "@/components/ResearchChronologyCard";
 import { sweepCookies } from "@/lib/cookieAudit";
-import { TimeCoinGlyph } from "@/components/icons/TimeCoinGlyph";
 import { supabase } from "@/integrations/supabase/client";
 
 type PromoCoupon = { id?: string | number; title?: string; description?: string; code?: string; store?: string; merchant?: string; brand?: string; url?: string; link?: string };
@@ -27,8 +26,7 @@ type PromoCoupon = { id?: string | number; title?: string; description?: string;
 function AnimatedCounter({ target }: { target: number }) {
   return (
     <span className="inline-flex items-center gap-1">
-      <TimeCoinGlyph size={16} />
-      <span>${target.toFixed(2)}</span>
+      <span>T${target.toFixed(2)}</span>
     </span>
   );
 }
@@ -436,7 +434,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-money">${m.earned.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-money">T${m.earned.toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground">+{m.xp_gained} XP</p>
                     </div>
                   </div>

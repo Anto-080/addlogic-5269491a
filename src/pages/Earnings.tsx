@@ -9,7 +9,7 @@ import { RoundVault } from "@/components/icons/RoundVault";
 import { StablecoinWithdraw } from "@/components/StablecoinWithdraw";
 import { TierIcon } from "@/components/TierIcon";
 import { NavLink } from "react-router-dom";
-import { TimeCoinGlyph } from "@/components/icons/TimeCoinGlyph";
+
 import timeCoinMedallion from "@/assets/time-coin-medallion.jpeg";
 
 const VAULT_GOLD = "#B0903D";
@@ -124,8 +124,7 @@ export default function Earnings() {
               <CardContent className="p-3 text-center">
                 <p className="text-[10px] text-muted-foreground">{item.label}</p>
                 <p className="text-xl font-bold text-money inline-flex items-center gap-1 justify-center">
-                  <TimeCoinGlyph size={18} />
-                  <span>${item.value.toFixed(2)}</span>
+                  <span>T${item.value.toFixed(2)}</span>
                 </p>
               </CardContent>
             </Card>
@@ -172,8 +171,8 @@ export default function Earnings() {
                     <div className="bg-crimson/60 rounded-sm" style={{ width: `${(t.redistribution / 250) * 100}%` }} />
                   </div>
                 </div>
-                <span className="text-xs text-money w-16 text-right">${t.earned.toFixed(0)}</span>
-                <span className="text-xs text-crimson w-12 text-right">+${t.redistribution.toFixed(0)}</span>
+                <span className="text-xs text-money w-16 text-right">T${t.earned.toFixed(0)}</span>
+                <span className="text-xs text-crimson w-12 text-right">+T${t.redistribution.toFixed(0)}</span>
               </div>
             ))}
             <div className="flex gap-4 text-xs text-muted-foreground mt-2">
@@ -222,8 +221,7 @@ export default function Earnings() {
               <RoundVault size={32} style={{ color: VAULT_GOLD }} />
               <div>
                 <p className="text-lg font-bold text-money inline-flex items-center gap-1">
-                  <TimeCoinGlyph size={18} />
-                  <span>${earningsAllTime.toFixed(2)}</span>
+                  <span>T${earningsAllTime.toFixed(2)}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">Time-Coin balance — redeem to withdraw</p>
               </div>

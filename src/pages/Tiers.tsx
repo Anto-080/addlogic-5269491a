@@ -148,7 +148,7 @@ export default function Tiers() {
                               </div>
                               <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>{tier.researchers.toLocaleString()} researchers</span>
-                                <span className="text-money font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
+                                <span className="text-money font-medium">Avg T${tier.avgEarning.toFixed(2)}/day</span>
                               </div>
                             </div>
                           </div>
@@ -202,7 +202,7 @@ export default function Tiers() {
                             </div>
                             <div className="flex justify-between text-xs text-muted-foreground">
                               <span>{tier.researchers.toLocaleString()} researchers</span>
-                              <span className="text-money font-medium">Avg ${tier.avgEarning.toFixed(2)}/day</span>
+                              <span className="text-money font-medium">Avg T${tier.avgEarning.toFixed(2)}/day</span>
                             </div>
                           </div>
                         </div>
