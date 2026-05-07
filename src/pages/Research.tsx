@@ -92,11 +92,6 @@ export default function Research() {
         </div>
 
 
-        <BrowserPicker
-          onOpenResult={(item) => exit.requestExit(item.url, primaryTierId)}
-          userLevel={userLevel}
-        />
-
         <Card className="bg-card border-border/60 glow-amber">
           <CardContent className="p-4 space-y-3">
             {userLevel < TOP_TIER_GATE && (
@@ -229,6 +224,10 @@ export default function Research() {
             );
           })}
         </div>
+
+        <BrowserPicker
+          onOpenResult={(item) => exit.requestExit(item.url, primaryTierId)}
+        />
 
         <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur border-t border-border px-4 py-3 z-40">
           <div className="max-w-5xl mx-auto flex items-center justify-between">

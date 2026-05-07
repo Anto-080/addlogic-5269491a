@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, Lock, Sparkles } from "lucide-react";
+import { ShieldCheck, Sparkles } from "lucide-react";
 import { DuckDuckGoLogo } from "@/components/icons/DuckDuckGoLogo";
 import { recordSearch } from "@/lib/userInterestProfiler";
 import { bumpSearchCount } from "@/lib/zeroPartyCookies";
@@ -13,10 +13,10 @@ import { TIERS } from "@/lib/mockData";
 
 type BrowserPickerProps = {
   onOpenResult?: (item: SearchResultItem) => void;
+  /** @deprecated kept for backward-compat; search is now always unlocked. */
   userLevel?: number;
 };
 
-const SEARCH_GATE_LEVEL = 25;
 const MIN_TIER_CONFIDENCE = 0.4;
 
 /**
@@ -29,7 +29,7 @@ const MIN_TIER_CONFIDENCE = 0.4;
  * the active research session (drives tier XP) and noun keywords are
  * persisted as that tier's discovered subcategories.
  */
-export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProps) {
+export function BrowserPicker({ onOpenResult }: BrowserPickerProps) {
   const { user } = useAuth();
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
@@ -37,10 +37,8 @@ export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProp
   const search = useWebSearch();
   const classify = useClassifyInterest();
   const session = useResearchSession();
-  const gated = userLevel < SEARCH_GATE_LEVEL;
 
   const runSearch = async (query: string) => {
-    if (gated) return;
     setLastQuery(query);
     recordSearch(query);
     bumpSearchCount();
@@ -99,44 +97,35 @@ export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProp
           <span className="text-[10px] uppercase tracking-wider text-money font-medium">Default</span>
         </div>
 
-        {gated ? (
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground p-3 rounded-lg border border-dashed border-border/50">
-            <Lock className="h-3 w-3" />
-            In-app search unlocks at <span className="text-money font-semibold">Level {SEARCH_GATE_LEVEL}</span> — keep researching to unlock.
-          </div>
-        ) : (
-          <>
-            {classified && (
-              <div
-                className={`flex items-center gap-2 text-[11px] p-2 rounded-lg border ${
-                  classified.confidence >= MIN_TIER_CONFIDENCE
-                    ? "border-crimson/40 bg-crimson/5 text-foreground"
-                    : "border-border/40 bg-secondary/30 text-muted-foreground"
-                }`}
-              >
-                <Sparkles className="h-3.5 w-3.5 text-crimson shrink-0" />
-                <span className="flex-1 min-w-0 truncate">
-                  Magnetic bar locked onto{" "}
-                  <strong style={{ color: TIERS.find((t) => t.id === classified.tierId)?.color }}>
-                    {classified.tierName}
-                  </strong>
-                  {" "}({Math.round(classified.confidence * 100)}% confidence)
-                </span>
-                {classified.confidence < MIN_TIER_CONFIDENCE && (
-                  <span className="text-[10px] italic">below veracity threshold — XP paused</span>
-                )}
-              </div>
+        {classified && (
+          <div
+            className={`flex items-center gap-2 text-[11px] p-2 rounded-lg border ${
+              classified.confidence >= MIN_TIER_CONFIDENCE
+                ? "border-crimson/40 bg-crimson/5 text-foreground"
+                : "border-border/40 bg-secondary/30 text-muted-foreground"
+            }`}
+          >
+            <Sparkles className="h-3.5 w-3.5 text-crimson shrink-0" />
+            <span className="flex-1 min-w-0 truncate">
+              Magnetic bar locked onto{" "}
+              <strong style={{ color: TIERS.find((t) => t.id === classified.tierId)?.color }}>
+                {classified.tierName}
+              </strong>
+              {" "}({Math.round(classified.confidence * 100)}% confidence)
+            </span>
+            {classified.confidence < MIN_TIER_CONFIDENCE && (
+              <span className="text-[10px] italic">below veracity threshold — XP paused</span>
             )}
-            <SearchResults
-              initialQuery={lastQuery}
-              results={results}
-              loading={search.isPending}
-              error={search.error ? (search.error as Error).message : null}
-              onSearch={runSearch}
-              onOpen={(item) => onOpenResult?.(item)}
-            />
-          </>
+          </div>
         )}
+        <SearchResults
+          initialQuery={lastQuery}
+          results={results}
+          loading={search.isPending}
+          error={search.error ? (search.error as Error).message : null}
+          onSearch={runSearch}
+          onOpen={(item) => onOpenResult?.(item)}
+        />
       </CardContent>
     </Card>
   );
