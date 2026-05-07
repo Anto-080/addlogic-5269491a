@@ -434,7 +434,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-money">${m.earned.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-money">T${m.earned.toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground">+{m.xp_gained} XP</p>
                     </div>
                   </div>

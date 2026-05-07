@@ -235,7 +235,7 @@ export default function Research() {
             <div className="flex items-center gap-4">
               <div>
                 <p className="text-[10px] text-muted-foreground">Session Earnings</p>
-                <p className="text-lg font-bold text-money">${sessionEarnings.toFixed(2)}</p>
+                <p className="text-lg font-bold text-money">T${sessionEarnings.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-[10px] text-muted-foreground">Articles</p>

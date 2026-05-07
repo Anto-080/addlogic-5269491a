@@ -171,8 +171,8 @@ export default function Earnings() {
                     <div className="bg-crimson/60 rounded-sm" style={{ width: `${(t.redistribution / 250) * 100}%` }} />
                   </div>
                 </div>
-                <span className="text-xs text-money w-16 text-right">${t.earned.toFixed(0)}</span>
-                <span className="text-xs text-crimson w-12 text-right">+${t.redistribution.toFixed(0)}</span>
+                <span className="text-xs text-money w-16 text-right">T${t.earned.toFixed(0)}</span>
+                <span className="text-xs text-crimson w-12 text-right">+T${t.redistribution.toFixed(0)}</span>
               </div>
             ))}
             <div className="flex gap-4 text-xs text-muted-foreground mt-2">
