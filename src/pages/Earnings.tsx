@@ -221,8 +221,7 @@ export default function Earnings() {
               <RoundVault size={32} style={{ color: VAULT_GOLD }} />
               <div>
                 <p className="text-lg font-bold text-money inline-flex items-center gap-1">
-                  <TimeCoinGlyph size={18} />
-                  <span>${earningsAllTime.toFixed(2)}</span>
+                  <span>T${earningsAllTime.toFixed(2)}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">Time-Coin balance — redeem to withdraw</p>
               </div>
