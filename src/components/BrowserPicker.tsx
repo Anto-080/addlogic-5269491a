@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, Lock, Sparkles } from "lucide-react";
+import { ShieldCheck, Sparkles } from "lucide-react";
 import { DuckDuckGoLogo } from "@/components/icons/DuckDuckGoLogo";
 import { recordSearch } from "@/lib/userInterestProfiler";
 import { bumpSearchCount } from "@/lib/zeroPartyCookies";
@@ -13,10 +13,10 @@ import { TIERS } from "@/lib/mockData";
 
 type BrowserPickerProps = {
   onOpenResult?: (item: SearchResultItem) => void;
+  /** @deprecated kept for backward-compat; search is now always unlocked. */
   userLevel?: number;
 };
 
-const SEARCH_GATE_LEVEL = 25;
 const MIN_TIER_CONFIDENCE = 0.4;
 
 /**
@@ -29,7 +29,7 @@ const MIN_TIER_CONFIDENCE = 0.4;
  * the active research session (drives tier XP) and noun keywords are
  * persisted as that tier's discovered subcategories.
  */
-export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProps) {
+export function BrowserPicker({ onOpenResult }: BrowserPickerProps) {
   const { user } = useAuth();
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
@@ -37,10 +37,8 @@ export function BrowserPicker({ onOpenResult, userLevel = 0 }: BrowserPickerProp
   const search = useWebSearch();
   const classify = useClassifyInterest();
   const session = useResearchSession();
-  const gated = userLevel < SEARCH_GATE_LEVEL;
 
   const runSearch = async (query: string) => {
-    if (gated) return;
     setLastQuery(query);
     recordSearch(query);
     bumpSearchCount();
