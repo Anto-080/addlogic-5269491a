@@ -70,10 +70,10 @@ Deno.serve(async (req) => {
     );
     const text = await upstream.text();
     if (!upstream.ok) {
-      // Surface upstream errors as a 200 with an error envelope so the client can show
-      // a friendly message instead of a red "non-2xx" toast (e.g. RapidAPI 403 "not subscribed").
+      // Log full upstream body server-side only; never leak provider error details to clients.
+      console.error("promo-codes upstream error", upstream.status, text);
       return new Response(
-        JSON.stringify({ error: "upstream", upstreamStatus: upstream.status, upstreamBody: text, data: [] }),
+        JSON.stringify({ error: "upstream", upstreamStatus: upstream.status, data: [] }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
