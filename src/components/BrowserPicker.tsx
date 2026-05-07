@@ -31,7 +31,7 @@ const MIN_TIER_CONFIDENCE = 0.4;
  * the active research session (drives tier XP) and noun keywords are
  * persisted as that tier's discovered subcategories.
  */
-export function BrowserPicker({ onOpenResult }: BrowserPickerProps) {
+export function BrowserPicker({ onOpenResult, linkedInSlot }: BrowserPickerProps) {
   const { user } = useAuth();
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
