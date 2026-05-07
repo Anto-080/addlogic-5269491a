@@ -19,7 +19,6 @@ import { GeoConsentSlide } from "@/components/GeoConsentSlide";
 import { CookieAuditSlide } from "@/components/CookieAuditSlide";
 import { ResearchChronologyCard } from "@/components/ResearchChronologyCard";
 import { sweepCookies } from "@/lib/cookieAudit";
-import { TimeCoinGlyph } from "@/components/icons/TimeCoinGlyph";
 import { supabase } from "@/integrations/supabase/client";
 
 type PromoCoupon = { id?: string | number; title?: string; description?: string; code?: string; store?: string; merchant?: string; brand?: string; url?: string; link?: string };
