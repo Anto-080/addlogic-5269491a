@@ -26,8 +26,7 @@ type PromoCoupon = { id?: string | number; title?: string; description?: string;
 function AnimatedCounter({ target }: { target: number }) {
   return (
     <span className="inline-flex items-center gap-1">
-      <TimeCoinGlyph size={16} />
-      <span>${target.toFixed(2)}</span>
+      <span>T${target.toFixed(2)}</span>
     </span>
   );
 }
