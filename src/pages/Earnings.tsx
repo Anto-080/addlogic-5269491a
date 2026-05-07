@@ -124,8 +124,7 @@ export default function Earnings() {
               <CardContent className="p-3 text-center">
                 <p className="text-[10px] text-muted-foreground">{item.label}</p>
                 <p className="text-xl font-bold text-money inline-flex items-center gap-1 justify-center">
-                  <TimeCoinGlyph size={18} />
-                  <span>${item.value.toFixed(2)}</span>
+                  <span>T${item.value.toFixed(2)}</span>
                 </p>
               </CardContent>
             </Card>
