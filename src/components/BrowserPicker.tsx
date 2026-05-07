@@ -15,6 +15,8 @@ type BrowserPickerProps = {
   onOpenResult?: (item: SearchResultItem) => void;
   /** @deprecated kept for backward-compat; search is now always unlocked. */
   userLevel?: number;
+  /** Optional slot rendered at the top of the card (e.g. LinkedIn connect CTA). */
+  linkedInSlot?: React.ReactNode;
 };
 
 const MIN_TIER_CONFIDENCE = 0.4;
@@ -29,7 +31,7 @@ const MIN_TIER_CONFIDENCE = 0.4;
  * the active research session (drives tier XP) and noun keywords are
  * persisted as that tier's discovered subcategories.
  */
-export function BrowserPicker({ onOpenResult }: BrowserPickerProps) {
+export function BrowserPicker({ onOpenResult, linkedInSlot }: BrowserPickerProps) {
   const { user } = useAuth();
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
@@ -78,6 +80,8 @@ export function BrowserPicker({ onOpenResult }: BrowserPickerProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {linkedInSlot}
+
         <p className="text-xs text-muted-foreground">
           Searches are fetched server-side through the DuckDuckGo HTML endpoint and rendered here as
           native cards — no third-party page is iframed (every major engine refuses iframe embedding,
