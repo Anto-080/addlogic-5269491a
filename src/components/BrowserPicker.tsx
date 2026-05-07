@@ -15,6 +15,8 @@ type BrowserPickerProps = {
   onOpenResult?: (item: SearchResultItem) => void;
   /** @deprecated kept for backward-compat; search is now always unlocked. */
   userLevel?: number;
+  /** Optional slot rendered at the top of the card (e.g. LinkedIn connect CTA). */
+  linkedInSlot?: React.ReactNode;
 };
 
 const MIN_TIER_CONFIDENCE = 0.4;
