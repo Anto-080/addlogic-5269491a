@@ -88,40 +88,43 @@ export default function Research() {
         </div>
 
 
-        <BrowserPicker
-          onOpenResult={(item) => exit.requestExit(item.url, primaryTierId)}
-          linkedInSlot={
-            userLevel < TOP_TIER_GATE ? (
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border border-border/50 bg-secondary/20">
-                <p className="text-xs text-muted-foreground">
-                  Connect with LinkedIn — <span className="text-foreground font-medium">For Biochemical Researchers Only</span>
-                </p>
-                <Button size="sm" variant="secondary" className="gap-2 self-start shrink-0">
-                  <ExternalLink className="h-3 w-3" /> Connect with LinkedIn
-                </Button>
-              </div>
-            ) : null
-          }
+        {/* PLOS banner + LinkedIn (Biochem-only) + collapsible PLOS search */}
+        <PlosCard
+          showLinkedIn={userLevel < TOP_TIER_GATE}
+          onOpenUrl={(url) => exit.requestExit(url, primaryTierId)}
         />
 
+        {/* XP / Tiers / DuckDuckGo combined card */}
         <Card className="bg-card border-border/60 glow-amber">
           <CardContent className="p-4 space-y-3">
-            <ExperienceBar baseMultiplier={baseForBar} earning />
+            <ExperienceBar baseMultiplier={selectedTierData.multiplier} earning />
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second based on your selected tier and active data permissions.
             </p>
+
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {TIERS.map((t) => (
+                <Button
+                  key={t.id}
+                  variant={selectedTier === t.id ? "default" : "secondary"}
+                  size="sm"
+                  onClick={() => setSelectedTier(t.id)}
+                  className="shrink-0 gap-1"
+                  style={selectedTier === t.id ? undefined : { color: t.color }}
+                  aria-label={t.name}
+                >
+                  <TierIcon tierId={t.id} size={14} />
+                </Button>
+              ))}
+            </div>
+
+            <BrowserPicker
+              onOpenResult={(item) => exit.requestExit(item.url, primaryTierId)}
+              onTierClassified={(tierId) => setSelectedTier(tierId)}
+            />
           </CardContent>
         </Card>
-
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          <Button variant={selectedTier === null ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(null)}>All</Button>
-          {TIERS.map((t) => (
-            <Button key={t.id} variant={selectedTier === t.id ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(t.id)} className="shrink-0 gap-1" style={selectedTier === t.id ? undefined : { color: t.color }} aria-label={t.name}>
-              <TierIcon tierId={t.id} size={14} />
-            </Button>
-          ))}
-        </div>
 
         {/* OpenAlex scholarly feed — moved here from the Tiers page; now public. */}
         <Card className="bg-card border-border/50">
