@@ -79,7 +79,53 @@ function applyLocalBlocklist(info: IpInfo): IpInfo {
 
 type EdgePayload = Partial<IpInfo> & { error?: string; fallback?: boolean };
 
-const UNVERIFIED_CACHE_MS = 8_000;
+const UNVERIFIED_CACHE_MS = 90_000;
+const VPN_PROXY_BLOCK_MESSAGE = "VPN/Proxy traffic detected. Please deactivate your VPN to access the site.";
+
+function classifyDegradedVerdict(reason: string | null): IpVerdict {
+  const normalized = String(reason ?? "verification failed").toLowerCase();
+
+  if (
+    normalized.includes("failed to send a request to the edge function") ||
+    normalized.includes("edge function unreachable") ||
+    normalized.includes("network error")
+  ) {
+    return {
+      status: "blocked",
+      info: {
+        ip: "",
+        country_code: null,
+        country_name: null,
+        asn: null,
+        org: null,
+        vpn_suspected: true,
+        reason: VPN_PROXY_BLOCK_MESSAGE,
+      },
+    };
+  }
+
+  if (normalized.includes("cloudflare 401")) {
+    return {
+      status: "unverified",
+      info: null,
+      unverifiedReason: "Cloudflare authentication needs to be refreshed.",
+    };
+  }
+
+  if (normalized.includes("cloudflare 429")) {
+    return {
+      status: "unverified",
+      info: null,
+      unverifiedReason: "Cloudflare rate limit reached — retrying shortly.",
+    };
+  }
+
+  return {
+    status: "unverified",
+    info: null,
+    unverifiedReason: reason ?? "verification failed",
+  };
+}
 
 async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string | null }> {
   try {
@@ -129,7 +175,7 @@ export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
     if (info) {
       verdict = { status: info.vpn_suspected ? "blocked" : "ok", info };
     } else {
-      verdict = { status: "unverified", info: null, unverifiedReason: degraded ?? "verification failed" };
+      verdict = classifyDegradedVerdict(degraded);
     }
     cached = { at: Date.now(), verdict };
     inflight = null;

@@ -19,6 +19,7 @@ type Props = {
 export function VpnConsentSlide({ open, onSatisfied }: Props) {
   const [verdict, setVerdict] = useState<IpVerdict | null>(null);
   const [checking, setChecking] = useState(false);
+  const blockedByTransportFailure = verdict?.info?.reason === "VPN/Proxy traffic detected. Please deactivate your VPN to access the site.";
 
   useEffect(() => {
     if (!open) return;
@@ -57,9 +58,17 @@ export function VpnConsentSlide({ open, onSatisfied }: Props) {
         <div className="text-center space-y-2">
           <h2 className="text-lg font-bold text-foreground">Disable VPN to keep researching</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            GPS-precision rewards are <span className="text-destructive font-semibold">region-priced</span>.
-            A VPN, proxy, or datacenter IP lets a user spoof a high-CPM region and drains the
-            redistributed pool. Disable your VPN (or turn off GPS precision) to continue.
+            {blockedByTransportFailure ? (
+              <>
+                <span className="text-destructive font-semibold">VPN/Proxy traffic detected.</span> Please deactivate your VPN to access the site.
+              </>
+            ) : (
+              <>
+                GPS-precision rewards are <span className="text-destructive font-semibold">region-priced</span>.
+                A VPN, proxy, or datacenter IP lets a user spoof a high-CPM region and drains the
+                redistributed pool. Disable your VPN (or turn off GPS precision) to continue.
+              </>
+            )}
           </p>
         </div>
 
@@ -84,7 +93,7 @@ export function VpnConsentSlide({ open, onSatisfied }: Props) {
             <><ShieldAlert className="h-4 w-4 text-destructive" /><span className="text-destructive font-semibold">VPN/proxy detected — still active</span></>
           )}
           {!checking && unverified && (
-            <><ShieldAlert className="h-4 w-4 text-muted-foreground" /><span className="text-muted-foreground font-semibold">Unverified — retrying</span></>
+            <><ShieldAlert className="h-4 w-4 text-muted-foreground" /><span className="text-muted-foreground font-semibold">Cloudflare check unavailable — retrying</span></>
           )}
           {!checking && canContinue && (
             <><CheckCircle2 className="h-4 w-4 text-money" /><span className="text-money font-semibold">All clear</span></>

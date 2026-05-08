@@ -59,7 +59,10 @@ export function GeoConsentSlide({ open, onSatisfied, onCancel }: Props) {
   // this slide — only the GPS↔IP country mismatch is treated as soft trust here.
   const lowTrust = countryMismatch;
 
-  const finalize = async (c: Coords) => {
+  const finalize = async (c: Coords, resolvedGpsCountry: string | null = gpsCountry) => {
+    const mismatch =
+      !!resolvedGpsCountry && !!ipInfo?.country_code && resolvedGpsCountry !== ipInfo.country_code;
+
     setCoords(c);
     if (user) {
       try {
@@ -71,8 +74,8 @@ export function GeoConsentSlide({ open, onSatisfied, onCancel }: Props) {
           .update({
             fingerprint: fp,
             ip_country: ipInfo?.country_code ?? null,
-            gps_country: gpsCountry,
-            vpn_suspected: lowTrust,
+            gps_country: resolvedGpsCountry,
+            vpn_suspected: mismatch,
             asn: ipInfo?.asn ?? null,
           })
           .eq("user_id", user.id);
@@ -92,8 +95,8 @@ export function GeoConsentSlide({ open, onSatisfied, onCancel }: Props) {
       if (c) {
         const cc = await reverseGeocodeCountry(c.lat, c.lng);
         setGpsCountry(cc);
-        await finalize(c);
-        toast.success(lowTrust ? "Location active — low-trust mode" : "Precise location active");
+        await finalize(c, cc);
+        toast.success(cc && ipInfo?.country_code && cc !== ipInfo.country_code ? "Location active — low-trust mode" : "Precise location active");
       } else if (newPerm === "denied") {
         toast.error("Location blocked by browser. Use approximate (IP) instead, or unblock and retry.");
       } else {

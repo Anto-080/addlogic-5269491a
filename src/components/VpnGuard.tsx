@@ -13,10 +13,11 @@ import { supabase } from "@/integrations/supabase/client";
  * draining the regional reward pool. There is no "continue anyway" — the
  * user must disconnect their VPN.
  *
- * Verification source: Abstract API only (see src/lib/vpnDetection.ts).
- * If Abstract is unreachable / rate-limited we show an "unverified" screen
- * with a Retry button — we do NOT silently let traffic through, and we do
- * NOT downgrade to a weaker provider for the block decision.
+ * Verification source: Cloudflare Radar + local ASN blocklist (see
+ * src/lib/vpnDetection.ts). If Cloudflare auth/rate-limit issues prevent a
+ * verdict we show an "unverified" screen with a Retry button — we do NOT
+ * silently let traffic through, and we do NOT downgrade to a weaker provider
+ * for the block decision.
  */
 
 export function VpnGuard({ children }: { children: ReactNode }) {
@@ -110,9 +111,17 @@ export function VpnGuard({ children }: { children: ReactNode }) {
           <p className="text-xs text-muted-foreground leading-relaxed">
             {blocked ? (
               <>
-                Your connection is routed through a <strong>VPN, proxy, or datacenter</strong> network.
-                To protect the regional reward pool from bot farms, AddLogic is unavailable on these
-                connections. <strong>Please disable your VPN or proxy</strong>, then re-check.
+                {verdict?.info?.reason === "VPN/Proxy traffic detected. Please deactivate your VPN to access the site." ? (
+                  <>
+                    <strong>VPN/Proxy traffic detected.</strong> Please deactivate your VPN to access the site.
+                  </>
+                ) : (
+                  <>
+                    Your connection is routed through a <strong>VPN, proxy, or datacenter</strong> network.
+                    To protect the regional reward pool from bot farms, AddLogic is unavailable on these
+                    connections. <strong>Please disable your VPN or proxy</strong>, then re-check.
+                  </>
+                )}
               </>
             ) : clear ? (
               <>
@@ -120,8 +129,8 @@ export function VpnGuard({ children }: { children: ReactNode }) {
               </>
             ) : (
               <>
-                We couldn't verify your network is residential. AddLogic is only available once your
-                connection has been verified as not being a VPN/proxy. Please retry.
+                We couldn't verify your network is residential yet. This usually means the Cloudflare
+                verification service is temporarily unavailable or needs its token refreshed. Please retry.
               </>
             )}
           </p>

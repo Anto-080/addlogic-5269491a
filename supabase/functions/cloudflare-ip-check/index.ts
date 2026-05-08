@@ -37,13 +37,17 @@ function getCallerIp(req: Request): string | null {
 
 type CfRadarIp = {
   result?: {
-    ip?: string;
-    type?: string;
-    location?: string;
-    locationName?: string;
-    asn?: number | string;
-    asnLocation?: string;
-    asOrganization?: string;
+    ip?: {
+      ip?: string;
+      ipVersion?: string;
+      type?: string;
+      location?: string;
+      locationName?: string;
+      asn?: number | string;
+      asnLocation?: string;
+      asnName?: string;
+      asnOrgName?: string;
+    };
   };
   success?: boolean;
 };
@@ -93,17 +97,20 @@ Deno.serve(async (req) => {
       );
     }
     const j = (await r.json()) as CfRadarIp;
-    const res = j.result ?? {};
+    const res = j.result?.ip ?? {};
     const ipType = String(res.type ?? "").toLowerCase();
-    // Cloudflare classifies IPv4 ranges; we treat anything tagged as
-    // "hosting"/"business"-ish as suspect upstream of the local blocklist.
-    const cfSuspected = ipType.includes("hosting") || ipType.includes("anonymizer") || ipType.includes("proxy");
+    const asnOrg = res.asnOrgName ?? res.asnName ?? null;
+    const cfSuspected =
+      ipType.includes("hosting") ||
+      ipType.includes("anonymizer") ||
+      ipType.includes("proxy") ||
+      ipType.includes("vpn");
     const payload = {
       ip: res.ip ?? callerIp,
       country_code: res.location ?? null,
       country_name: res.locationName ?? res.location ?? null,
       asn: res.asn != null ? String(res.asn) : null,
-      org: res.asOrganization ?? null,
+      org: asnOrg,
       vpn_suspected: cfSuspected,
       reason: cfSuspected ? `Cloudflare IP type: ${ipType}` : null,
     };
