@@ -1,6 +1,6 @@
-// PLOS public Solr search proxy. No API key required.
-// Returns concise article cards used by the PlosCard collapsible search.
-// verify_jwt = false (public endpoint).
+// PLOS public Solr search proxy. Requires a signed-in user to prevent
+// open-proxy abuse, even though the upstream API is keyless.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,6 +8,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 type PlosDoc = {
   id?: string;
@@ -19,6 +22,32 @@ type PlosDoc = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // ---- Auth gate ----
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (!authHeader.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  try {
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claims, error: authErr } = await userClient.auth.getClaims(
+      authHeader.replace("Bearer ", ""),
+    );
+    if (authErr || !claims?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  } catch {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   let body: { query?: string; limit?: number } = {};
   try { body = await req.json(); } catch { /* allow GET */ }
   const query = (body.query ?? new URL(req.url).searchParams.get("q") ?? "").trim();
@@ -60,7 +89,7 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("plos-search error", e);
-    return new Response(JSON.stringify({ results: [], error: e instanceof Error ? e.message : "fetch failed" }), {
+    return new Response(JSON.stringify({ results: [], error: "Upstream unavailable" }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

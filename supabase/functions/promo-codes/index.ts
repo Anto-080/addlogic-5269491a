@@ -82,8 +82,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    console.error("promo-codes upstream fetch failed", e);
     return new Response(
-      JSON.stringify({ error: "Upstream failed", detail: e instanceof Error ? e.message : String(e) }),
+      JSON.stringify({ error: "Upstream unavailable", data: [] }),
       { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
