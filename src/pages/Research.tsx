@@ -12,12 +12,14 @@ import { TierIcon } from "@/components/TierIcon";
 import { useSettings, XP_PER_LEVEL, consentBonus } from "@/contexts/SettingsContext";
 import { ExperienceBar } from "@/components/ExperienceBar";
 import { OpenAlexFeed } from "@/components/OpenAlexFeed";
+import { PlosCard } from "@/components/PlosCard";
 import { toast } from "sonner";
 
 const TOP_TIER_GATE = 35;
+const DEFAULT_TIER = 4;
 
 export default function Research() {
-  const [selectedTier, setSelectedTier] = useState<number | null>(null);
+  const [selectedTier, setSelectedTier] = useState<number>(DEFAULT_TIER);
   const [sessionEarnings, setSessionEarnings] = useState(0);
   const [articleCount, setArticleCount] = useState(0);
   const exit = useOutboundExit();
@@ -27,20 +29,14 @@ export default function Research() {
   const curate = useCurateNews();
   const [liveNews, setLiveNews] = useState<LiveArticle[]>([]);
 
-  const selectedTierData = TIERS.find((t) => t.id === (selectedTier ?? 4)) ?? TIERS[3];
-  const primaryTierId = selectedTier ?? 4;
+  const selectedTierData = TIERS.find((t) => t.id === selectedTier) ?? TIERS[3];
+  const primaryTierId = selectedTier;
   const userLevel = stats?.level ?? 1;
-  // When "All" is selected, fall back to the live persisted multiplier so the
-  // bar reflects ongoing activity instead of getting stuck on a hardcoded base.
-  const baseForBar = selectedTier === null ? undefined : selectedTierData.multiplier;
-  const liveMultiplier = (stats?.current_multiplier ?? 1) + consentBonus(cookieAutoAccept, gpsPrecision);
-  const activeMultiplier = selectedTier === null
-    ? liveMultiplier
-    : selectedTierData.multiplier + consentBonus(cookieAutoAccept, gpsPrecision);
+  const activeMultiplier = selectedTierData.multiplier + consentBonus(cookieAutoAccept, gpsPrecision);
 
   const filteredArticles = useMemo(() => {
     let list = liveArticles
-      .filter((a) => !selectedTier || a.tier_id === selectedTier)
+      .filter((a) => a.tier_id === selectedTier)
       .map((a) => ({
         id: a.id,
         title: a.title,
@@ -68,7 +64,7 @@ export default function Research() {
   };
 
   const handleFetchLive = async () => {
-    const ids = selectedTier ? [selectedTier] : (topInterestTiers.length ? topInterestTiers.slice(0, 4) : [4]);
+    const ids = [selectedTier];
     try {
       const articles = await curate.mutateAsync({ tierIds: ids, count: 6 });
       setLiveNews(articles);
