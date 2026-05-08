@@ -13,6 +13,7 @@ import { WipTapeBanner } from "@/components/WipTapeBanner";
 import { TierExperienceBar } from "@/components/TierExperienceBar";
 import { ExitInterstitial } from "@/components/ExitInterstitial";
 import { useOutboundExit } from "@/hooks/useOutboundExit";
+import { useTierKeywords } from "@/hooks/useTierKeywords";
 
 const TOP_TIER_GATE = 35;
 
@@ -26,6 +27,7 @@ export default function Tiers() {
   const { data: stats } = useUserStats();
   const userLevel = stats?.level ?? 1;
   const topTierLocked = userLevel < TOP_TIER_GATE;
+  const personalKeywords = useTierKeywords();
 
   // Natural chromatic order: top three priority tiers (purple) first, then
   // every other tier sorted by multiplier descending. This keeps the blue
@@ -216,6 +218,18 @@ export default function Tiers() {
                               <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/60 text-foreground/80 border border-border/40">{s}</span>
                             ))}
                           </div>
+                          {(personalKeywords[tier.id]?.length ?? 0) > 0 && (
+                            <>
+                              <p className="text-[11px] text-crimson mt-3 mb-2">Your personalised sub-interests (zero-party):</p>
+                              <div className="flex flex-wrap gap-2">
+                                {personalKeywords[tier.id].map((k) => (
+                                  <span key={k.keyword} className="text-xs px-2 py-1 rounded-full bg-crimson/10 text-foreground/90 border border-crimson/30">
+                                    {k.keyword} <span className="text-muted-foreground">×{k.count}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                     </CardContent>
