@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useOpenAlex, type OpenAlexWork } from "@/hooks/useOpenAlex";
 import { Button } from "@/components/ui/button";
 import { Loader2, BookOpen, Newspaper } from "lucide-react";
+import openAlexLogo from "@/assets/openalex-logo.png";
 
 type Props = {
   tierName: string;
@@ -25,6 +26,9 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
 
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-center pb-1">
+        <img src={openAlexLogo} alt="OpenAlex" className="h-7 w-auto object-contain dark:invert" />
+      </div>
       <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
         Scholarly feed (OpenAlex) · choose a sub-interest
       </p>

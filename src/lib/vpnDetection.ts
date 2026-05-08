@@ -1,17 +1,21 @@
 /**
  * VPN / datacenter / proxy detection.
  *
- * Single source of truth: Abstract API IP Intelligence, proxied through our
- * `ip-intelligence` edge function (so the API key is never bundled).
+ * Primary verdict source: Cloudflare Radar IP intelligence, proxied through
+ * our `cloudflare-ip-check` edge function. Abstract API is paused (free
+ * quota was depleting) but its edge function (`ip-intelligence`) remains
+ * on disk as an emergency fallback.
  *
  * Why: AddLogic's reward pool is region-priced. A user in a low-cost region
  * can otherwise spoof a high-CPM region (e.g. US/EU) via VPN and drain the
  * pool. Suspect IPs are hard-blocked app-wide by VpnGuard.
  *
- * Design rule: this module ONLY uses Abstract for the access-control
+ * Design rule: this module ONLY uses Cloudflare for the access-control
  * verdict. We deliberately do not mix in weaker keyless providers
  * (e.g. ipwho.is) for the block decision — that would let attackers
- * downgrade to a provider that doesn't flag their VPN.
+ * downgrade to a provider that doesn't flag their VPN. The local datacenter
+ * ASN blocklist (`VPN_HOSTS`) escalates Cloudflare "ok" → "blocked"
+ * when the org/ASN matches a known VPN/hosting provider.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -77,18 +81,18 @@ type EdgePayload = Partial<IpInfo> & { error?: string; fallback?: boolean };
 
 const UNVERIFIED_CACHE_MS = 8_000;
 
-async function callAbstract(): Promise<{ info: IpInfo | null; degraded: string | null }> {
+async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string | null }> {
   try {
-    const { data, error } = await supabase.functions.invoke("ip-intelligence", { method: "GET" });
+    const { data, error } = await supabase.functions.invoke("cloudflare-ip-check", { method: "GET" });
     if (error || !data) {
       return { info: null, degraded: error?.message ?? "edge function unreachable" };
     }
     const d = data as EdgePayload;
     if (d.fallback || d.error) {
-      // Edge says it couldn't get a verdict from Abstract (rate limit,
-      // missing key, upstream 5xx). We do NOT silently substitute another
-      // provider — caller decides what to show.
-      return { info: null, degraded: d.error ?? "abstract unavailable" };
+      // Edge says it couldn't get a verdict from Cloudflare (missing token,
+      // upstream 5xx). We do NOT silently substitute another provider —
+      // caller decides what to show.
+      return { info: null, degraded: d.error ?? "cloudflare unavailable" };
     }
     const info: IpInfo = {
       ip: d.ip ?? "",
@@ -120,7 +124,7 @@ export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
   if (!force && inflight) return inflight;
 
   inflight = (async () => {
-    const { info, degraded } = await callAbstract();
+    const { info, degraded } = await callCloudflare();
     let verdict: IpVerdict;
     if (info) {
       verdict = { status: info.vpn_suspected ? "blocked" : "ok", info };

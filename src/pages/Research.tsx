@@ -12,12 +12,14 @@ import { TierIcon } from "@/components/TierIcon";
 import { useSettings, XP_PER_LEVEL, consentBonus } from "@/contexts/SettingsContext";
 import { ExperienceBar } from "@/components/ExperienceBar";
 import { OpenAlexFeed } from "@/components/OpenAlexFeed";
+import { PlosCard } from "@/components/PlosCard";
 import { toast } from "sonner";
 
 const TOP_TIER_GATE = 35;
+const DEFAULT_TIER = 4;
 
 export default function Research() {
-  const [selectedTier, setSelectedTier] = useState<number | null>(null);
+  const [selectedTier, setSelectedTier] = useState<number>(DEFAULT_TIER);
   const [sessionEarnings, setSessionEarnings] = useState(0);
   const [articleCount, setArticleCount] = useState(0);
   const exit = useOutboundExit();
@@ -27,20 +29,14 @@ export default function Research() {
   const curate = useCurateNews();
   const [liveNews, setLiveNews] = useState<LiveArticle[]>([]);
 
-  const selectedTierData = TIERS.find((t) => t.id === (selectedTier ?? 4)) ?? TIERS[3];
-  const primaryTierId = selectedTier ?? 4;
+  const selectedTierData = TIERS.find((t) => t.id === selectedTier) ?? TIERS[3];
+  const primaryTierId = selectedTier;
   const userLevel = stats?.level ?? 1;
-  // When "All" is selected, fall back to the live persisted multiplier so the
-  // bar reflects ongoing activity instead of getting stuck on a hardcoded base.
-  const baseForBar = selectedTier === null ? undefined : selectedTierData.multiplier;
-  const liveMultiplier = (stats?.current_multiplier ?? 1) + consentBonus(cookieAutoAccept, gpsPrecision);
-  const activeMultiplier = selectedTier === null
-    ? liveMultiplier
-    : selectedTierData.multiplier + consentBonus(cookieAutoAccept, gpsPrecision);
+  const activeMultiplier = selectedTierData.multiplier + consentBonus(cookieAutoAccept, gpsPrecision);
 
   const filteredArticles = useMemo(() => {
     let list = liveArticles
-      .filter((a) => !selectedTier || a.tier_id === selectedTier)
+      .filter((a) => a.tier_id === selectedTier)
       .map((a) => ({
         id: a.id,
         title: a.title,
@@ -68,7 +64,7 @@ export default function Research() {
   };
 
   const handleFetchLive = async () => {
-    const ids = selectedTier ? [selectedTier] : (topInterestTiers.length ? topInterestTiers.slice(0, 4) : [4]);
+    const ids = [selectedTier];
     try {
       const articles = await curate.mutateAsync({ tierIds: ids, count: 6 });
       setLiveNews(articles);
@@ -92,40 +88,43 @@ export default function Research() {
         </div>
 
 
-        <BrowserPicker
-          onOpenResult={(item) => exit.requestExit(item.url, primaryTierId)}
-          linkedInSlot={
-            userLevel < TOP_TIER_GATE ? (
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border border-border/50 bg-secondary/20">
-                <p className="text-xs text-muted-foreground">
-                  Connect with LinkedIn — <span className="text-foreground font-medium">For Biochemical Researchers Only</span>
-                </p>
-                <Button size="sm" variant="secondary" className="gap-2 self-start shrink-0">
-                  <ExternalLink className="h-3 w-3" /> Connect with LinkedIn
-                </Button>
-              </div>
-            ) : null
-          }
+        {/* PLOS banner + LinkedIn (Biochem-only) + collapsible PLOS search */}
+        <PlosCard
+          showLinkedIn={userLevel < TOP_TIER_GATE}
+          onOpenUrl={(url) => exit.requestExit(url, primaryTierId)}
         />
 
+        {/* XP / Tiers / DuckDuckGo combined card */}
         <Card className="bg-card border-border/60 glow-amber">
           <CardContent className="p-4 space-y-3">
-            <ExperienceBar baseMultiplier={baseForBar} earning />
+            <ExperienceBar baseMultiplier={selectedTierData.multiplier} earning />
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second based on your selected tier and active data permissions.
             </p>
+
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {TIERS.map((t) => (
+                <Button
+                  key={t.id}
+                  variant={selectedTier === t.id ? "default" : "secondary"}
+                  size="sm"
+                  onClick={() => setSelectedTier(t.id)}
+                  className="shrink-0 gap-1"
+                  style={selectedTier === t.id ? undefined : { color: t.color }}
+                  aria-label={t.name}
+                >
+                  <TierIcon tierId={t.id} size={14} />
+                </Button>
+              ))}
+            </div>
+
+            <BrowserPicker
+              onOpenResult={(item) => exit.requestExit(item.url, primaryTierId)}
+              onTierClassified={(tierId) => setSelectedTier(tierId)}
+            />
           </CardContent>
         </Card>
-
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          <Button variant={selectedTier === null ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(null)}>All</Button>
-          {TIERS.map((t) => (
-            <Button key={t.id} variant={selectedTier === t.id ? "default" : "secondary"} size="sm" onClick={() => setSelectedTier(t.id)} className="shrink-0 gap-1" style={selectedTier === t.id ? undefined : { color: t.color }} aria-label={t.name}>
-              <TierIcon tierId={t.id} size={14} />
-            </Button>
-          ))}
-        </div>
 
         {/* OpenAlex scholarly feed — moved here from the Tiers page; now public. */}
         <Card className="bg-card border-border/50">
@@ -146,11 +145,7 @@ export default function Research() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">Live news from Claude</p>
                   <p className="text-[11px] text-muted-foreground truncate">
-                    {selectedTier
-                      ? `Curating for ${TIERS.find((t) => t.id === selectedTier)?.name ?? "tier"}`
-                      : topInterestTiers.length
-                        ? `Curating for your top ${Math.min(topInterestTiers.length, 4)} interest${topInterestTiers.length === 1 ? "" : "s"}`
-                        : "Pick a tier or set interests in Settings"}
+                    Curating for {TIERS.find((t) => t.id === selectedTier)?.name ?? "tier"}
                   </p>
                 </div>
               </div>
