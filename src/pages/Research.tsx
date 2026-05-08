@@ -145,11 +145,7 @@ export default function Research() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">Live news from Claude</p>
                   <p className="text-[11px] text-muted-foreground truncate">
-                    {selectedTier
-                      ? `Curating for ${TIERS.find((t) => t.id === selectedTier)?.name ?? "tier"}`
-                      : topInterestTiers.length
-                        ? `Curating for your top ${Math.min(topInterestTiers.length, 4)} interest${topInterestTiers.length === 1 ? "" : "s"}`
-                        : "Pick a tier or set interests in Settings"}
+                    Curating for {TIERS.find((t) => t.id === selectedTier)?.name ?? "tier"}
                   </p>
                 </div>
               </div>
