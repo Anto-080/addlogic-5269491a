@@ -1,111 +1,92 @@
-## Three-Step Restructure of Research Page + Security Layer
+## Why the gate isn't blocking right now
 
-### Step 1 — Cloudflare Turnstile + FingerprintJS as primary VPN/abuse layer (Abstract paused, NOT removed)
+The current Cloudflare-only check is returning a clean verdict even when a VPN is on:
 
-Goal: shift the hard-block decision off Abstract API (which is burning the free quota) onto a Cloudflare-based check + FingerprintJS, while keeping the exact same UX (full-screen VPN block, full-screen AdBlock block).
-
-Backend
-- New edge function `cloudflare-ip-check` that calls Cloudflare's IP intel / Radar (using the user's CF token stored as secret `CLOUDFLARE_API_TOKEN`) and returns the same payload shape Abstract returns today: `{ ip, country_code, country_name, asn, org, vpn_suspected, reason }`.
-  - Reads `CF-Connecting-IP` / `x-forwarded-for`.
-  - Flags `vpn_suspected = true` when Cloudflare returns `is_anonymizer`, `is_proxy`, `is_hosting`, `threat_score >= 30`, or matches our existing local datacenter ASN list.
-- The existing `ip-intelligence` (Abstract) edge function is **kept on disk** but no longer invoked from the client — it stays callable for emergency fallback / debugging.
-
-Client
-- `src/lib/vpnDetection.ts`: switch `callAbstract()` → `callCloudflare()` invoking the new function. Same `IpVerdict` shape, same cache, same local-blocklist escalation. Comments updated to say "Cloudflare is now the primary verdict source; Abstract is paused but retained."
-- `VpnGuard` and `useVpnDetector` are unchanged in behavior — they still consume `fetchIpVerdict()`. Full-screen block stays identical.
-- Re-activate FingerprintJS as a second-factor: if Cloudflare returns "ok" but the same `visitorId` has been seen tied to a previously blocked IP (stored in `device_telemetry`), escalate to "blocked" with reason `"Fingerprint linked to previously flagged device"`.
-- Geolocation API: re-enabled inside the Cloudflare path only when Cloudflare's response is missing `country_code` — used as a sanity cross-check via the existing `reverseGeocodeCountry()` helper. No new UI.
-- AdBlock full-screen ban is untouched (`useAdBlockDetector` keeps its current behavior).
-
-Secrets
-- Request `CLOUDFLARE_API_TOKEN` via `secrets--add_secret` before deploying the new function.
-
-### Step 2 — PLOS banner + LinkedIn block + collapsible PLOS search
-
-New card placed right under the page heading on `/research`:
-
-```text
-┌────────────────────────────────────────────────┐
-│  [PLOS banner image]            ⟩PLOS  →       │  ← image + "⟩PLOS" link to plos.org
-├────────────────────────────────────────────────┤
-│  Connect with LinkedIn — For Biochemical       │
-│  Researchers Only             [Connect ▸]      │
-├────────────────────────────────────────────────┤
-│  ▸ Search PLOS articles  (collapsible)         │
-│      [ search input ] [ Search ]               │
-│      • result 1                                │
-│      • result 2 …                              │
-└────────────────────────────────────────────────┘
+```
+{"ip":"…","org":"Tiscali Italia S.P.A.","vpn_suspected":false,"reason":null}
 ```
 
-Files
-- `src/assets/plos-logo.png` — already copied from upload, used as the banner image.
-- `src/components/PlosCard.tsx` — new component:
-  - Renders the banner image, a small "⟩PLOS" link (`https://plos.org`, opens in in-app browser via `useOutboundExit`).
-  - LinkedIn block (moved out of `BrowserPicker.linkedInSlot`).
-  - `<Collapsible>` (already in project: `src/components/ui/collapsible.tsx`) wrapping a PLOS search bar.
-- `src/hooks/usePlosSearch.ts` — `useMutation` calling a new edge function `plos-search` that hits PLOS's public Solr endpoint `https://api.plos.org/search?q=...&fl=id,title,journal,publication_date,abstract&wt=json&rows=8`. No key required. Returns `{ id, title, journal, date, url }[]` with `url = https://journals.plos.org/plosone/article?id=<doi>`.
-- `src/pages/Research.tsx` — render `<PlosCard />` and remove the `linkedInSlot` from `BrowserPicker`.
+Two real problems:
 
-### Step 3 — Cleanup of OpenAlex / DuckDuckGo / Tier system
+1. **Cloudflare Radar is not a VPN classifier.** Its `result.ip.type` field rarely returns `vpn`/`proxy`/`anonymizer` for consumer VPNs (NordVPN, Mullvad, Proton, etc.). It mostly says `hosting` for datacenter ranges and `business`/`isp` for almost everything else. So our verdict only catches obvious datacenter IPs — most real VPN exit nodes slip through as "ok".
+2. **FingerprintJS is loaded but its security signals are unused.** `src/lib/fingerprint.ts` only calls the OSS agent (`visitorId` only). The OSS build does not expose `vpn`, `proxy`, `tor`, or `incognito` signals — those require the Pro/Smart Signals API. Even if we asked the OSS agent for them, it would return nothing.
 
-A. Tier filter chips (the row currently above the OpenAlex card)
-- Remove the `"All"` chip entirely.
-- Default `selectedTier` to `4` (instead of `null`) so the multiplier logic always has a concrete tier.
-- Drop all `selectedTier === null` branches in `Research.tsx` (`baseForBar`, `activeMultiplier`, `filteredArticles` filter, `handleFetchLive` fallback) — they were the source of the "All gives infinite multiplier" bug.
+Net effect: the only thing that can flip the verdict to "blocked" today is the local ASN substring list, which doesn't cover most consumer VPN exits.
 
-B. Move DuckDuckGo `BrowserPicker` into the XP/Tiers card
-- The XP card (the one currently rendering `<ExperienceBar />` + tier chip row) becomes one card containing, in order:
-  1. ExperienceBar
-  2. The XP/Crimson explanatory paragraph
-  3. Tier chips row (no "All")
-  4. `<BrowserPicker />` (no longer renders LinkedIn slot, no longer renders the "Searches are fetched server-side…" paragraph)
+## What we'll change
 
-C. `BrowserPicker.tsx` cleanup
-- Delete the paragraph: *"Searches are fetched server-side through the DuckDuckGo HTML endpoint…"* (per user request).
-- Remove the `linkedInSlot` prop entirely (now lives in `PlosCard`).
-- Keep DuckDuckGo logo header and the classifier/results UI.
+Add a real second source (FingerprintJS Smart Signals) and OR it with Cloudflare. Either source flagging VPN/proxy/Tor/relay = hard block, full site, regardless of GPS toggle. Abstract stays paused on disk as emergency fallback only.
 
-D. OpenAlex card
-- Add the OpenAlex logo (`src/assets/openalex-logo.png`) as a small header above the existing `OpenAlexFeed` card.
-- Keep the card position (below the LinkedIn-only PLOS card) and visible to everyone.
+### 1. New edge function: `fingerprint-signals`
 
-E. HuggingFace classifier → personalised subcategories (Zero-Party data)
-- Already wired: `useClassifyInterest` returns `tierId` + `tierName`, and `persistKeywords()` writes to `tier_keywords`. Today the active session pulse drives the multiplier — keep that.
-- New behavior in `BrowserPicker.runSearch`:
-  - On a confident classification (`confidence >= MIN_TIER_CONFIDENCE`):
-    - Auto-select that tier in the parent (lift state via a new `onTierClassified?: (tierId: number) => void` prop wired from `Research.tsx` to `setSelectedTier`). This makes the chip row visually reflect the detected tier and feeds the OpenAlex feed below with the right subcategories.
-    - Persist the extracted keywords as before (already does this) — these become the user's personalised subcategories surfaced on their per-tier Tiers page.
-- On `src/pages/Tiers.tsx`: read `tier_keywords` for the current user and show them as a "Your personalised sub-interests" chip row inside each tier's detail panel. (Read-only display; no schema change — the table already exists.)
+- `verify_jwt = false` (called pre-auth from `VpnGuard`).
+- Accepts `{ requestId }` from the client (returned by FP Pro `agent.get()`).
+- Server-side calls `https://eu.api.fpjs.io/events/{requestId}` (or `api.fpjs.io` for US region) with `Auth-API-Key: ${FINGERPRINT_SECRET_API_KEY}`.
+- Reads `products.vpn.data.result`, `products.proxy.data.result`, `products.tor.data.result`, `products.relay.data.result`, `products.incognito.data.result`.
+- Returns a normalized payload: `{ vpn: bool, proxy: bool, tor: bool, relay: bool, incognito: bool, confidence: string, error?: string }`.
+- Caches per `requestId` for the event lifetime; on upstream error returns `{ error, fallback: true }` with status 200 (never crashes the gate).
+- Will need a new runtime secret `FINGERPRINT_SECRET_API_KEY` (added via the secrets tool — we'll request it before deploying).
 
-### Result (top → bottom of `/research`)
+### 2. Frontend FingerprintJS upgrade
+
+- Swap `@fingerprintjs/fingerprintjs` for `@fingerprintjs/fingerprintjs-pro` in `src/lib/fingerprint.ts`.
+- New helper `getVisitorEvent()` → `{ visitorId, requestId }`. The Pro agent is initialized with the public `FINGERPRINT_PUBLIC_API_KEY` (publishable, OK to live in code/env).
+- Keep `getVisitorId()` API-stable for existing callers.
+
+### 3. New verdict pipeline in `src/lib/vpnDetection.ts`
 
 ```text
-H1 + tagline
-─────────────────────────────────────
-PLOS banner card
-  ├ [banner image]  ⟩PLOS link
-  ├ LinkedIn — Biochemical only
-  └ ▸ Collapsible PLOS search
-─────────────────────────────────────
-XP / Tiers / DuckDuckGo card
-  ├ ExperienceBar
-  ├ XP + Crimson explainer
-  ├ Tier chips (no "All")
-  └ DuckDuckGo BrowserPicker
-─────────────────────────────────────
-[OpenAlex logo]
-OpenAlex scholarly feed card
-─────────────────────────────────────
-Live news from Claude card
-─────────────────────────────────────
-Article list
+fetchIpVerdict()
+  ├── callCloudflare()          (existing)
+  ├── callFingerprint(requestId) (new — only if requestId obtained)
+  └── merge:
+        blocked  if  cloudflare.vpn_suspected
+                  OR fingerprint.{vpn|proxy|tor|relay} === true
+                  OR local ASN blocklist matches
+        ok       if  both sources return clean
+        unverified if  Cloudflare degraded AND Fingerprint degraded
 ```
 
-### Technical notes
+The `info` returned to the UI includes the source of the block (`reason: "FingerprintJS: VPN detected"` etc.) so `VpnGuard` and `VpnConsentSlide` can show meaningful copy.
 
-- New edge functions: `cloudflare-ip-check`, `plos-search` (both with `verify_jwt = false` since they're called pre-auth / publicly).
-- New secret: `CLOUDFLARE_API_TOKEN` (requested via add_secret tool before code lands).
-- Files added: `src/components/PlosCard.tsx`, `src/hooks/usePlosSearch.ts`, `src/assets/plos-logo.png`, `src/assets/openalex-logo.png`, two edge functions.
-- Files edited: `src/pages/Research.tsx`, `src/pages/Tiers.tsx`, `src/components/BrowserPicker.tsx`, `src/components/OpenAlexFeed.tsx`, `src/lib/vpnDetection.ts`, `src/components/VpnGuard.tsx` (minor — fingerprint escalation only).
-- Files untouched: `useAdBlockDetector`, `AdBlockConsentSlide`, `VpnConsentSlide` UX, `ip-intelligence` edge function (paused but retained).
+### 4. `VpnGuard` behavior (unchanged contract, stronger signal)
+
+- Still mounted at App root, still re-checks every 60s + on focus.
+- Hard-block screen now fires whenever either source flags. No "continue anyway" button.
+- "Unverified" retry gate is preserved (per your answer): if both sources are degraded we show the existing retry UI rather than denying by default.
+
+### 5. `AppLayout` GPS-bound mirror gate
+
+- `useVpnDetector` continues to poll every 5s while the GPS toggle is on.
+- Because the underlying verdict is now stronger, the in-layout `VpnConsentSlide` will also fire correctly when the user toggles GPS on while a VPN is up.
+
+### 6. Abstract stays paused
+
+- `supabase/functions/ip-intelligence/` is left on disk. No code path calls it. Documented in the file header as "emergency fallback only — re-enable by adding a `callAbstract()` branch in `vpnDetection.ts`".
+
+### 7. Memory + docs
+
+- Update `mem://index.md` Core line to: "VPN verdict source: Cloudflare Radar + FingerprintJS Pro Smart Signals (either flag → hard block). Abstract paused on disk as emergency fallback."
+
+## What you need to provide
+
+One secret: **`FINGERPRINT_SECRET_API_KEY`** — your FingerprintJS Pro Server API key (Dashboard → API Keys → Secret key). Region matters: tell me whether your workspace is **EU** or **Global/US** so the edge function hits the right base URL (`eu.api.fpjs.io` vs `api.fpjs.io`).
+
+The public key (used by the browser agent) can be hardcoded as a publishable token; share that too or I'll read it from a `VITE_FINGERPRINT_PUBLIC_API_KEY` env var.
+
+## Files touched
+
+- `supabase/functions/fingerprint-signals/index.ts` — new
+- `src/lib/fingerprint.ts` — Pro agent, exposes `getVisitorEvent()`
+- `src/lib/vpnDetection.ts` — merge Cloudflare + Fingerprint signals
+- `src/components/VpnGuard.tsx` — block-reason copy honors source
+- `src/components/VpnConsentSlide.tsx` — same
+- `package.json` — replace `@fingerprintjs/fingerprintjs` with `@fingerprintjs/fingerprintjs-pro`
+- `mem://index.md` — updated Core line
+
+## Out of scope (kept exactly as today)
+
+- The "unverified → retry, never auto-pass" rule.
+- GeoConsentSlide GPS↔IP country comparison.
+- The ASN substring blocklist (still escalates "ok" → "blocked").
+- All other site behavior.
