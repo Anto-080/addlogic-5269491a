@@ -22,13 +22,42 @@ function ddgNewsUrl(query: string): string {
  */
 export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
   const [active, setActive] = useState<string | null>(subcategories[0] ?? null);
-  const queryStr = active ? `${active} ${tierName}` : null;
+  const [freeQuery, setFreeQuery] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
+  const queryStr = submittedQuery ?? (active ? `${active} ${tierName}` : null);
   const { data: works = [], isLoading, isError } = useOpenAlex(queryStr);
+
+  const submitFreeSearch = () => {
+    const v = freeQuery.trim();
+    if (!v) return;
+    setSubmittedQuery(v);
+    setActive(null);
+  };
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-center pb-1">
-        <img src={openAlexLogo} alt="OpenAlex" className="h-7 w-auto object-contain dark:invert" />
+        <div className="bg-white border-2 border-black rounded-md px-3 py-1.5 inline-flex items-center justify-center">
+          <img src={openAlexLogo} alt="OpenAlex" className="h-7 w-auto object-contain" />
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <Input
+          value={freeQuery}
+          onChange={(e) => setFreeQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submitFreeSearch(); }}
+          placeholder="Search OpenAlex scholarly works…"
+          className="bg-secondary/50 h-9 text-sm"
+        />
+        <Button
+          onClick={submitFreeSearch}
+          disabled={isLoading || !freeQuery.trim()}
+          size="sm"
+          className="gap-1 shrink-0 bg-money hover:bg-money/90 text-white h-9"
+        >
+          {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <SearchIcon className="h-3.5 w-3.5" />}
+          Search
+        </Button>
       </div>
       <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
         Scholarly feed (OpenAlex) · choose a sub-interest
