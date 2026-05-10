@@ -1,24 +1,27 @@
 /**
  * VPN / datacenter / proxy detection.
  *
- * Primary verdict source: Cloudflare Radar IP intelligence, proxied through
- * our `cloudflare-ip-check` edge function. Abstract API is paused (free
- * quota was depleting) but its edge function (`ip-intelligence`) remains
- * on disk as an emergency fallback.
+ * Verdict pipeline (any single source flagging = hard block):
+ *   1. Cloudflare Radar (`cloudflare-ip-check` edge fn) — IP type / ASN.
+ *   2. FingerprintJS Pro Smart Signals (`fingerprint-signals` edge fn) —
+ *      vpn/proxy/tor/relay flags from the browser event.
+ *   3. Local datacenter / VPN ASN substring blocklist (escalates only).
+ *
+ * Abstract API (`ip-intelligence` edge fn) is paused on disk as an
+ * emergency fallback — no code path calls it. Re-enable by adding a third
+ * branch to the merge below.
  *
  * Why: AddLogic's reward pool is region-priced. A user in a low-cost region
  * can otherwise spoof a high-CPM region (e.g. US/EU) via VPN and drain the
  * pool. Suspect IPs are hard-blocked app-wide by VpnGuard.
  *
- * Design rule: this module ONLY uses Cloudflare for the access-control
- * verdict. We deliberately do not mix in weaker keyless providers
- * (e.g. ipwho.is) for the block decision — that would let attackers
- * downgrade to a provider that doesn't flag their VPN. The local datacenter
- * ASN blocklist (`VPN_HOSTS`) escalates Cloudflare "ok" → "blocked"
- * when the org/ASN matches a known VPN/hosting provider.
+ * Design rule: we never silently downgrade to a weaker keyless provider for
+ * the block decision. If both authoritative sources are degraded we surface
+ * an "unverified, retry" state — never auto-pass.
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { clearVisitorEventCache, getVisitorEvent } from "@/lib/fingerprint";
 
 export type IpInfo = {
   ip: string;
@@ -35,14 +38,9 @@ export type VerdictStatus = "ok" | "blocked" | "unverified";
 export type IpVerdict = {
   status: VerdictStatus;
   info: IpInfo | null;
-  // Only set when status === "unverified" — explains why we couldn't decide.
   unverifiedReason?: string;
 };
 
-// Local secondary blocklist (substring match against ASN/org) — layered on
-// top of Abstract's flags so a generic "datacenter" string still trips the
-// gate even if the upstream provider misses it. This NEVER unblocks; it
-// can only escalate an Abstract "ok" to "blocked".
 const VPN_HOSTS = [
   "nordvpn", "nord ", "expressvpn", "express vpn", "mullvad", "protonvpn", "proton ag",
   "surfshark", "private internet access", "pia ", "windscribe", "cyberghost",
@@ -80,51 +78,16 @@ function applyLocalBlocklist(info: IpInfo): IpInfo {
 type EdgePayload = Partial<IpInfo> & { error?: string; fallback?: boolean };
 
 const UNVERIFIED_CACHE_MS = 90_000;
+const CLIENT_TTL_MS = 5 * 60 * 1000;
 const VPN_PROXY_BLOCK_MESSAGE = "VPN/Proxy traffic detected. Please deactivate your VPN to access the site.";
 
-function classifyDegradedVerdict(reason: string | null): IpVerdict {
-  const normalized = String(reason ?? "verification failed").toLowerCase();
-
-  if (
-    normalized.includes("failed to send a request to the edge function") ||
-    normalized.includes("edge function unreachable") ||
-    normalized.includes("network error")
-  ) {
-    return {
-      status: "blocked",
-      info: {
-        ip: "",
-        country_code: null,
-        country_name: null,
-        asn: null,
-        org: null,
-        vpn_suspected: true,
-        reason: VPN_PROXY_BLOCK_MESSAGE,
-      },
-    };
-  }
-
-  if (normalized.includes("cloudflare 401")) {
-    return {
-      status: "unverified",
-      info: null,
-      unverifiedReason: "Cloudflare authentication needs to be refreshed.",
-    };
-  }
-
-  if (normalized.includes("cloudflare 429")) {
-    return {
-      status: "unverified",
-      info: null,
-      unverifiedReason: "Cloudflare rate limit reached — retrying shortly.",
-    };
-  }
-
-  return {
-    status: "unverified",
-    info: null,
-    unverifiedReason: reason ?? "verification failed",
-  };
+function transportBlocked(reason: string | null): boolean {
+  const n = String(reason ?? "").toLowerCase();
+  return (
+    n.includes("failed to send a request to the edge function") ||
+    n.includes("edge function unreachable") ||
+    n.includes("network error")
+  );
 }
 
 async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string | null }> {
@@ -135,9 +98,6 @@ async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string
     }
     const d = data as EdgePayload;
     if (d.fallback || d.error) {
-      // Edge says it couldn't get a verdict from Cloudflare (missing token,
-      // upstream 5xx). We do NOT silently substitute another provider —
-      // caller decides what to show.
       return { info: null, degraded: d.error ?? "cloudflare unavailable" };
     }
     const info: IpInfo = {
@@ -155,12 +115,49 @@ async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string
   }
 }
 
-// Dedupe concurrent callers (anything that needs the verdict) and cache the
-// result for 5 min so we stay well under the Abstract free-tier 1-req/sec
-// limit. Single shared check across the app.
+type FpSignals = {
+  vpn: boolean;
+  proxy: boolean;
+  tor: boolean;
+  relay: boolean;
+  incognito: boolean;
+  fallback?: boolean;
+  error?: string;
+};
+
+async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded: string | null }> {
+  try {
+    const { requestId } = await getVisitorEvent();
+    if (!requestId) {
+      return { signals: null, degraded: "fingerprint requestId unavailable" };
+    }
+    const { data, error } = await supabase.functions.invoke("fingerprint-signals", {
+      method: "POST",
+      body: { requestId },
+    });
+    if (error || !data) {
+      return { signals: null, degraded: error?.message ?? "fingerprint edge unreachable" };
+    }
+    const d = data as FpSignals;
+    if (d.fallback || d.error) {
+      return { signals: null, degraded: d.error ?? "fingerprint unavailable" };
+    }
+    return { signals: d, degraded: null };
+  } catch (e) {
+    return { signals: null, degraded: e instanceof Error ? e.message : "network error" };
+  }
+}
+
+function fingerprintReason(s: FpSignals): string | null {
+  if (s.vpn) return "FingerprintJS: VPN detected";
+  if (s.proxy) return "FingerprintJS: Proxy detected";
+  if (s.tor) return "FingerprintJS: Tor exit node";
+  if (s.relay) return "FingerprintJS: Privacy relay (iCloud/etc.)";
+  return null;
+}
+
 let inflight: Promise<IpVerdict> | null = null;
 let cached: { at: number; verdict: IpVerdict } | null = null;
-const CLIENT_TTL_MS = 5 * 60 * 1000;
 
 export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
   if (!force && cached) {
@@ -168,15 +165,70 @@ export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
     if (Date.now() - cached.at < ttl) return cached.verdict;
   }
   if (!force && inflight) return inflight;
+  if (force) clearVisitorEventCache();
 
   inflight = (async () => {
-    const { info, degraded } = await callCloudflare();
-    let verdict: IpVerdict;
-    if (info) {
-      verdict = { status: info.vpn_suspected ? "blocked" : "ok", info };
-    } else {
-      verdict = classifyDegradedVerdict(degraded);
+    const [cf, fp] = await Promise.all([callCloudflare(), callFingerprint()]);
+
+    // Hard blocks — any source flagging wins.
+    if (cf.info?.vpn_suspected) {
+      const verdict: IpVerdict = { status: "blocked", info: cf.info };
+      cached = { at: Date.now(), verdict };
+      inflight = null;
+      return verdict;
     }
+    const fpReason = fp.signals ? fingerprintReason(fp.signals) : null;
+    if (fpReason) {
+      const baseInfo = cf.info ?? {
+        ip: "", country_code: null, country_name: null, asn: null, org: null,
+        vpn_suspected: false, reason: null,
+      };
+      const verdict: IpVerdict = {
+        status: "blocked",
+        info: { ...baseInfo, vpn_suspected: true, reason: fpReason },
+      };
+      cached = { at: Date.now(), verdict };
+      inflight = null;
+      return verdict;
+    }
+
+    // Transport-level failure on Cloudflare while we have nothing else
+    // → treat as the friendly "VPN/proxy traffic detected" hard block, since
+    // some VPNs aggressively block our edge endpoint.
+    if (!cf.info && transportBlocked(cf.degraded)) {
+      const verdict: IpVerdict = {
+        status: "blocked",
+        info: {
+          ip: "", country_code: null, country_name: null, asn: null, org: null,
+          vpn_suspected: true, reason: VPN_PROXY_BLOCK_MESSAGE,
+        },
+      };
+      cached = { at: Date.now(), verdict };
+      inflight = null;
+      return verdict;
+    }
+
+    // Unverified — neither source could deliver a confident verdict.
+    if (!cf.info && !fp.signals) {
+      const reason = cf.degraded?.toLowerCase().includes("cloudflare 401")
+        ? "Cloudflare authentication needs to be refreshed."
+        : cf.degraded?.toLowerCase().includes("cloudflare 429")
+          ? "Cloudflare rate limit reached — retrying shortly."
+          : (cf.degraded ?? fp.degraded ?? "verification failed");
+      const verdict: IpVerdict = { status: "unverified", info: null, unverifiedReason: reason };
+      cached = { at: Date.now(), verdict };
+      inflight = null;
+      return verdict;
+    }
+
+    // Both sources happy (or one happy + the other degraded) → ok.
+    const verdict: IpVerdict = {
+      status: "ok",
+      info: cf.info ?? {
+        ip: "", country_code: null, country_name: null, asn: null, org: null,
+        vpn_suspected: false, reason: null,
+      },
+    };
     cached = { at: Date.now(), verdict };
     inflight = null;
     return verdict;
@@ -197,6 +249,7 @@ export async function fetchIpInfo(): Promise<IpInfo | null> {
 export function clearIpVerdictCache() {
   cached = null;
   inflight = null;
+  clearVisitorEventCache();
 }
 
 /**
