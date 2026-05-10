@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useOpenAlex, type OpenAlexWork } from "@/hooks/useOpenAlex";
 import { Button } from "@/components/ui/button";
-import { Loader2, BookOpen, Newspaper } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, BookOpen, Newspaper, Search as SearchIcon } from "lucide-react";
 import openAlexLogo from "@/assets/openalex-logo.png";
 
 type Props = {
