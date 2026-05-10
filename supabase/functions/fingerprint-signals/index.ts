@@ -1,0 +1,148 @@
+// FingerprintJS Pro Smart Signals proxy.
+//
+// Two endpoints in one function:
+//   GET  → returns the publishable client config { publicKey, region }
+//          so the browser agent can initialize without leaking the secret
+//          server key to the bundle.
+//   POST { requestId } → server-side fetches the event from FP Pro,
+//          extracts the security signals (vpn, proxy, tor, relay, incognito)
+//          and returns a normalized payload.
+//
+// verify_jwt = false (called pre-auth from VpnGuard).
+//
+// Region: defaults to "eu" (most likely for an Italian workspace). Override
+// with a FINGERPRINT_REGION secret set to "us" or "ap" if your FP workspace
+// is hosted elsewhere.
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+};
+
+function regionBase(region: string): string {
+  switch (region.toLowerCase()) {
+    case "us":
+    case "global":
+      return "https://api.fpjs.io";
+    case "ap":
+      return "https://ap.api.fpjs.io";
+    case "eu":
+    default:
+      return "https://eu.api.fpjs.io";
+  }
+}
+
+type ProductBool = { data?: { result?: boolean } };
+type EventResp = {
+  products?: {
+    vpn?: ProductBool;
+    proxy?: ProductBool;
+    tor?: ProductBool;
+    privacySettings?: ProductBool;
+    incognito?: ProductBool;
+    suspectScore?: { data?: { result?: number } };
+    // FP also sometimes nests under "ipInfo" with "v4.geolocation.country.code"
+    // but we only care about the security flags here.
+  };
+};
+
+const eventCache = new Map<string, { at: number; payload: unknown }>();
+const EVENT_TTL_MS = 5 * 60 * 1000;
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const region = Deno.env.get("FINGERPRINT_REGION") ?? "eu";
+  const publicKey = Deno.env.get("FINGERPRINT_PUBLIC_API_KEY") ?? "";
+  const secretKey = Deno.env.get("FINGERPRINT_SECRET_API_KEY") ?? "";
+
+  // ── GET: ship the publishable config to the browser ────────────────
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify({
+        publicKey,
+        region,
+        configured: !!publicKey && !!secretKey,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
+  // ── POST: server-side event lookup ─────────────────────────────────
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  if (!secretKey) {
+    return new Response(
+      JSON.stringify({ error: "FINGERPRINT_SECRET_API_KEY not configured", fallback: true }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
+  let body: { requestId?: string } = {};
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "invalid json" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const requestId = body.requestId?.trim();
+  if (!requestId) {
+    return new Response(JSON.stringify({ error: "requestId required" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const hit = eventCache.get(requestId);
+  if (hit && Date.now() - hit.at < EVENT_TTL_MS) {
+    return new Response(JSON.stringify(hit.payload), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json", "x-cache": "HIT" },
+    });
+  }
+
+  try {
+    const r = await fetch(
+      `${regionBase(region)}/events/${encodeURIComponent(requestId)}`,
+      { headers: { "Auth-API-Key": secretKey, Accept: "application/json" } },
+    );
+    if (!r.ok) {
+      const text = await r.text().catch(() => "");
+      console.error("fingerprint-signals upstream error", r.status, text);
+      return new Response(
+        JSON.stringify({ error: `Fingerprint ${r.status}`, fallback: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const j = (await r.json()) as EventResp;
+    const p = j.products ?? {};
+    const payload = {
+      vpn: p.vpn?.data?.result === true,
+      proxy: p.proxy?.data?.result === true,
+      tor: p.tor?.data?.result === true,
+      relay: p.privacySettings?.data?.result === true,
+      incognito: p.incognito?.data?.result === true,
+      suspectScore: p.suspectScore?.data?.result ?? null,
+      fallback: false as const,
+    };
+    eventCache.set(requestId, { at: Date.now(), payload });
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json", "x-cache": "MISS" },
+    });
+  } catch (e) {
+    console.error("fingerprint-signals error", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "fetch failed", fallback: true }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+});
