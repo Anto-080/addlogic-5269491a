@@ -11,7 +11,7 @@
         "@capacitor/core": "^8.3.1",
         "@capacitor/geolocation": "^8.2.0",
         "@capacitor/ios": "^8.3.1",
-        "@fingerprintjs/fingerprintjs": "^5.2.0",
+        "@fingerprintjs/fingerprintjs-pro": "^3.12.9",
         "@hookform/resolvers": "^3.10.0",
         "@lovable.dev/cloud-auth-js": "^1.1.1",
         "@radix-ui/react-accordion": "^1.2.11",
@@ -179,7 +179,7 @@
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.3.4", "", { "dependencies": { "@eslint/core": "^0.15.1", "levn": "^0.4.1" } }, "sha512-Ul5l+lHEcw3L5+k8POx6r74mxEYKG5kOb6Xpy2gCRW6zweT6TEhAf8vhxGgjhqrd/VO/Dirhsb+1hNpD1ue9hw=="],
 
-    "@fingerprintjs/fingerprintjs": ["@fingerprintjs/fingerprintjs@5.2.0", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@fingerprintjs/fingerprintjs/-/fingerprintjs-5.2.0.tgz", {}, "sha512-j+2nInkwCQNTJcNhOjvkGM/nLRTuGJTC6xai4quqvUpjob2ssrGwBZjS7k55nOmKvge7qvJT2nS3i/IRvQSTQA=="],
+    "@fingerprintjs/fingerprintjs-pro": ["@fingerprintjs/fingerprintjs-pro@3.12.9", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@fingerprintjs/fingerprintjs-pro/-/fingerprintjs-pro-3.12.9.tgz", {}, "sha512-MiM8ASp9nQgY/abPK+1+LaZHvn6aaTX9Zze1ghCDO/Y86k1dbRnDeBr5Zg5fmEhwMda9J7+6zl54lds6GENZUw=="],
 
     "@floating-ui/core": ["@floating-ui/core@1.7.2", "", { "dependencies": { "@floating-ui/utils": "^0.2.10" } }, "sha512-wNB5ooIKHQc+Kui96jE/n69rHFWAVoxn5CAzL1Xdd8FG03cgY3MLO+GF9U3W737fYDSgPWA6MReKhBQBop6Pcw=="],
 
