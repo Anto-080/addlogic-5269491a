@@ -218,11 +218,23 @@ export default function Tiers() {
                               <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/60 text-foreground/80 border border-border/40">{s}</span>
                             ))}
                           </div>
-                          {(personalKeywords[tier.id]?.length ?? 0) > 0 && (
+                          {(personalKeywords.subcategories[tier.id]?.length ?? 0) > 0 && (
                             <>
-                              <p className="text-[11px] text-crimson mt-3 mb-2">Your personalised sub-interests (zero-party):</p>
+                              <p className="text-[11px] text-primary mt-3 mb-2">🧠 AI-derived sub-interests (from your searches):</p>
                               <div className="flex flex-wrap gap-2">
-                                {personalKeywords[tier.id].map((k) => (
+                                {personalKeywords.subcategories[tier.id].map((k) => (
+                                  <span key={k.keyword} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-foreground/90 border border-primary/40">
+                                    {k.keyword} <span className="text-muted-foreground">×{k.count}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                          {(personalKeywords.keywords[tier.id]?.length ?? 0) > 0 && (
+                            <>
+                              <p className="text-[11px] text-crimson mt-3 mb-2">Your personalised keywords (zero-party):</p>
+                              <div className="flex flex-wrap gap-2">
+                                {personalKeywords.keywords[tier.id].map((k) => (
                                   <span key={k.keyword} className="text-xs px-2 py-1 rounded-full bg-crimson/10 text-foreground/90 border border-crimson/30">
                                     {k.keyword} <span className="text-muted-foreground">×{k.count}</span>
                                   </span>
