@@ -1,6 +1,6 @@
-// Zero-shot classification proxy for facebook/bart-large-mnli.
-// Maps free-form research queries onto our 17 interest tiers.
-// Uses HUGGINGFACE_API_KEY (Lovable Cloud secret).
+// Mistral Agent classifier — assigns a research query to one of the 18 tiers
+// and generates 1-3 dynamic, semantic subcategories.
+// Replaces the previous HuggingFace BART zero-shot classifier.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -14,30 +14,145 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 // Tier names — kept in sync with src/lib/mockData.ts (TIERS).
 const TIER_LABELS: { id: number; name: string }[] = [
-  { id: 1, name: "Biological Systems" },
-  { id: 2, name: "Astrophysics & Cosmology" },
-  { id: 3, name: "Sustainable Energy" },
-  { id: 4, name: "Technology & Computing" },
-  { id: 5, name: "Tourism & Travel" },
-  { id: 6, name: "Real Estate & Architecture" },
-  { id: 7, name: "Finance & Economics" },
-  { id: 8, name: "Health & Medicine" },
-  { id: 9, name: "Education & Pedagogy" },
-  { id: 10, name: "Arts & Culture" },
-  { id: 11, name: "Sports & Athletics" },
-  { id: 12, name: "Food & Agriculture" },
-  { id: 13, name: "Fashion & Lifestyle" },
-  { id: 14, name: "Entertainment & Media" },
-  { id: 15, name: "Politics & Governance" },
-  { id: 16, name: "Religion & Philosophy" },
-  { id: 17, name: "Adult Content" },
+  { id: 1, name: "Biological Systems & Lifesaving Technologies" },
+  { id: 2, name: "Biochemical Knowledge" },
+  { id: 3, name: "Systematically Important Scientific Research" },
+  { id: 4, name: "Ecology & Natural Biomes" },
+  { id: 5, name: "Financial & Economic Services" },
+  { id: 6, name: "Technological Advancements" },
+  { id: 7, name: "Art & Culture / Humanism" },
+  { id: 8, name: "Global News" },
+  { id: 9, name: "Entertainment: Movies, Games, Books" },
+  { id: 10, name: "Food: Recipes, Nutrition, Diets" },
+  { id: 11, name: "Real Estate Services" },
+  { id: 12, name: "Personal Shopping" },
+  { id: 13, name: "Personal Care: Skin, Perfume, Makeup" },
+  { id: 14, name: "Clothes & Accessories" },
+  { id: 15, name: "Sports & eSports" },
+  { id: 16, name: "Betting Services" },
+  { id: 17, name: "Adult Entertainment" },
+  { id: 18, name: "Tourism & Travel" },
 ];
+
+const SYSTEM_PROMPT = `You are a strict research-query classifier. The user submits a free-form research query. You MUST:
+1. Pick exactly ONE tier from the list (by id) that best captures the topic.
+2. Generate 1 to 3 short, specific subcategories (2-4 words each) that describe sub-themes of the query, in the same language as the query when possible.
+3. Estimate a confidence score in [0,1].
+
+Tiers:
+${TIER_LABELS.map((t) => `${t.id}. ${t.name}`).join("\n")}
+
+Return ONLY a JSON object with this exact shape, nothing else:
+{"tierId": <int>, "tierName": <string>, "confidence": <float 0..1>, "subcategories": [<string>, ...]}`;
+
+async function callMistral(query: string): Promise<{
+  tierId: number | null;
+  tierName: string | null;
+  confidence: number;
+  subcategories: string[];
+} | null> {
+  const apiKey = Deno.env.get("MISTRAL_API_KEY");
+  const agentId = Deno.env.get("MISTRAL_AGENT_ID");
+  if (!apiKey) throw new Error("MISTRAL_API_KEY not configured");
+
+  // Try Agents API first if agent id is provided.
+  let body: Record<string, unknown>;
+  let url: string;
+  if (agentId) {
+    url = "https://api.mistral.ai/v1/agents/completions";
+    body = {
+      agent_id: agentId,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: query },
+      ],
+      response_format: { type: "json_object" },
+    };
+  } else {
+    url = "https://api.mistral.ai/v1/chat/completions";
+    body = {
+      model: "mistral-small-latest",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: query },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+    };
+  }
+
+  let r = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  // Fallback: if Agents API rejects (e.g. 4xx), try chat completions.
+  if (!r.ok && agentId) {
+    console.warn("Agents API failed, falling back to chat completions:", r.status);
+    r = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "mistral-small-latest",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: query },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.2,
+      }),
+    });
+  }
+
+  if (!r.ok) {
+    const t = await r.text();
+    console.error("Mistral error", r.status, t.slice(0, 400));
+    if (r.status === 429) throw new Error("rate_limited");
+    if (r.status === 402) throw new Error("payment_required");
+    throw new Error(`mistral_${r.status}`);
+  }
+
+  const data = await r.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") return null;
+
+  let parsed: any;
+  try { parsed = JSON.parse(content); } catch {
+    // Try to recover JSON inside text.
+    const m = content.match(/\{[\s\S]*\}/);
+    if (!m) return null;
+    try { parsed = JSON.parse(m[0]); } catch { return null; }
+  }
+
+  const tierId = Number.isFinite(parsed.tierId) ? Number(parsed.tierId) : null;
+  const tier = TIER_LABELS.find((t) => t.id === tierId);
+  const subs: string[] = Array.isArray(parsed.subcategories)
+    ? parsed.subcategories
+        .map((s: unknown) => (typeof s === "string" ? s.trim() : ""))
+        .filter((s: string) => s.length >= 2 && s.length <= 60)
+        .slice(0, 3)
+    : [];
+  const confidence = Math.max(0, Math.min(1, Number(parsed.confidence) || 0));
+
+  return {
+    tierId: tier?.id ?? null,
+    tierName: tier?.name ?? null,
+    confidence,
+    subcategories: subs,
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // ---- Auth gate: require a valid signed-in user. ----
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader.startsWith("Bearer ")) {
       return new Response(
@@ -70,60 +185,25 @@ Deno.serve(async (req) => {
       );
     }
 
-    const token = Deno.env.get("HUGGINGFACE_API_KEY");
-    if (!token) {
+    const result = await callMistral(text.trim());
+    if (!result) {
       return new Response(
-        JSON.stringify({ error: "HUGGINGFACE_API_KEY not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    const r = await fetch(
-      "https://api-inference.huggingface.co/models/facebook/bart-large-mnli",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          inputs: text,
-          parameters: {
-            candidate_labels: TIER_LABELS.map((t) => t.name),
-            multi_label: false,
-          },
-        }),
-      },
-    );
-
-    if (!r.ok) {
-      const body = await r.text();
-      console.error("classify-interest: HF error", r.status, body.slice(0, 400));
-      return new Response(
-        JSON.stringify({ error: "Upstream classification error" }),
+        JSON.stringify({ error: "Classification failed" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const data = (await r.json()) as { labels?: string[]; scores?: number[] };
-    const topLabel = data.labels?.[0] ?? null;
-    const topScore = data.scores?.[0] ?? 0;
-    const tier = TIER_LABELS.find((t) => t.name === topLabel);
-
     return new Response(
-      JSON.stringify({
-        tierId: tier?.id ?? null,
-        tierName: tier?.name ?? null,
-        confidence: topScore,
-        text,
-      }),
+      JSON.stringify({ ...result, text }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
-    console.error("classify-interest error:", e);
+    const msg = e instanceof Error ? e.message : "Internal server error";
+    console.error("classify-interest error:", msg);
+    const status = msg === "rate_limited" ? 429 : msg === "payment_required" ? 402 : 500;
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      JSON.stringify({ error: msg }),
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
