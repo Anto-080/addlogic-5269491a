@@ -6,7 +6,7 @@ import { recordSearch } from "@/lib/userInterestProfiler";
 import { bumpSearchCount } from "@/lib/zeroPartyCookies";
 import { useWebSearch } from "@/hooks/useWebSearch";
 import { SearchResults, type SearchResultItem } from "@/components/SearchResults";
-import { useClassifyInterest, extractKeywords, persistKeywords } from "@/hooks/useClassifyInterest";
+import { useClassifyInterest, extractKeywords, persistKeywords, persistSubcategories } from "@/hooks/useClassifyInterest";
 import { useResearchSession } from "@/contexts/ResearchSessionContext";
 import { useAuth } from "@/hooks/useAuth";
 import { TIERS } from "@/lib/mockData";
@@ -60,6 +60,7 @@ export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerP
         if (user) {
           const kws = extractKeywords(query);
           persistKeywords(user.id, cls.tierId, kws).catch(() => undefined);
+          persistSubcategories(user.id, cls.tierId, cls.subcategories ?? []).catch(() => undefined);
         }
       }
     }).catch(() => setClassified(null));
