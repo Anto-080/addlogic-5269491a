@@ -396,6 +396,7 @@ export type Database = {
           count: number
           id: string
           keyword: string
+          kind: string
           last_seen: string
           tier_id: number
           user_id: string
@@ -404,6 +405,7 @@ export type Database = {
           count?: number
           id?: string
           keyword: string
+          kind?: string
           last_seen?: string
           tier_id: number
           user_id: string
@@ -412,6 +414,7 @@ export type Database = {
           count?: number
           id?: string
           keyword?: string
+          kind?: string
           last_seen?: string
           tier_id?: number
           user_id?: string
