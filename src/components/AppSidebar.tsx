@@ -1,6 +1,7 @@
 import { Users, Lock, LogOut, Tag } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import addlogicMark from "@/assets/addlogic-mark.jpg";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
@@ -27,7 +28,13 @@ export function AppSidebar() {
               <p className="text-xs text-muted-foreground">Earn while you learn</p>
             </div>
           )}
-          {collapsed && <span className="text-xl">🔬</span>}
+          {collapsed && (
+            <img
+              src={addlogicMark}
+              alt="AddLogic"
+              className="h-8 w-8 rounded-full object-cover object-center ring-1 ring-primary/40"
+            />
+          )}
         </div>
 
         <SidebarGroup>
