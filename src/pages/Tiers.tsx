@@ -220,7 +220,7 @@ export default function Tiers() {
                           </div>
                           {(personalKeywords.subcategories[tier.id]?.length ?? 0) > 0 && (
                             <>
-                              <p className="text-[11px] text-primary mt-3 mb-2">🧠 AI-derived sub-interests (from your searches):</p>
+                              <p className="text-[11px] text-primary mt-3 mb-2">AI-derived sub-interests (from your searches):</p>
                               <div className="flex flex-wrap gap-2">
                                 {personalKeywords.subcategories[tier.id].map((k) => (
                                   <span key={k.keyword} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-foreground/90 border border-primary/40">

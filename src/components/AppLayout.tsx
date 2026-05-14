@@ -10,8 +10,6 @@ import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useAdBlockDetector } from "@/hooks/useAdBlockDetector";
 import { AdBlockConsentSlide } from "@/components/AdBlockConsentSlide";
-import { VpnConsentSlide } from "@/components/VpnConsentSlide";
-import { useVpnDetector } from "@/hooks/useVpnDetector";
 
 const QUICK_LINKS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -24,16 +22,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { data: stats } = useUserStats();
   const location = useLocation();
   const vaultBalance = stats?.earnings_all_time ?? 0;
-  const { cookieAutoAccept, gpsPrecision } = useSettings();
-  // Re-probe every 5s while cookies are on; if blocker active → mount the gate.
+  const { cookieAutoAccept } = useSettings();
   const blocked = useAdBlockDetector(cookieAutoAccept ? 5000 : 0);
   const [gateDismissed, setGateDismissed] = useState(false);
   const showAdBlockGate = cookieAutoAccept && blocked === true && !gateDismissed;
-  // Poll IP verdict whenever GPS precision is on so toggling on a VPN
-  // mid-session triggers the gate (matches AdBlock+Cookies behavior).
-  const vpnStatus = useVpnDetector(gpsPrecision ? 5000 : 0);
-  const [vpnGateDismissed, setVpnGateDismissed] = useState(false);
-  const showVpnGate = gpsPrecision && vpnStatus === "blocked" && !vpnGateDismissed;
 
   return (
     <SidebarProvider>
@@ -101,15 +93,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
         open={showAdBlockGate}
         onSatisfied={() => setGateDismissed(true)}
       />
-      <VpnConsentSlide
-        open={showVpnGate}
-        onSatisfied={() => setVpnGateDismissed(true)}
-      />
     </SidebarProvider>
   );
 }
-
-// Note: VpnGuard at the App root handles the unauthenticated/site-wide
-// hard block. This in-layout slide is the GPS-toggle-bound mirror of
-// AdBlockConsentSlide, so toggling GPS on while behind a VPN immediately
-// surfaces a full-screen card the same way AdBlock+Cookies does.

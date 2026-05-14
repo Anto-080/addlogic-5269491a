@@ -253,6 +253,51 @@ export function clearIpVerdictCache() {
 }
 
 /**
+ * IP-branch fraud check used by the post-login entrance card. Runs MaxMind
+ * minFraud first (when configured) and falls back to FingerprintJS Pro
+ * Smart Signals + the local datacenter ASN blocklist.
+ */
+export async function verifyIpForApproximateLocation(): Promise<{
+  ok: boolean;
+  reason?: string;
+}> {
+  // 1. MaxMind minFraud (skipped silently if not configured server-side).
+  try {
+    const { data } = await supabase.functions.invoke("maxmind-minfraud", { method: "POST" });
+    const d = data as {
+      configured?: boolean;
+      isVpn?: boolean;
+      isHostingProvider?: boolean;
+      isPublicProxy?: boolean;
+      isTorExitNode?: boolean;
+      riskScore?: number;
+    } | null;
+    if (d?.configured) {
+      if (d.isVpn) return { ok: false, reason: "MaxMind: anonymous VPN" };
+      if (d.isPublicProxy) return { ok: false, reason: "MaxMind: public proxy" };
+      if (d.isTorExitNode) return { ok: false, reason: "MaxMind: Tor exit node" };
+      if (d.isHostingProvider) return { ok: false, reason: "MaxMind: hosting provider / datacenter" };
+      if ((d.riskScore ?? 0) >= 75) return { ok: false, reason: `MaxMind: high risk score ${d.riskScore}` };
+    }
+  } catch { /* fall through to fingerprint */ }
+
+  // 2. FingerprintJS Pro Smart Signals.
+  const fp = await callFingerprint();
+  if (fp.signals) {
+    const fpReason = fingerprintReason(fp.signals);
+    if (fpReason) return { ok: false, reason: fpReason };
+  }
+
+  // 3. Local datacenter ASN blocklist via Cloudflare Radar.
+  const cf = await callCloudflare();
+  if (cf.info?.vpn_suspected) {
+    return { ok: false, reason: cf.info.reason ?? "Datacenter / VPN ASN" };
+  }
+
+  return { ok: true };
+}
+
+/**
  * Reverse geocode using keyless geocode.maps.co (free tier). Returns ISO
  * country code, used to cross-check against the IP-derived country.
  */

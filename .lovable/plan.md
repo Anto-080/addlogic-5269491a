@@ -1,92 +1,78 @@
-## Obiettivo
+# Plan — Entrance-card VPN gating + minor visuals
 
-Sostituire HuggingFace con un Mistral AI Agent che, ad ogni ricerca dell'utente:
+## 1. Remove the always-on site-wide VPN hard gate
 
-1. Assegna la ricerca a uno dei tier predefiniti (1-18).
-2. Genera 1-3 subcategorie semantiche coerenti (es. "Microbiologia", "Microbiota Umano", "Interazione Microrganismi-Biologia Umana").
-3. Salva tutto come zero-party / non-PII analytics per l'utente.
-4. Le subcategorie compaiono nelle Tier cards espanse in **Interests Tiers**, sotto le subcategorie statiche, personalizzate per ogni utente. Layout invariato.
+- `src/App.tsx`: stop wrapping the app in `<VpnGuard>`. The current Cloudflare/FingerprintJS hard block runs on every page (including `/login`) and is the main reason VPN control "doesn't work" while also burning quota.
+- Keep `src/components/VpnGuard.tsx` on disk for now (unused) — easy to re-enable, no behavior cost.
+- Remove the in-layout `VpnConsentSlide` from `AppLayout.tsx` (and the `useVpnDetector` polling tied to the GPS toggle). VPN gating now happens once, in the entrance card.
 
-## Step 1 — Secrets
+## 2. Promote the GPS card to a post-login entrance gate
 
-Richiedere via `add_secret`:
+`GeoConsentSlide` becomes the single chokepoint right after authentication. It blocks the app behind a full-screen card with two outcomes:
 
-- `MISTRAL_API_KEY` — chiave API generata su console.mistral.ai
-- `MISTRAL_AGENT_ID` — `ag_019e1c86830173e189f360bdcd36f6ce`
+- **Use precise location (GPS)** — calls the existing phone GPS fetcher. If GPS is off / denied, it keeps returning negative just like today. Success → user is trusted, app unlocks, **no IP/VPN check is ever called for them**. Sales pitch on the card: more precise + better-paid ads, regional offers.
+- **Use approximate location (IP)** — only this branch triggers a fraud check. We call MaxMind minFraud (when the key exists) **plus** FingerprintJS Pro Smart Signals (already wired) to decide vpn/proxy/datacenter. Pass → unlock. Fail → user is told to disable VPN and retry; no app access.
 
-## Step 2 — Schema DB (migration)
+Mounting:
 
-Estendere `tier_keywords` con una colonna `kind` per distinguere keyword grezze da subcategorie generate dall'agente:
+- Move the slide out of `Dashboard.tsx` and into a new `PostLoginGate` wrapper used by `ProtectedRoute` (so it shows on every protected page until satisfied for the session).
+- "Satisfied" is stored per-session (sessionStorage keyed by user id) so the gate doesn't re-prompt on every navigation, but re-shows on a fresh login and at Each Refresh Control the Approximate IP is the Same as the Last Session.
 
-```sql
-ALTER TABLE public.tier_keywords
-  ADD COLUMN kind text NOT NULL DEFAULT 'keyword'
-  CHECK (kind IN ('keyword','subcategory'));
+Card content (kept from current `GeoConsentSlide`, copy tightened):
 
-CREATE INDEX IF NOT EXISTS tier_keywords_user_tier_kind_idx
-  ON public.tier_keywords(user_id, tier_id, kind);
-```
+- Headline + short paragraph summarising: "Activate GPS for more precise, better-paid ads and regional offers, **or** share approximate location so we can verify you're not on a VPN/proxy used by bot farms to drain the regional reward pool."
+- Keep the **collapsible "Show anti-fraud details"** block (fingerprint id + IP/ASN readout).
+- Keep the two buttons exactly as they are.
+- Remove "Cancel and turn GPS toggle off" since now is a Choice based upon Network Safety.
 
-Le subcategorie vivono nella stessa tabella (RLS già a posto, ognuna scopata per `user_id`), col campo `count` che incrementa quando lo stesso concept torna. Nessuna nuova tabella → minimo blast radius.
+## 3. MaxMind minFraud edge function (stub-ready)
 
-Per gli **anonymous analytics non-PII** riusiamo l'aggregato già esistente: la subcategoria viene loggata in `anonymous_research_analytics` come nuovo record con `host = 'mistral:subcategory:<slug>'` (riusa la pipe di anonimizzazione esistente, niente PII perché solo l'aggregato per tier+settimana).
+- New edge function `maxmind-minfraud/index.ts`:
+  - Reads `MAXMIND_ACCOUNT_ID` + `MAXMIND_LICENSE_KEY` from secrets.
+  - If either missing → returns `{ configured: false }` and the client falls back to **FingerprintJS Pro Smart Signals only** (already implemented in `vpnDetection.ts`).
+  - When configured → POSTs the caller's IP to `https://minfraud.maxmind.com/minfraud/v2.0/score`, returns `{ riskScore, ipRisk, isVpn, isHostingProvider }`.
+- Client logic in the IP branch of the entrance card:
+  1. Call `maxmind-minfraud`. If `configured && (isVpn || isHostingProvider || riskScore > threshold)` → block.
+  2. Else call FingerprintJS Pro signals. If vpn/proxy/tor/relay → block.
+  3. Else → pass.
+- Don't ask for the MaxMind secret yet (user said "I don't own it but eventually"). The function is shipped disabled and will start working the moment `secrets--add_secret` is run.
 
-## Step 3 — Edge function `classify-interest` (riscritta)
+## 4. Slim `vpnDetection.ts` accordingly
 
-Sostituire la chiamata HuggingFace con Mistral Agents API:
+- Delete the `VpnGuard`-driven Cloudflare polling loop call sites.
+- Keep `fetchIpInfo()` (used by the card to display ASN/country) but stop the 60s background re-checks.
+- The local datacenter ASN substring blocklist stays as an escalation signal in the IP branch.
 
-```
-POST https://api.mistral.ai/v1/agents/completions
-Headers: Authorization: Bearer ${MISTRAL_API_KEY}
-Body: {
-  agent_id: "${MISTRAL_AGENT_ID}",
-  messages: [{ role: "user", content: <query utente + lista 18 tier> }],
-  response_format: { type: "json_object" }
-}
-```
+## 5. Minor visual changes
 
-L'agente deve restituire JSON strutturato:
+- **Sidebar collapsed logo** (`src/components/AppSidebar.tsx` line 30): replace the 🔬 emoji with a circular crop of `user-uploads://Emerald_Anarchy.jpg` representing the "A" of AddLogic.
+  - Copy upload to `src/assets/addlogic-mark.jpg`, render as `<img class="h-7 w-7 rounded-full object-cover" />` centered on the anarchy "A".
+- **Tiers page** (`src/pages/Tiers.tsx` line 223): remove the 🧠 emoji from "🧠 AI-derived sub-interests (from your searches):" → "AI-derived sub-interests (from your searches):".
+- **PLOS card** (`src/components/PlosCard.tsx`):
+  - Make the logo smaller — change `p-4` to e.g. `max-w-[180px] mx-auto p-3`.
+  - Change the Background of the Logo in Ivory token: add `--ivory: 60 29% 94%;` 
 
-```json
-{
-  "tierId": 1,
-  "tierName": "Biological Systems",
-  "confidence": 0.92,
-  "subcategories": ["Microbiologia", "Microbiota Umano", "Interazione Microrganismi-Biologia Umana"]
-}
-```
+## 6. Memory update
 
-Se l'agente non rispetta lo schema (Mistral non garantisce tool-calling per gli Agents), aggiungere un fallback `chat/completions` con `mistral-small-latest` + system prompt che impone JSON. Catturare 429/402 e rilanciarli al client.
+Update `mem://index.md` Core to reflect: "VPN/proxy gating happens once at the post-login entrance card; precise GPS bypasses the IP fraud check, IP-approximate path goes through MaxMind minFraud (when configured) + FingerprintJS Pro signals." Remove the old "VpnGuard at the App root hard-blocks everything" line.
 
-Mantiene auth `getUser()` come ora, mantiene la stessa response shape estesa con `subcategories: string[]` (backward-compatible con `useClassifyInterest`).
+## Files touched
 
-## Step 4 — Persistenza subcategorie
+- `src/App.tsx` — drop `<VpnGuard>`.
+- `src/components/AppLayout.tsx` — drop `VpnConsentSlide` + `useVpnDetector`.
+- New `src/components/PostLoginGate.tsx` — wraps protected routes, mounts `GeoConsentSlide`.
+- `src/components/GeoConsentSlide.tsx` — copy tweaks, IP branch calls MaxMind first then FingerprintJS, blocks on fail.
+- `src/lib/vpnDetection.ts` — add `verifyIpForApproximateLocation()` helper.
+- New `supabase/functions/maxmind-minfraud/index.ts` (graceful no-op until secrets exist).
+- `src/components/AppSidebar.tsx` — emoji → image.
+- `src/assets/addlogic-mark.jpg` (copied from upload).
+- `src/pages/Tiers.tsx` — drop 🧠.
+- `src/components/PlosCard.tsx` — smaller logo + ivory PLOS overlay.
+- `src/index.css` — add `--ivory` token.
+- `mem://index.md` — update Core.
 
-In `useClassifyInterest.ts`, aggiungere `persistSubcategories(userId, tierId, subs)` che fa upsert con `kind='subcategory'`. Chiamato da `BrowserPicker.tsx` (e `OpenAlexFeed`) subito dopo che la classificazione torna.
+## Open question
 
-`extractKeywords()` continua a girare per le keyword grezze (kind='keyword'), così abbiamo sia il segnale fine (parole) sia il segnale strutturato (subcategorie LLM).
+When the IP branch fails verification, should the user be **fully locked out** (must disable VPN, no app access), or **allowed in low-trust mode** (no rewards multiplier, like today's GPS↔IP mismatch)? Default in this plan: **fully locked out**, since you said "reduce fraud risk to approximately zero". Tell me if you'd rather keep low-trust as a soft fallback.
 
-## Step 5 — UI Interests Tiers
-
-In `src/hooks/useTierKeywords.ts`: aggiungere `kind` nella `select` e nel tipo, e splittare in `byTierKeywords` + `byTierSubcategories` (oppure un solo `byTier` con due array).
-
-In `src/pages/Tiers.tsx` (righe 212-233), nella sezione espansa aggiungere — **sopra** "Your personalised sub-interests" e **sotto** le subcategorie statiche — un nuovo blocco:
-
-```
-AI-derived subcategories (from your searches):
-[chip Microbiologia ×3] [chip Microbiota Umano ×1] ...
-```
-
-Stilizzato con accento amber per distinguerlo dal blocco crimson delle keyword. Layout cards invariato.
-
-## Step 6 — Memory + verifica
-
-- Aggiornare `mem://index.md`: rimpiazzare la riga "HuggingFace classifier" con "Mistral Agent classifier (ag_019e...) genera tier + subcategorie zero-party".
-- Test manuale: ricerca "Rhodopseudomonas Palustris in association with Human Biological Functions" → deve apparire come tier Biological Systems con subcategorie generate, visibili nella card espansa di quel tier.
-
-## Note tecniche
-
-- HuggingFace classifier viene **rimosso** dal flusso (codice secret `HUGGINGFACE_API_KEY` resta nei secret per ora, non lo cancello).
-- Le subcategorie sono **per-utente**: due utenti che cercano la stessa cosa avranno chip diverse nelle proprie tier card se cercano altri interessi e uguali se cercano le stesse cose, questo Integrerá la Possibilità di Connettere Utenti con Affinità e Interessi Simili collegati a Meta. Layout/markup uguale per tutti.
-- Zero PII: la query grezza non viene mai esposta al client di altri utenti, solo subcategorie e count aggregati.
-- Costo: 1 chiamata Mistral per ogni search submit (già il pattern attuale con HF).
+**Zero** Trust, user just need to Deactivate VPN.
