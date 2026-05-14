@@ -460,7 +460,6 @@ export default function Dashboard() {
       <GeoConsentSlide
         open={geoSlideOpen}
         onSatisfied={() => { setGpsPrecision(true); setGeoSlideOpen(false); }}
-        onCancel={() => { setGpsPrecision(false); setGeoSlideOpen(false); }}
       />
     </AppLayout>
   );
