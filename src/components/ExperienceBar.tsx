@@ -80,7 +80,6 @@ export function ExperienceBar({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [earning, activeMultiplier]);
-  }, [earning, activeMultiplier, stats?.current_multiplier]);
 
   const liveXp = baseXp + (earning ? accumulatedRef.current : 0);
   const xpPercent = Math.min(100, (liveXp / XP_PER_LEVEL) * 100);
@@ -95,7 +94,8 @@ export function ExperienceBar({
       : markerPercent + ((activeMultiplier - cap) / cap) * (100 - markerPercent)
   );
 
-  const barH = compact ? "h-3" : "h-4";
+  const barH = compact ? "h-1.5" : "h-2";
+  const trackCls = `relative w-full overflow-hidden rounded-full bg-secondary/60 shadow-inner ${barH}`;
 
   return (
     <div className="space-y-2">
