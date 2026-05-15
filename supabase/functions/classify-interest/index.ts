@@ -193,6 +193,28 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Persist Mistral-derived multiplier on the user's stats so the
+    // Experience bar reflects what the AI graded — toggles no longer
+    // contribute. multiplier = clamp(1, 10, 1 + tierWeight * confidence).
+    try {
+      const tierWeights: Record<number, number> = {
+        1: 10, 2: 9.2, 3: 8.5, 4: 7.5, 5: 6.5, 6: 5.8, 7: 5.2,
+        8: 4.5, 9: 4.0, 10: 3.5, 11: 3.0, 12: 2.5, 13: 2.2,
+        14: 1.8, 15: 1.4, 16: 0.8, 17: 0.5, 18: 3.2,
+      };
+      const w = result.tierId ? tierWeights[result.tierId] ?? 1 : 1;
+      const newMultiplier = Math.max(1, Math.min(10, w * (result.confidence || 0.5)));
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (serviceKey) {
+        const admin = createClient(SUPABASE_URL, serviceKey);
+        await admin.from("user_stats")
+          .update({ current_multiplier: newMultiplier })
+          .eq("user_id", userData.user.id);
+      }
+    } catch (e) {
+      console.warn("multiplier persist failed:", (e as Error).message);
+    }
+
     return new Response(
       JSON.stringify({ ...result, text }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
