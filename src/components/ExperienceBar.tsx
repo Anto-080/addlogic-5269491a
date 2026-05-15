@@ -1,15 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Zap } from "lucide-react";
-import { useSettings } from "@/contexts/SettingsContext";
 import { useUserStats, useUpdateUserStats } from "@/hooks/useAppData";
 
-const XP_PER_LEVEL = 1_000_000;
-const COOKIE_BONUS = 2;
-const GPS_BONUS = 5;
-
-function consentBonus(cookies: boolean, gps: boolean) {
-  return (cookies ? COOKIE_BONUS : 0) + (gps ? GPS_BONUS : 0);
-}
+const XP_PER_LEVEL = 500_000;
 
 /**
  * Experience + Crimson Multiplier — backed by the live `user_stats` row.
