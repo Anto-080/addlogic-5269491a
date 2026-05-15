@@ -95,7 +95,6 @@ export function ExperienceBar({
   );
 
   const barH = compact ? "h-1.5" : "h-2";
-  const trackCls = `relative w-full overflow-hidden rounded-full bg-secondary/60 shadow-inner ${barH}`;
 
   return (
     <div className="space-y-2">
