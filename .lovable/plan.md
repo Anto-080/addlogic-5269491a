@@ -1,78 +1,90 @@
-# Plan — Entrance-card VPN gating + minor visuals
+## 1. PLOS card — rollback + fix search
 
-## 1. Remove the always-on site-wide VPN hard gate
+**`src/components/PlosCard.tsx`**
+- Remove the `bg-[hsl(var(--ivory))]` wrapper button. Restore the prior look: PLOS logo on the card's normal dark background. Make the bitmap **shorter and wider** (squeezed): cap height (`maxHeight: 48px`) and let width run wide (`maxWidth: 260px`, `width:100%`), `objectFit: contain`. No ivory overlay.
+- Keep "⟩PLOS →" link in foreground/60.
 
-- `src/App.tsx`: stop wrapping the app in `<VpnGuard>`. The current Cloudflare/FingerprintJS hard block runs on every page (including `/login`) and is the main reason VPN control "doesn't work" while also burning quota.
-- Keep `src/components/VpnGuard.tsx` on disk for now (unused) — easy to re-enable, no behavior cost.
-- Remove the in-layout `VpnConsentSlide` from `AppLayout.tsx` (and the `useVpnDetector` polling tied to the GPS toggle). VPN gating now happens once, in the entrance card.
+**`src/hooks/usePlosSearch.ts` + `supabase/functions/plos-search/index.ts`**
+- The search button "doesn't work": likely the `body` is sent through `functions.invoke` but the edge function reads it then also requires Bearer auth. Confirm by adding a console.error capture and check live network. Fix: edge function currently rejects when no Authorization Bearer; `supabase.functions.invoke` from the browser does pass the user JWT, so the failure is most likely the **CORS header missing on the 401 response after `OPTIONS`**, or the empty-body POST throwing. Concretely:
+  - Change `usePlosSearch` to also pass `headers: { "Content-Type": "application/json" }`.
+  - In the edge function, wrap the `await req.json()` in a defensive parse (already done) and ensure the auth check returns CORS headers (already does). Add a fallback: if `Authorization` is missing, allow public read (PLOS is keyless and rate-limited upstream anyway) — drop the auth gate to a soft warning. This restores the toggle.
 
-## 2. Promote the GPS card to a post-login entrance gate
+## 2. Sidebar "A" mark — real round frame
 
-`GeoConsentSlide` becomes the single chokepoint right after authentication. It blocks the app behind a full-screen card with two outcomes:
+**`src/components/AppSidebar.tsx`**
+- The current `<img className="h-8 w-8 rounded-full object-cover">` crops the source image to a circle but the source itself is rectangular, so the visible A looks oval. Replace with a fixed-size **round container** that holds the full image with padding so the entire circled A + its green halo are visible:
+```tsx
+<div className="h-9 w-9 rounded-full overflow-hidden ring-1 ring-primary/40 bg-[hsl(150_60%_8%)] flex items-center justify-center">
+  <img src={addlogicMark} alt="AddLogic" className="h-full w-full object-contain" />
+</div>
+```
+- Also do the same in the expanded (non-collapsed) header so the brand mark sits next to "AddLogic" text.
 
-- **Use precise location (GPS)** — calls the existing phone GPS fetcher. If GPS is off / denied, it keeps returning negative just like today. Success → user is trusted, app unlocks, **no IP/VPN check is ever called for them**. Sales pitch on the card: more precise + better-paid ads, regional offers.
-- **Use approximate location (IP)** — only this branch triggers a fraud check. We call MaxMind minFraud (when the key exists) **plus** FingerprintJS Pro Smart Signals (already wired) to decide vpn/proxy/datacenter. Pass → unlock. Fail → user is told to disable VPN and retry; no app access.
+## 3. Live-vs-preview colour mismatch (OpenAlex icon black-on-black, paler logos)
 
-Mounting:
+Root cause: components using inline `style={{ color: tier.color }}` with `currentColor` SVGs render fine in dev, but in the published bundle Tailwind's purge + a few `text-foreground/XX` overlays + `mix-blend` from parent gradients shift the apparent value. The OpenAlex icon specifically is rendered as an `<img>` of a black-on-transparent PNG inside a dark card without any background.
 
-- Move the slide out of `Dashboard.tsx` and into a new `PostLoginGate` wrapper used by `ProtectedRoute` (so it shows on every protected page until satisfied for the session).
-- "Satisfied" is stored per-session (sessionStorage keyed by user id) so the gate doesn't re-prompt on every navigation, but re-shows on a fresh login and at Each Refresh Control the Approximate IP is the Same as the Last Session.
+Fixes:
+- **`src/components/OpenAlexFeed.tsx`**: wrap the OpenAlex logo `<img>` in a small ivory pill `<span className="inline-flex items-center justify-center rounded-md bg-[hsl(var(--ivory))] px-2 py-1">` so the black mark sits on its native white background in both preview and prod.
+- **Audit `text-foreground/60`, `opacity-50` overlays on logo containers** (Sidebar, PlosCard, OpenAlexFeed, TierIcon usage in Dashboard "Primary Research Tier" card). Remove the opacity wrappers around brand assets — they cause the "paler in live" effect because production builds resolve `opacity` differently when combined with backdrop-blur cards.
+- Add a single utility `.brand-asset { opacity: 1 !important; mix-blend-mode: normal !important; filter: none !important; }` in `index.css` and apply it to the AddLogic mark, OpenAlex logo, PLOS logo and tier icons rendered inside cards. This guarantees identical rendering in preview and `addlogic.lovable.app`.
 
-Card content (kept from current `GeoConsentSlide`, copy tightened):
+## 4. Tiers list — replace mock numbers with real traffic
 
-- Headline + short paragraph summarising: "Activate GPS for more precise, better-paid ads and regional offers, **or** share approximate location so we can verify you're not on a VPN/proxy used by bot farms to drain the regional reward pool."
-- Keep the **collapsible "Show anti-fraud details"** block (fingerprint id + IP/ASN readout).
-- Keep the two buttons exactly as they are.
-- Remove "Cancel and turn GPS toggle off" since now is a Choice based upon Network Safety.
+**`src/lib/mockData.ts` + `src/pages/Tiers.tsx`**
+- Remove the hardcoded `researchers` and `avgEarning` numbers in `TIERS`.
+- New hook `useTierTraffic()` that reads from `anonymous_research_analytics` (already in DB) aggregated per `tier_id`:
+  - `researchers = COUNT(DISTINCT user_id_hash)` — but that table is anonymised; instead aggregate `SUM(visit_count)` as "weekly visits" and `SUM(total_dwell_seconds)/3600` as "researcher-hours".
+  - `avgEarning` = remove entirely until the rewards engine flushes real T$ per tier; show "—" with tooltip "Live data accumulating".
+- In `Tiers.tsx`, render `{traffic[t.id]?.visits ?? "—"} visits · {hours} researcher-hours` instead of "X researchers · T$Y/day".
+- "Top Milestones" card on Dashboard already uses real `milestones` rows — leave it.
 
-## 3. MaxMind minFraud edge function (stub-ready)
+## 5. Experience & Multiplier bar
 
-- New edge function `maxmind-minfraud/index.ts`:
-  - Reads `MAXMIND_ACCOUNT_ID` + `MAXMIND_LICENSE_KEY` from secrets.
-  - If either missing → returns `{ configured: false }` and the client falls back to **FingerprintJS Pro Smart Signals only** (already implemented in `vpnDetection.ts`).
-  - When configured → POSTs the caller's IP to `https://minfraud.maxmind.com/minfraud/v2.0/score`, returns `{ riskScore, ipRisk, isVpn, isHostingProvider }`.
-- Client logic in the IP branch of the entrance card:
-  1. Call `maxmind-minfraud`. If `configured && (isVpn || isHostingProvider || riskScore > threshold)` → block.
-  2. Else call FingerprintJS Pro signals. If vpn/proxy/tor/relay → block.
-  3. Else → pass.
-- Don't ask for the MaxMind secret yet (user said "I don't own it but eventually"). The function is shipped disabled and will start working the moment `secrets--add_secret` is run.
+**`src/components/ExperienceBar.tsx`**
+- `XP_PER_LEVEL` from `1_000_000` → **`500_000`** (request: "500000 instead of a Million").
+- Bars: thinner — `h-3` → `h-2`, compact mode `h-2` → `h-1.5`. Soften edges with `rounded-full` already, plus `shadow-inner` on the track.
+- **Decouple multiplier from cookie/GPS toggles**: drop `consentBonus(...)` from `activeMultiplier`. Multiplier is now driven only by `stats.current_multiplier`, which is set server-side by the Mistral classifier each time a research query is graded. Remove the `useEffect` that mutates `current_multiplier` from this component — the bar becomes read-only.
+- Update Dashboard "Multiplier x{COOKIE_BONUS}" / "Multiplier x{GPS_BONUS}" copy on the cookie + GPS rows: relabel as "Required permission" instead of advertising a multiplier number, since they no longer move the bar.
+- Replace 🔴 red star / crimson "AI argument" indicators with a small Mistral "M" mark. Add `src/assets/mistral-mark.svg` (white M on transparent bg) and use it wherever the AI-derived chip currently shows the brain emoji or a star (Tiers.tsx line 223 already removed brain — also remove the colored `text-primary` star next to "AI-derived sub-interests" if any; render `<img src={mistralMark} className="brand-asset h-3 w-3 inline-block mr-1" />`).
 
-## 4. Slim `vpnDetection.ts` accordingly
+**`supabase/functions/classify-interest/index.ts`**
+- After classification, write back the user's `current_multiplier` based on confidence × tier multiplier. Persist via service-role to `user_stats.current_multiplier`. This is what the bar will reflect.
 
-- Delete the `VpnGuard`-driven Cloudflare polling loop call sites.
-- Keep `fetchIpInfo()` (used by the card to display ASN/country) but stop the 60s background re-checks.
-- The local datacenter ASN substring blocklist stays as an escalation signal in the IP branch.
+## 6. Top Milestones card → host the Meta-Interests Cake
 
-## 5. Minor visual changes
+**`src/pages/Dashboard.tsx`** — keep the card title "Top Milestones" but split body into two sections:
 
-- **Sidebar collapsed logo** (`src/components/AppSidebar.tsx` line 30): replace the 🔬 emoji with a circular crop of `user-uploads://Emerald_Anarchy.jpg` representing the "A" of AddLogic.
-  - Copy upload to `src/assets/addlogic-mark.jpg`, render as `<img class="h-7 w-7 rounded-full object-cover" />` centered on the anarchy "A".
-- **Tiers page** (`src/pages/Tiers.tsx` line 223): remove the 🧠 emoji from "🧠 AI-derived sub-interests (from your searches):" → "AI-derived sub-interests (from your searches):".
-- **PLOS card** (`src/components/PlosCard.tsx`):
-  - Make the logo smaller — change `p-4` to e.g. `max-w-[180px] mx-auto p-3`.
-  - Change the Background of the Logo in Ivory token: add `--ivory: 60 29% 94%;` 
+a. **Meta-Interests Cake** (new, on top): a circular pie chart showing % of XP this user has accumulated per tier. Built with a small dependency-free SVG donut (no Recharts needed — keep bundle light). Slice colour = `tier.color`. Center label = "Affinity Map". Below the donut, a 3-row legend of the user's top 3 tiers with `% affinity`.
+   - Data source: existing `tier_progress` rows. New hook `useTierAffinity()` returns `[{ tierId, percent }]` normalised over `seconds_active`.
+   - Caption: "Your skill mix — connect with researchers who share ≥30% overlap." Add a small "Find affinity matches" link that routes to `/connections?affinity=1` (just navigation, matching logic out of scope here).
 
-## 6. Memory update
+b. Existing milestone list stays underneath the donut.
 
-Update `mem://index.md` Core to reflect: "VPN/proxy gating happens once at the post-login entrance card; precise GPS bypasses the IP fraud check, IP-approximate path goes through MaxMind minFraud (when configured) + FingerprintJS Pro signals." Remove the old "VpnGuard at the App root hard-blocks everything" line.
+**New file**: `src/components/MetaInterestsCake.tsx` — pure SVG donut, no animation library, accepts `slices: {color, percent, label}[]`.
+
+## 7. Memory update
+
+Update `mem://index.md` Core line to note: "Multiplier is set only by Mistral classifier on each research query — toggles no longer add to it. XP_PER_LEVEL = 500k. Top Milestones card hosts a Meta-Interests Cake (donut of per-tier affinity)."
 
 ## Files touched
 
-- `src/App.tsx` — drop `<VpnGuard>`.
-- `src/components/AppLayout.tsx` — drop `VpnConsentSlide` + `useVpnDetector`.
-- New `src/components/PostLoginGate.tsx` — wraps protected routes, mounts `GeoConsentSlide`.
-- `src/components/GeoConsentSlide.tsx` — copy tweaks, IP branch calls MaxMind first then FingerprintJS, blocks on fail.
-- `src/lib/vpnDetection.ts` — add `verifyIpForApproximateLocation()` helper.
-- New `supabase/functions/maxmind-minfraud/index.ts` (graceful no-op until secrets exist).
-- `src/components/AppSidebar.tsx` — emoji → image.
-- `src/assets/addlogic-mark.jpg` (copied from upload).
-- `src/pages/Tiers.tsx` — drop 🧠.
-- `src/components/PlosCard.tsx` — smaller logo + ivory PLOS overlay.
-- `src/index.css` — add `--ivory` token.
-- `mem://index.md` — update Core.
+- `src/components/PlosCard.tsx` (rollback)
+- `src/hooks/usePlosSearch.ts`, `supabase/functions/plos-search/index.ts` (search fix)
+- `src/components/AppSidebar.tsx` (round A frame, both states)
+- `src/components/OpenAlexFeed.tsx` (ivory pill behind logo)
+- `src/index.css` (`.brand-asset` utility)
+- `src/lib/mockData.ts` (drop fake numbers)
+- `src/hooks/useTierTraffic.ts` (new), `src/pages/Tiers.tsx` (real traffic)
+- `src/components/ExperienceBar.tsx` (500k cap, thinner, decouple from toggles)
+- `src/pages/Dashboard.tsx` (relabel toggle copy, mount Meta-Interests Cake in milestones card)
+- `src/hooks/useTierAffinity.ts` (new)
+- `src/components/MetaInterestsCake.tsx` (new)
+- `src/assets/mistral-mark.svg` (new)
+- `src/pages/Tiers.tsx` (Mistral M chip in AI-derived line)
+- `supabase/functions/classify-interest/index.ts` (write `current_multiplier`)
+- `mem://index.md`
 
 ## Open question
 
-When the IP branch fails verification, should the user be **fully locked out** (must disable VPN, no app access), or **allowed in low-trust mode** (no rewards multiplier, like today's GPS↔IP mismatch)? Default in this plan: **fully locked out**, since you said "reduce fraud risk to approximately zero". Tell me if you'd rather keep low-trust as a soft fallback.
-
-**Zero** Trust, user just need to Deactivate VPN.
+For the Meta-Interests Cake "affinity match" link — should clicking through filter the existing `/connections` list to users with ≥30% tier overlap (requires a new RPC + an affinity score column on `tier_progress`), or just deep-link without filtering for now? Default in this plan: **deep-link only**, build the matching RPC in a follow-up.
