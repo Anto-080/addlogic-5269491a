@@ -14,6 +14,8 @@ import { TierExperienceBar } from "@/components/TierExperienceBar";
 import { ExitInterstitial } from "@/components/ExitInterstitial";
 import { useOutboundExit } from "@/hooks/useOutboundExit";
 import { useTierKeywords } from "@/hooks/useTierKeywords";
+import { useTierTraffic } from "@/hooks/useTierTraffic";
+import mistralMark from "@/assets/mistral-mark.svg";
 
 const TOP_TIER_GATE = 35;
 
@@ -28,6 +30,17 @@ export default function Tiers() {
   const userLevel = stats?.level ?? 1;
   const topTierLocked = userLevel < TOP_TIER_GATE;
   const personalKeywords = useTierKeywords();
+  const { data: traffic = {} } = useTierTraffic();
+  const fmtVisits = (id: number) => {
+    const t = traffic[id];
+    if (!t || t.visits === 0) return "— visits";
+    return `${t.visits.toLocaleString()} visits`;
+  };
+  const fmtHours = (id: number) => {
+    const t = traffic[id];
+    if (!t || t.hours < 0.1) return "live data accumulating";
+    return `${t.hours.toFixed(1)} researcher-hours`;
+  };
 
   // Natural chromatic order: top three priority tiers (purple) first, then
   // every other tier sorted by multiplier descending. This keeps the blue
@@ -149,8 +162,8 @@ export default function Tiers() {
                                 <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: tier.color }} />
                               </div>
                               <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>{tier.researchers.toLocaleString()} researchers</span>
-                                <span className="text-money font-medium">Avg T${tier.avgEarning.toFixed(2)}/day</span>
+                                <span>{fmtVisits(tier.id)}</span>
+                                <span className="text-money font-medium">{fmtHours(tier.id)}</span>
                               </div>
                             </div>
                           </div>
@@ -203,8 +216,8 @@ export default function Tiers() {
                               <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: tier.color }} />
                             </div>
                             <div className="flex justify-between text-xs text-muted-foreground">
-                              <span>{tier.researchers.toLocaleString()} researchers</span>
-                              <span className="text-money font-medium">Avg T${tier.avgEarning.toFixed(2)}/day</span>
+                              <span>{fmtVisits(tier.id)}</span>
+                              <span className="text-money font-medium">{fmtHours(tier.id)}</span>
                             </div>
                           </div>
                         </div>
@@ -220,10 +233,14 @@ export default function Tiers() {
                           </div>
                           {(personalKeywords.subcategories[tier.id]?.length ?? 0) > 0 && (
                             <>
-                              <p className="text-[11px] text-primary mt-3 mb-2">AI-derived sub-interests (from your searches):</p>
+                              <p className="text-[11px] text-primary mt-3 mb-2 inline-flex items-center gap-1.5">
+                                <img src={mistralMark} alt="Mistral" className="brand-asset h-3 w-3" />
+                                AI-derived sub-interests (from your searches):
+                              </p>
                               <div className="flex flex-wrap gap-2">
                                 {personalKeywords.subcategories[tier.id].map((k) => (
-                                  <span key={k.keyword} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-foreground/90 border border-primary/40">
+                                  <span key={k.keyword} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-foreground/90 border border-primary/40 inline-flex items-center gap-1.5">
+                                    <img src={mistralMark} alt="" className="brand-asset h-2.5 w-2.5" />
                                     {k.keyword} <span className="text-muted-foreground">×{k.count}</span>
                                   </span>
                                 ))}
