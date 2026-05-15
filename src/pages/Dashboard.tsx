@@ -20,6 +20,9 @@ import { CookieAuditSlide } from "@/components/CookieAuditSlide";
 import { ResearchChronologyCard } from "@/components/ResearchChronologyCard";
 import { sweepCookies } from "@/lib/cookieAudit";
 import { supabase } from "@/integrations/supabase/client";
+import { MetaInterestsCake } from "@/components/MetaInterestsCake";
+import { useTierAffinity } from "@/hooks/useTierAffinity";
+import { Link } from "react-router-dom";
 
 type PromoCoupon = { id?: string | number; title?: string; description?: string; code?: string; store?: string; merchant?: string; brand?: string; url?: string; link?: string };
 
@@ -153,8 +156,8 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Reads first-party cookies on this device to map dominant interests and auto-accepts cookie banners while you browse in-app.
                   </p>
-                  <p className="text-[11px] mt-1 font-semibold text-crimson">
-                    Multiplier x{COOKIE_BONUS} {cookieAutoAccept ? "· active" : "· inactive"}
+                  <p className="text-[11px] mt-1 font-medium text-muted-foreground">
+                    Required permission · {cookieAutoAccept ? "active" : "inactive"}
                   </p>
                   {cookieAutoAccept && cookieCounts && (
                     <p className="text-[10px] mt-1 text-muted-foreground">
@@ -185,8 +188,8 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Coarse location plus anonymous signals (timezone, locale, screen, hardware tier, network type) used to surface higher-paying regional ads and coupons. No contacts, no IMEI, no browsing history.
                   </p>
-                  <p className="text-[11px] mt-1 font-semibold text-crimson">
-                    Multiplier x{GPS_BONUS} {gpsPrecision ? "· active" : "· inactive"}
+                  <p className="text-[11px] mt-1 font-medium text-muted-foreground">
+                    Required permission · {gpsPrecision ? "active" : "inactive"}
                   </p>
                   {permission === "denied" && (
                     <p className="text-[11px] mt-2 flex items-start gap-1 text-destructive">
