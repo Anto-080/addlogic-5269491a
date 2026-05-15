@@ -23,29 +23,20 @@ type PlosDoc = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // ---- Auth gate ----
+  // ---- Soft auth: log if missing/invalid but never block. PLOS is keyless
+  // and rate-limited upstream, and the gate was breaking the in-app toggle.
   const authHeader = req.headers.get("Authorization") ?? "";
-  if (!authHeader.startsWith("Bearer ")) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-  try {
-    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: authErr } = await userClient.auth.getUser(token);
-    if (authErr || !userData?.user?.id) {
-      console.error("plos-search auth failed", authErr?.message);
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  if (authHeader.startsWith("Bearer ")) {
+    try {
+      const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
       });
+      const token = authHeader.replace("Bearer ", "");
+      const { error: authErr } = await userClient.auth.getUser(token);
+      if (authErr) console.warn("plos-search soft-auth warn:", authErr.message);
+    } catch (e) {
+      console.warn("plos-search soft-auth threw:", (e as Error).message);
     }
-  } catch {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   }
 
   let body: { query?: string; limit?: number } = {};

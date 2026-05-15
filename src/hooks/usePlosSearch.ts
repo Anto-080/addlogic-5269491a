@@ -15,8 +15,12 @@ export function usePlosSearch() {
     mutationFn: async (query: string): Promise<PlosResult[]> => {
       const { data, error } = await supabase.functions.invoke("plos-search", {
         body: { query, limit: 8 },
+        headers: { "Content-Type": "application/json" },
       });
-      if (error) throw error;
+      if (error) {
+        console.error("plos-search invoke error:", error);
+        throw error;
+      }
       return (data?.results ?? []) as PlosResult[];
     },
   });

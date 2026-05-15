@@ -1,15 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Zap } from "lucide-react";
-import { useSettings } from "@/contexts/SettingsContext";
 import { useUserStats, useUpdateUserStats } from "@/hooks/useAppData";
 
-const XP_PER_LEVEL = 1_000_000;
-const COOKIE_BONUS = 2;
-const GPS_BONUS = 5;
-
-function consentBonus(cookies: boolean, gps: boolean) {
-  return (cookies ? COOKIE_BONUS : 0) + (gps ? GPS_BONUS : 0);
-}
+const XP_PER_LEVEL = 500_000;
 
 /**
  * Experience + Crimson Multiplier — backed by the live `user_stats` row.
@@ -28,7 +21,6 @@ export function ExperienceBar({
   earning?: boolean;
   compact?: boolean;
 }) {
-  const { cookieAutoAccept, gpsPrecision } = useSettings();
   const { data: stats } = useUserStats();
   const updateStats = useUpdateUserStats();
 
@@ -36,11 +28,11 @@ export function ExperienceBar({
   const baseXp = stats?.xp ?? 0;
   const dbMultiplier = stats?.current_multiplier ?? 1;
 
-  const activeMultiplier =
-    (baseMultiplier ?? dbMultiplier) + consentBonus(cookieAutoAccept, gpsPrecision);
+  // Multiplier is now driven ONLY by the Mistral classifier (server-side).
+  // The cookie/GPS toggles no longer add to it — they only enable/disable
+  // permission flows. The bar reflects whatever the backend has stored.
+  const activeMultiplier = baseMultiplier ?? dbMultiplier;
 
-  // Local accumulator only used when earning=true. No render impact for
-  // dashboard since the effect short-circuits.
   const accumulatedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
   const [, force] = useState(0);
@@ -68,7 +60,7 @@ export function ExperienceBar({
         xp -= XP_PER_LEVEL;
         level += 1;
       }
-      updateStats.mutate({ xp, level, current_multiplier: activeMultiplier });
+      updateStats.mutate({ xp, level });
     }, 15000);
 
     return () => {
@@ -83,22 +75,11 @@ export function ExperienceBar({
           xp -= XP_PER_LEVEL;
           level += 1;
         }
-        updateStats.mutate({ xp, level, current_multiplier: activeMultiplier });
+        updateStats.mutate({ xp, level });
       }
     };
-    // Only re-init when earning toggles or the active multiplier changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [earning, activeMultiplier]);
-
-  // When dashboard mounts (earning=false) we still want the multiplier
-  // persisted once per change so other pages see the same value.
-  useEffect(() => {
-    if (earning) return;
-    if (!stats) return;
-    if (Math.abs((stats.current_multiplier ?? 0) - activeMultiplier) < 0.01) return;
-    updateStats.mutate({ current_multiplier: activeMultiplier });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [earning, activeMultiplier, stats?.current_multiplier]);
 
   const liveXp = baseXp + (earning ? accumulatedRef.current : 0);
   const xpPercent = Math.min(100, (liveXp / XP_PER_LEVEL) * 100);
@@ -113,7 +94,7 @@ export function ExperienceBar({
       : markerPercent + ((activeMultiplier - cap) / cap) * (100 - markerPercent)
   );
 
-  const barH = compact ? "h-3" : "h-4";
+  const barH = compact ? "h-1.5" : "h-2";
 
   return (
     <div className="space-y-2">

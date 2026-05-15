@@ -22,18 +22,21 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarContent>
         <div className="p-4 flex items-center gap-3">
+          <div
+            className="h-9 w-9 rounded-full overflow-hidden ring-1 ring-primary/40 shrink-0 flex items-center justify-center"
+            style={{ backgroundColor: "hsl(150 60% 8%)" }}
+          >
+            <img
+              src={addlogicMark}
+              alt="AddLogic"
+              className="brand-asset h-full w-full object-contain"
+            />
+          </div>
           {!collapsed && (
             <div>
               <h1 className="text-lg font-bold text-gradient-gold">AddLogic</h1>
               <p className="text-xs text-muted-foreground">Earn while you learn</p>
             </div>
-          )}
-          {collapsed && (
-            <img
-              src={addlogicMark}
-              alt="AddLogic"
-              className="h-8 w-8 rounded-full object-cover object-center ring-1 ring-primary/40"
-            />
           )}
         </div>
 

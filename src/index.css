@@ -200,6 +200,15 @@
   button[role="switch"][data-emerald="true"][data-state="checked"] {
     background-color: hsl(var(--emerald-eternal)) !important;
   }
+
+  /* Brand assets must render identically in preview and production —
+     no opacity, blend, or filter inherited from card chrome should ever
+     fade or tint logos (PLOS, OpenAlex, AddLogic, tier icons in cards). */
+  .brand-asset {
+    opacity: 1 !important;
+    mix-blend-mode: normal !important;
+    filter: none !important;
+  }
 }
 
 @layer utilities {
