@@ -8,7 +8,7 @@ import { ShieldStar } from "@/components/icons/ShieldStar";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
 import { ClockIcon } from "@/components/icons/ClockIcon";
-import { useSettings, COOKIE_BONUS, GPS_BONUS } from "@/contexts/SettingsContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { TierIcon } from "@/components/TierIcon";
 import { ExperienceBar } from "@/components/ExperienceBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
