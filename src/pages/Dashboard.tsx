@@ -413,39 +413,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Star className="h-5 w-5 text-gold" />
-              Top Milestones
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {milestones.length === 0 && (
-                <p className="text-xs text-muted-foreground italic">No milestones yet — start a research session to log your first.</p>
-              )}
-              {milestones.map((m) => {
-                const tier = TIERS.find((t) => t.id === m.tier_id);
-                return (
-                  <div key={m.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <span style={{ color: tier?.color }}>{tier && <TierIcon tierId={tier.id} size={22} />}</span>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{m.title}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(m.occurred_at).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-money">T${m.earned.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">+{m.xp_gained} XP</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <MilestonesAndAffinityCard milestones={milestones} />
       </div>
 
       <AdBlockConsentSlide
