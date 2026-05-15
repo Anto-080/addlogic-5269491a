@@ -34,14 +34,14 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
       <button
         type="button"
         onClick={() => onOpenUrl("https://plos.org")}
-        className="w-full block bg-[hsl(var(--ivory))] hover:bg-[hsl(var(--ivory))]/90 transition-colors"
+        className="w-full block hover:bg-secondary/20 transition-colors"
         aria-label="Visit PLOS site"
       >
         <img
           src={plosLogo}
           alt="PLOS — Public Library of Science"
-          className="mx-auto h-auto object-contain p-3"
-          style={{ maxWidth: 180 }}
+          className="brand-asset mx-auto object-contain px-4 py-2"
+          style={{ maxHeight: 44, width: "auto", maxWidth: 260 }}
         />
         <div className="px-4 pb-2 text-right">
           <span className="text-[11px] tracking-wide text-foreground/60 hover:text-foreground">⟩PLOS →</span>

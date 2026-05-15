@@ -37,8 +37,11 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-center pb-1">
-        <div className="bg-white border-2 border-black rounded-md px-3 py-1.5 inline-flex items-center justify-center">
-          <img src={openAlexLogo} alt="OpenAlex" className="h-7 w-auto object-contain" />
+        <div
+          className="border-2 border-black rounded-md px-3 py-1.5 inline-flex items-center justify-center"
+          style={{ backgroundColor: "#ffffff" }}
+        >
+          <img src={openAlexLogo} alt="OpenAlex" className="brand-asset h-7 w-auto object-contain" />
         </div>
       </div>
       <div className="flex gap-2">
