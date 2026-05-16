@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, BookOpen, Newspaper, Search as SearchIcon } from "lucide-react";
 import openAlexLogo from "@/assets/openalex-logo.png";
+import { useLockInterest } from "@/hooks/useLockInterest";
 
 type Props = {
   tierName: string;
