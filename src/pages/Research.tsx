@@ -227,8 +227,8 @@ export default function Research() {
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur border-t border-border px-4 py-3 z-40">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-4 min-w-0">
               <div>
                 <p className="text-[10px] text-muted-foreground">Session Earnings</p>
                 <p className="text-lg font-bold text-money">T${sessionEarnings.toFixed(2)}</p>
@@ -237,10 +237,19 @@ export default function Research() {
                 <p className="text-[10px] text-muted-foreground">Articles</p>
                 <p className="text-sm font-semibold text-foreground">{articleCount}</p>
               </div>
+              {stats?.locked_query && stats?.locked_until && new Date(stats.locked_until).getTime() > Date.now() && (
+                <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full border border-primary/40 bg-primary/10 min-w-0">
+                  <img src={mistralMark} alt="Mistral" className="brand-asset h-3 w-3 shrink-0" />
+                  <span className="text-[10px] text-foreground/80 truncate max-w-[160px]">Locked: {stats.locked_query}</span>
+                </div>
+              )}
             </div>
-            <div className="text-right">
-              <p className="text-[10px] text-muted-foreground">Active Multiplier</p>
-              <p className="text-sm font-bold text-crimson">x{activeMultiplier.toFixed(2)}</p>
+            <div className="text-right inline-flex items-center gap-1.5">
+              <img src={mistralMark} alt="Mistral" className="brand-asset h-3 w-3" />
+              <div>
+                <p className="text-[10px] text-muted-foreground">Active Multiplier</p>
+                <p className="text-sm font-bold text-primary">x{(stats?.current_multiplier ?? activeMultiplier).toFixed(2)}</p>
+              </div>
             </div>
           </div>
         </div>
