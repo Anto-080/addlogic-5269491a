@@ -33,6 +33,7 @@ const MIN_TIER_CONFIDENCE = 0.4;
  */
 export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerProps) {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [classified, setClassified] = useState<{ tierId: number; tierName: string; confidence: number } | null>(null);
