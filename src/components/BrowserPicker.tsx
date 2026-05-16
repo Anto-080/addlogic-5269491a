@@ -99,11 +99,11 @@ export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerP
           <div
             className={`flex items-center gap-2 text-[11px] p-2 rounded-lg border ${
               classified.confidence >= MIN_TIER_CONFIDENCE
-                ? "border-crimson/40 bg-crimson/5 text-foreground"
+                ? "border-primary/40 bg-primary/5 text-foreground"
                 : "border-border/40 bg-secondary/30 text-muted-foreground"
             }`}
           >
-            <Sparkles className="h-3.5 w-3.5 text-crimson shrink-0" />
+            <img src={mistralMark} alt="Mistral" className="brand-asset h-3.5 w-3.5 shrink-0" />
             <span className="flex-1 min-w-0 truncate">
               Magnetic bar locked onto{" "}
               <strong style={{ color: TIERS.find((t) => t.id === classified.tierId)?.color }}>
