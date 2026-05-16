@@ -6,6 +6,7 @@ import { TIERS } from "@/lib/mockData";
 import { useArticles, useUserStats, useCurateNews, type LiveArticle } from "@/hooks/useAppData";
 import { Clock, DollarSign, Lock, ExternalLink, RefreshCw, Loader2 } from "lucide-react";
 import anthropicMark from "@/assets/anthropic-mark.png";
+import mistralMark from "@/assets/mistral-mark.png";
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { ExitInterstitial } from "@/components/ExitInterstitial";
 import { useOutboundExit } from "@/hooks/useOutboundExit";
