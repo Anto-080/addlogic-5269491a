@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, Sparkles } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import mistralMark from "@/assets/mistral-mark.png";
 import { DuckDuckGoLogo } from "@/components/icons/DuckDuckGoLogo";
 import { recordSearch } from "@/lib/userInterestProfiler";
 import { bumpSearchCount } from "@/lib/zeroPartyCookies";
