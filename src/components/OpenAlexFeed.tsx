@@ -27,10 +27,12 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const queryStr = submittedQuery ?? (active ? `${active} ${tierName}` : null);
   const { data: works = [], isLoading, isError } = useOpenAlex(queryStr);
+  const lockInterest = useLockInterest();
 
   const submitFreeSearch = () => {
     const v = freeQuery.trim();
     if (!v) return;
+    lockInterest(v);
     setSubmittedQuery(v);
     setActive(null);
   };
