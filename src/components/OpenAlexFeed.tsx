@@ -77,7 +77,7 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
           return (
             <button
               key={s}
-              onClick={() => { setActive(s); setSubmittedQuery(null); setFreeQuery(""); }}
+              onClick={() => { setActive(s); setSubmittedQuery(null); setFreeQuery(""); lockInterest(`${s} ${tierName}`); }}
               className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
                 sel
                   ? "bg-primary/20 border-primary/50 text-foreground"
