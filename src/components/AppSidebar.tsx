@@ -1,7 +1,7 @@
 import { Users, Lock, LogOut, Tag } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
-import addlogicMark from "@/assets/addlogic-mark.jpg";
+import addlogicMark from "@/assets/addlogic-mark-square.jpg";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
