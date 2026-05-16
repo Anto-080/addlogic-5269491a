@@ -193,22 +193,38 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Persist Mistral-derived multiplier on the user's stats so the
-    // Experience bar reflects what the AI graded — toggles no longer
-    // contribute. multiplier = clamp(1, 10, 1 + tierWeight * confidence).
+    // Persist Mistral-derived multiplier on user_stats AND stamp a
+    // 5-minute window during which the ExperienceBar accumulator ticks.
+    // Base multiplier reads cookie/GPS toggles from profiles.preferences
+    // (server-side source of truth) and the query weight multiplies it.
     try {
       const tierWeights: Record<number, number> = {
         1: 10, 2: 9.2, 3: 8.5, 4: 7.5, 5: 6.5, 6: 5.8, 7: 5.2,
         8: 4.5, 9: 4.0, 10: 3.5, 11: 3.0, 12: 2.5, 13: 2.2,
         14: 1.8, 15: 1.4, 16: 0.8, 17: 0.5, 18: 3.2,
       };
-      const w = result.tierId ? tierWeights[result.tierId] ?? 1 : 1;
-      const newMultiplier = Math.max(1, Math.min(10, w * (result.confidence || 0.5)));
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       if (serviceKey) {
         const admin = createClient(SUPABASE_URL, serviceKey);
+        const { data: prof } = await admin
+          .from("profiles")
+          .select("preferences")
+          .eq("user_id", userData.user.id)
+          .maybeSingle();
+        const prefs = (prof?.preferences ?? {}) as Record<string, unknown>;
+        const cookies = !!prefs.cookies;
+        const gps = !!prefs.gps;
+        const base = 1 + (cookies ? 2 : 0) + (gps ? 5 : 0);
+        const w = result.tierId ? tierWeights[result.tierId] ?? 1 : 1;
+        const queryFactor = Math.max(1, w * (result.confidence || 0.5));
+        const newMultiplier = Math.max(1, Math.min(20, base * queryFactor / 5));
+        const lockedUntil = new Date(Date.now() + 5 * 60 * 1000).toISOString();
         await admin.from("user_stats")
-          .update({ current_multiplier: newMultiplier })
+          .update({
+            current_multiplier: newMultiplier,
+            locked_query: text.trim().slice(0, 200),
+            locked_until: lockedUntil,
+          })
           .eq("user_id", userData.user.id);
       }
     } catch (e) {
