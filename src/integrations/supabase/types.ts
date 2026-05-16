@@ -311,6 +311,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          preferences: Json
           updated_at: string
           user_id: string
         }
@@ -319,6 +320,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          preferences?: Json
           updated_at?: string
           user_id: string
         }
@@ -327,6 +329,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          preferences?: Json
           updated_at?: string
           user_id?: string
         }
@@ -516,6 +519,8 @@ export type Database = {
           earnings_today: number
           earnings_week: number
           level: number
+          locked_query: string | null
+          locked_until: string | null
           updated_at: string
           user_id: string
           xp: number
@@ -527,6 +532,8 @@ export type Database = {
           earnings_today?: number
           earnings_week?: number
           level?: number
+          locked_query?: string | null
+          locked_until?: string | null
           updated_at?: string
           user_id: string
           xp?: number
@@ -538,6 +545,8 @@ export type Database = {
           earnings_today?: number
           earnings_week?: number
           level?: number
+          locked_query?: string | null
+          locked_until?: string | null
           updated_at?: string
           user_id?: string
           xp?: number

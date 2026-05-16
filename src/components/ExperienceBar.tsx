@@ -33,6 +33,7 @@ export function ExperienceBar({
   // permission flows. The bar reflects whatever the backend has stored.
   const activeMultiplier = baseMultiplier ?? dbMultiplier;
 
+  const lockedUntilMs = stats?.locked_until ? new Date(stats.locked_until as string).getTime() : 0;
   const accumulatedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
   const [, force] = useState(0);
@@ -44,7 +45,8 @@ export function ExperienceBar({
       const now = Date.now();
       const dt = (now - lastTickRef.current) / 1000;
       lastTickRef.current = now;
-      if (!document.hidden && dt < 60) {
+      // Only accumulate while inside the 5-minute Mistral lock window.
+      if (!document.hidden && dt < 60 && now < lockedUntilMs) {
         accumulatedRef.current += dt * activeMultiplier;
         force((n) => n + 1);
       }
@@ -79,7 +81,7 @@ export function ExperienceBar({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [earning, activeMultiplier]);
+  }, [earning, activeMultiplier, lockedUntilMs]);
 
   const liveXp = baseXp + (earning ? accumulatedRef.current : 0);
   const xpPercent = Math.min(100, (liveXp / XP_PER_LEVEL) * 100);

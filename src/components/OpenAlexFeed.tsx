@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, BookOpen, Newspaper, Search as SearchIcon } from "lucide-react";
 import openAlexLogo from "@/assets/openalex-logo.png";
+import { useLockInterest } from "@/hooks/useLockInterest";
 
 type Props = {
   tierName: string;
@@ -26,10 +27,12 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const queryStr = submittedQuery ?? (active ? `${active} ${tierName}` : null);
   const { data: works = [], isLoading, isError } = useOpenAlex(queryStr);
+  const lockInterest = useLockInterest();
 
   const submitFreeSearch = () => {
     const v = freeQuery.trim();
     if (!v) return;
+    lockInterest(v);
     setSubmittedQuery(v);
     setActive(null);
   };
@@ -74,7 +77,7 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
           return (
             <button
               key={s}
-              onClick={() => { setActive(s); setSubmittedQuery(null); setFreeQuery(""); }}
+              onClick={() => { setActive(s); setSubmittedQuery(null); setFreeQuery(""); lockInterest(`${s} ${tierName}`); }}
               className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
                 sel
                   ? "bg-primary/20 border-primary/50 text-foreground"
@@ -88,7 +91,7 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
       </div>
 
       {active && (
-        <div className="flex items-center justify-between gap-2 p-2 rounded-lg border border-crimson/30 bg-crimson/5">
+        <div className="flex items-center justify-between gap-2 p-2 rounded-lg border border-money/30 bg-money/5">
           <span className="text-[11px] text-foreground/90 truncate">
             <strong>{active}</strong> news feed on DuckDuckGo
           </span>

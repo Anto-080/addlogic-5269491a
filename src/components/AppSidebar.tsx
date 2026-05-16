@@ -1,7 +1,7 @@
 import { Users, Lock, LogOut, Tag } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
-import addlogicMark from "@/assets/addlogic-mark.jpg";
+import addlogicMark from "@/assets/addlogic-mark-square.jpg";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
@@ -22,14 +22,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarContent>
         <div className="p-4 flex items-center gap-3">
-          <div
-            className="h-9 w-9 rounded-full overflow-hidden ring-1 ring-primary/40 shrink-0 flex items-center justify-center"
-            style={{ backgroundColor: "hsl(150 60% 8%)" }}
-          >
+          <div className="h-9 w-9 rounded-full overflow-hidden ring-1 ring-primary/40 shrink-0">
             <img
               src={addlogicMark}
               alt="AddLogic"
-              className="brand-asset h-full w-full object-contain"
+              className="brand-asset h-full w-full object-cover"
             />
           </div>
           {!collapsed && (

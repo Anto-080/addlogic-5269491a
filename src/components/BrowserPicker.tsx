@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, Sparkles } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import mistralMark from "@/assets/mistral-mark.png";
 import { DuckDuckGoLogo } from "@/components/icons/DuckDuckGoLogo";
 import { recordSearch } from "@/lib/userInterestProfiler";
 import { bumpSearchCount } from "@/lib/zeroPartyCookies";
@@ -31,6 +33,7 @@ const MIN_TIER_CONFIDENCE = 0.4;
  */
 export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerProps) {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [classified, setClassified] = useState<{ tierId: number; tierName: string; confidence: number } | null>(null);
@@ -63,7 +66,9 @@ export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerP
           persistSubcategories(user.id, cls.tierId, cls.subcategories ?? []).catch(() => undefined);
         }
       }
-    }).catch(() => setClassified(null));
+    }).catch(() => setClassified(null)).finally(() => {
+      if (user) qc.invalidateQueries({ queryKey: ["user_stats", user.id] });
+    });
 
     try {
       const r = await search.mutateAsync(query);
@@ -97,11 +102,11 @@ export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerP
           <div
             className={`flex items-center gap-2 text-[11px] p-2 rounded-lg border ${
               classified.confidence >= MIN_TIER_CONFIDENCE
-                ? "border-crimson/40 bg-crimson/5 text-foreground"
+                ? "border-primary/40 bg-primary/5 text-foreground"
                 : "border-border/40 bg-secondary/30 text-muted-foreground"
             }`}
           >
-            <Sparkles className="h-3.5 w-3.5 text-crimson shrink-0" />
+            <img src={mistralMark} alt="Mistral" className="brand-asset h-3.5 w-3.5 shrink-0" />
             <span className="flex-1 min-w-0 truncate">
               Magnetic bar locked onto{" "}
               <strong style={{ color: TIERS.find((t) => t.id === classified.tierId)?.color }}>

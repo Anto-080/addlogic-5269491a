@@ -50,9 +50,10 @@ export function ExitInterstitial({ open, url, host, tierId, ad, onConfirm, onCan
 
   if (!open) return null;
 
+  // Unskippable 5s timer. Ad is shown but tap is no longer required.
   const ratingNeeded = !!sponsorId && !ratingState?.rated;
   const ratingSubmitted = ratingNeeded ? stars > 0 : true;
-  const canContinue = adOpened && countdown === 0 && ratingSubmitted;
+  const canContinue = countdown === 0;
 
   const submitRating = (n: number) => {
     setStars(n);
@@ -60,11 +61,11 @@ export function ExitInterstitial({ open, url, host, tierId, ad, onConfirm, onCan
   };
 
   return (
-    <div className="fixed inset-0 z-[70] bg-background/95 backdrop-blur flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-card border border-primary/40 rounded-2xl p-5 space-y-4 shadow-2xl">
+    <div className="fixed inset-0 z-[70] bg-background/95 backdrop-blur flex items-center justify-center p-4 overflow-y-auto">
+      <div className="max-w-md w-full bg-card border border-primary/40 rounded-2xl p-6 space-y-4 shadow-2xl my-8">
         <div className="flex items-center justify-between">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-            Exit interstitial
+            Sponsored interstitial · {countdown > 0 ? `${countdown}s` : "ready"}
           </p>
           <button
             type="button"
@@ -77,13 +78,14 @@ export function ExitInterstitial({ open, url, host, tierId, ad, onConfirm, onCan
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Opening <span className="text-foreground font-medium">{host}</span> in a new browser tab.
-          Tap the sponsor card to credit your retribution, then continue.
+          Opening <span className="text-foreground font-medium">{host}</span> in a new browser tab in {countdown > 0 ? `${countdown}s` : "a moment"}.
         </p>
 
-        <NativeAdSlot tierId={tierId} ad={ad} onOpen={() => setAdOpened(true)} opened={adOpened} />
+        <div className="min-h-[260px]">
+          <NativeAdSlot tierId={tierId} ad={ad} onOpen={() => setAdOpened(true)} opened={adOpened} />
+        </div>
 
-        {ratingNeeded && adOpened && countdown === 0 && (
+        {ratingNeeded && countdown === 0 && (
           <div className="rounded-lg border border-gold/40 bg-gold/5 p-3 space-y-2">
             <p className="text-xs text-foreground font-medium">
               Rate this sponsor (one time only)
@@ -116,14 +118,13 @@ export function ExitInterstitial({ open, url, host, tierId, ad, onConfirm, onCan
             className="w-full gap-2"
           >
             <ExternalLink className="h-4 w-4" />
-            {!adOpened
-              ? "Tap the sponsor card first"
-              : countdown > 0
-                ? `Continue in ${countdown}s…`
-                : !ratingSubmitted
-                  ? "Tap stars to rate then continue"
-                  : `Continue to ${host}`}
+            {countdown > 0
+              ? `Go in ${countdown}s…`
+              : `Go to ${host}`}
           </Button>
+          {ratingNeeded && countdown === 0 && !ratingSubmitted && (
+            <p className="text-[10px] text-muted-foreground text-center">Tap stars to rate (optional)</p>
+          )}
           <button
             type="button"
             onClick={onCancel}

@@ -130,6 +130,12 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
             <strong>or</strong> share your <strong>approximate location</strong> so we can verify
             you're not on a VPN/proxy used by bot farms to drain the regional reward pool.
           </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            In the proximate future: Geolocation will allow you to check Places of Interest usually
+            frequented by individuals sharing the same types of interests. You'll also be enabled
+            to better connect with users of similar interest affinity who accepted to exchange
+            Contact Cards with you.
+          </p>
         </div>
 
         {ipBlock && (

@@ -4,7 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TIERS } from "@/lib/mockData";
 import { useArticles, useUserStats, useCurateNews, type LiveArticle } from "@/hooks/useAppData";
-import { Clock, DollarSign, Lock, ExternalLink, Sparkles, RefreshCw, Loader2 } from "lucide-react";
+import { Clock, DollarSign, Lock, ExternalLink, RefreshCw, Loader2 } from "lucide-react";
+import anthropicMark from "@/assets/anthropic-mark.png";
+import mistralMark from "@/assets/mistral-mark.png";
 import { BrowserPicker } from "@/components/BrowserPicker";
 import { ExitInterstitial } from "@/components/ExitInterstitial";
 import { useOutboundExit } from "@/hooks/useOutboundExit";
@@ -137,11 +139,11 @@ export default function Research() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-crimson/30">
+        <Card className="bg-card border-money/30">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <Sparkles className="h-4 w-4 text-crimson shrink-0" />
+                <img src={anthropicMark} alt="Anthropic" className="brand-asset h-4 w-4 shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">Live news from Claude</p>
                   <p className="text-[11px] text-muted-foreground truncate">
@@ -162,11 +164,11 @@ export default function Research() {
                   return (
                     <div
                       key={`${a.url}-${i}`}
-                      className="rounded-lg border border-border/50 bg-secondary/20 p-3 hover:border-crimson/40 transition-colors cursor-pointer"
+                      className="rounded-lg border border-border/50 bg-secondary/20 p-3 hover:border-money/40 transition-colors cursor-pointer"
                       onClick={() => handleOpenLive(a)}
                     >
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-crimson/15 text-crimson font-semibold uppercase tracking-wider">Live</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-money/15 text-money font-semibold uppercase tracking-wider">Live</span>
                         {tier && (
                           <span className="flex items-center gap-1" style={{ color: tier.color }}>
                             <TierIcon tierId={tier.id} size={12} />
@@ -226,8 +228,8 @@ export default function Research() {
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur border-t border-border px-4 py-3 z-40">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-4 min-w-0">
               <div>
                 <p className="text-[10px] text-muted-foreground">Session Earnings</p>
                 <p className="text-lg font-bold text-money">T${sessionEarnings.toFixed(2)}</p>
@@ -236,10 +238,19 @@ export default function Research() {
                 <p className="text-[10px] text-muted-foreground">Articles</p>
                 <p className="text-sm font-semibold text-foreground">{articleCount}</p>
               </div>
+              {stats?.locked_query && stats?.locked_until && new Date(stats.locked_until).getTime() > Date.now() && (
+                <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full border border-primary/40 bg-primary/10 min-w-0">
+                  <img src={mistralMark} alt="Mistral" className="brand-asset h-3 w-3 shrink-0" />
+                  <span className="text-[10px] text-foreground/80 truncate max-w-[160px]">Locked: {stats.locked_query}</span>
+                </div>
+              )}
             </div>
-            <div className="text-right">
-              <p className="text-[10px] text-muted-foreground">Active Multiplier</p>
-              <p className="text-sm font-bold text-crimson">x{activeMultiplier.toFixed(2)}</p>
+            <div className="text-right inline-flex items-center gap-1.5">
+              <img src={mistralMark} alt="Mistral" className="brand-asset h-3 w-3" />
+              <div>
+                <p className="text-[10px] text-muted-foreground">Active Multiplier</p>
+                <p className="text-sm font-bold text-primary">x{(stats?.current_multiplier ?? activeMultiplier).toFixed(2)}</p>
+              </div>
             </div>
           </div>
         </div>

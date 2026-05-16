@@ -152,9 +152,9 @@ export default function Dashboard() {
                   style={{ color: "hsl(var(--cookie-chip))" }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">Cookie auto-accept &amp; profile sync</p>
+                  <p className="text-sm font-semibold text-foreground">Cookies Acceptance &amp; Profile Sync <span className="ml-1 text-[10px] font-bold text-crimson">×2</span></p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Reads first-party cookies on this device to map dominant interests and auto-accepts cookie banners while you browse in-app.
+                    Accept First, Third Party &amp; Commercial Cookies, Create '<span className="text-crimson font-medium">Zero Party Data</span>' generated from User's on-Site Experience.
                   </p>
                   <p className="text-[11px] mt-1 font-medium text-muted-foreground">
                     Required permission · {cookieAutoAccept ? "active" : "inactive"}
@@ -184,9 +184,9 @@ export default function Dashboard() {
                   style={{ color: gpsPrecision ? "#9A7246" : "hsl(var(--muted-foreground))" }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">Location &amp; non-PII device profile</p>
+                  <p className="text-sm font-semibold text-foreground">GPS &amp; Non-PII Data Analytics Consensus <span className="ml-1 text-[10px] font-bold text-money">×5</span></p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Coarse location plus anonymous signals (timezone, locale, screen, hardware tier, network type) used to surface higher-paying regional ads and coupons. No contacts, no IMEI, no browsing history.
+                    Allow GPS Location Retrieval and Generation of Non Personal (Non-PII) Anonymous Data for Commercial Analytical Purposes, Providing More Targeted Advertising for Your Researched Interests with Higher Retribution Potential. Regional Offers &amp; Proximity Users Affinity Available Only when this Feature is Activated.
                   </p>
                   <p className="text-[11px] mt-1 font-medium text-muted-foreground">
                     Required permission · {gpsPrecision ? "active" : "inactive"}
