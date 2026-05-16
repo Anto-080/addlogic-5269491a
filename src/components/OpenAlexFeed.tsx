@@ -91,7 +91,7 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
       </div>
 
       {active && (
-        <div className="flex items-center justify-between gap-2 p-2 rounded-lg border border-crimson/30 bg-crimson/5">
+        <div className="flex items-center justify-between gap-2 p-2 rounded-lg border border-money/30 bg-money/5">
           <span className="text-[11px] text-foreground/90 truncate">
             <strong>{active}</strong> news feed on DuckDuckGo
           </span>
