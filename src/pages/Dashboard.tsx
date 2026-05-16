@@ -152,9 +152,9 @@ export default function Dashboard() {
                   style={{ color: "hsl(var(--cookie-chip))" }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">Cookie auto-accept &amp; profile sync</p>
+                  <p className="text-sm font-semibold text-foreground">Cookies Acceptance &amp; Profile Sync <span className="ml-1 text-[10px] font-bold text-crimson">×2</span></p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Reads first-party cookies on this device to map dominant interests and auto-accepts cookie banners while you browse in-app.
+                    Accept First, Third Party &amp; Commercial Cookies, Create '<span className="text-crimson font-medium">Zero Party Data</span>' generated from User's on-Site Experience.
                   </p>
                   <p className="text-[11px] mt-1 font-medium text-muted-foreground">
                     Required permission · {cookieAutoAccept ? "active" : "inactive"}
