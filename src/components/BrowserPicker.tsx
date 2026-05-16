@@ -66,7 +66,9 @@ export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerP
           persistSubcategories(user.id, cls.tierId, cls.subcategories ?? []).catch(() => undefined);
         }
       }
-    }).catch(() => setClassified(null));
+    }).catch(() => setClassified(null)).finally(() => {
+      if (user) qc.invalidateQueries({ queryKey: ["user_stats", user.id] });
+    });
 
     try {
       const r = await search.mutateAsync(query);
