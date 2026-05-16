@@ -43,8 +43,8 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
         <img
           src={plosLogo}
           alt="PLOS — Public Library of Science"
-          className="brand-asset mx-auto object-contain px-4 py-2"
-          style={{ maxHeight: 44, width: "auto", maxWidth: 260 }}
+          className="brand-asset mx-auto object-contain px-4 py-3"
+          style={{ height: 80, width: "auto", maxWidth: "100%" }}
         />
         <div className="px-4 pb-2 text-right">
           <span className="text-[11px] tracking-wide text-foreground/60 hover:text-foreground">⟩PLOS →</span>
