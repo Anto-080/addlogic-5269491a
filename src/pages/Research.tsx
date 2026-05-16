@@ -138,11 +138,11 @@ export default function Research() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-crimson/30">
+        <Card className="bg-card border-money/30">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <Sparkles className="h-4 w-4 text-crimson shrink-0" />
+                <img src={anthropicMark} alt="Anthropic" className="brand-asset h-4 w-4 shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">Live news from Claude</p>
                   <p className="text-[11px] text-muted-foreground truncate">
@@ -163,11 +163,11 @@ export default function Research() {
                   return (
                     <div
                       key={`${a.url}-${i}`}
-                      className="rounded-lg border border-border/50 bg-secondary/20 p-3 hover:border-crimson/40 transition-colors cursor-pointer"
+                      className="rounded-lg border border-border/50 bg-secondary/20 p-3 hover:border-money/40 transition-colors cursor-pointer"
                       onClick={() => handleOpenLive(a)}
                     >
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-crimson/15 text-crimson font-semibold uppercase tracking-wider">Live</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-money/15 text-money font-semibold uppercase tracking-wider">Live</span>
                         {tier && (
                           <span className="flex items-center gap-1" style={{ color: tier.color }}>
                             <TierIcon tierId={tier.id} size={12} />
