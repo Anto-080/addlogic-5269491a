@@ -185,6 +185,8 @@ export type UserStats = {
   earnings_all_time: number;
   current_multiplier: number;
   active_streak: number;
+  locked_query: string | null;
+  locked_until: string | null;
 };
 
 export function useUserStats() {
@@ -200,6 +202,7 @@ export function useUserStats() {
         .eq("user_id", user.id)
         .maybeSingle();
       if (error || !data) return null;
+      const row = data as typeof data & { locked_query?: string | null; locked_until?: string | null };
       return {
         user_id: data.user_id,
         xp: Number(data.xp),
@@ -209,6 +212,8 @@ export function useUserStats() {
         earnings_all_time: Number(data.earnings_all_time),
         current_multiplier: Number(data.current_multiplier),
         active_streak: data.active_streak,
+        locked_query: row.locked_query ?? null,
+        locked_until: row.locked_until ?? null,
       };
     },
     staleTime: 10_000,
