@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, ExternalLink, Loader2, Search } from "lucide-react";
 import plosLogo from "@/assets/plos-logo.png";
 import { usePlosSearch, type PlosResult } from "@/hooks/usePlosSearch";
+import { useLockInterest } from "@/hooks/useLockInterest";
 
 type Props = {
   /** Whether the LinkedIn block should be shown (top-tier gate not yet reached). */
@@ -18,10 +19,12 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<PlosResult[]>([]);
   const search = usePlosSearch();
+  const lockInterest = useLockInterest();
 
   const run = async () => {
     if (q.trim().length < 2) return;
     try {
+      lockInterest(q.trim());
       const r = await search.mutateAsync(q.trim());
       setResults(r);
     } catch {
