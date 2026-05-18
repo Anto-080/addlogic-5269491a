@@ -11,7 +11,7 @@ import { BrowserPicker } from "@/components/BrowserPicker";
 import { ExitInterstitial } from "@/components/ExitInterstitial";
 import { useOutboundExit } from "@/hooks/useOutboundExit";
 import { TierIcon } from "@/components/TierIcon";
-import { useSettings, XP_PER_LEVEL, consentBonus } from "@/contexts/SettingsContext";
+import { useSettings, XP_PER_LEVEL } from "@/contexts/SettingsContext";
 import { ExperienceBar } from "@/components/ExperienceBar";
 import { OpenAlexFeed } from "@/components/OpenAlexFeed";
 import { PlosCard } from "@/components/PlosCard";
@@ -25,7 +25,7 @@ export default function Research() {
   const [sessionEarnings, setSessionEarnings] = useState(0);
   const [articleCount, setArticleCount] = useState(0);
   const exit = useOutboundExit();
-  const { topInterestTiers, cookieAutoAccept, gpsPrecision } = useSettings();
+  const { topInterestTiers } = useSettings();
   const { data: stats } = useUserStats();
   const { data: liveArticles = [] } = useArticles();
   const curate = useCurateNews();
@@ -34,7 +34,9 @@ export default function Research() {
   const selectedTierData = TIERS.find((t) => t.id === selectedTier) ?? TIERS[3];
   const primaryTierId = selectedTier;
   const userLevel = stats?.level ?? 1;
-  const activeMultiplier = selectedTierData.multiplier + consentBonus(cookieAutoAccept, gpsPrecision);
+  // Active multiplier is the server-authoritative value, set ONLY by Mistral
+  // when the user runs a search. Tier icon clicks do not change it.
+  const activeMultiplier = stats?.current_multiplier ?? 1;
 
   const filteredArticles = useMemo(() => {
     let list = liveArticles
@@ -99,7 +101,7 @@ export default function Research() {
         {/* XP / Tiers / DuckDuckGo combined card */}
         <Card className="bg-card border-border/60 glow-amber">
           <CardContent className="p-4 space-y-3">
-            <ExperienceBar baseMultiplier={selectedTierData.multiplier} earning />
+            <ExperienceBar earning />
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second based on your selected tier and active data permissions.

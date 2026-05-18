@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { TIERS } from "@/lib/mockData";
 import { useEffect, useState } from "react";
-import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info } from "lucide-react";
+import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info, Lock, Unlock } from "lucide-react";
 import { ShieldStar } from "@/components/icons/ShieldStar";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
@@ -35,7 +35,7 @@ function AnimatedCounter({ target }: { target: number }) {
 }
 
 export default function Dashboard() {
-  const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision } = useSettings();
+  const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision, cookieLocked, gpsLocked, setCookieLocked, setGpsLocked } = useSettings();
   const [couponsOpen, setCouponsOpen] = useState(false);
   const [permission, setPermission] = useState<GeolocationPermissionState>("prompt");
   const [adBlockSlideOpen, setAdBlockSlideOpen] = useState(false);
@@ -171,7 +171,20 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
+              <div className="flex flex-col items-center gap-1.5">
+                <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
+                <button
+                  type="button"
+                  onClick={() => setCookieLocked(!cookieLocked)}
+                  className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${cookieLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+                  aria-pressed={cookieLocked}
+                  aria-label="Remember cookie choice across sessions"
+                  title={cookieLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
+                >
+                  {cookieLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
+                  <span>{cookieLocked ? "saved" : "save"}</span>
+                </button>
+              </div>
             </div>
 
             <div className="border-t border-border/40" />
@@ -201,11 +214,24 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              <Switch
-                checked={gpsPrecision}
-                onCheckedChange={handleGpsToggle}
-                data-emerald="true"
-              />
+              <div className="flex flex-col items-center gap-1.5">
+                <Switch
+                  checked={gpsPrecision}
+                  onCheckedChange={handleGpsToggle}
+                  data-emerald="true"
+                />
+                <button
+                  type="button"
+                  onClick={() => setGpsLocked(!gpsLocked)}
+                  className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${gpsLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+                  aria-pressed={gpsLocked}
+                  aria-label="Remember GPS choice across sessions"
+                  title={gpsLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
+                >
+                  {gpsLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
+                  <span>{gpsLocked ? "saved" : "save"}</span>
+                </button>
+              </div>
             </div>
 
             {/* Coupons appear right under the GPS row when location is on */}
