@@ -35,7 +35,20 @@ function AnimatedCounter({ target }: { target: number }) {
 }
 
 export default function Dashboard() {
-  const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision, cookieLocked, gpsLocked, setCookieLocked, setGpsLocked } = useSettings();
+  const {
+    cookieAutoAccept,
+    gpsPrecision,
+    setCookieAutoAccept,
+    setGpsPrecision,
+    cookieRemember,
+    gpsRemember,
+    setCookieRemember,
+    setGpsRemember,
+    cookieLocked,
+    gpsLocked,
+    setCookieLocked,
+    setGpsLocked,
+  } = useSettings();
   const [couponsOpen, setCouponsOpen] = useState(false);
   const [permission, setPermission] = useState<GeolocationPermissionState>("prompt");
   const [adBlockSlideOpen, setAdBlockSlideOpen] = useState(false);
@@ -124,18 +137,18 @@ export default function Dashboard() {
 
   const handleCookieRememberToggle = (v: boolean) => {
     if (cookieLocked) return;
-    setCookieLocked(v);
-    if (!v) setCookieAutoAccept(false);
+    setCookieRemember(v);
+    if (!v) setCookieLocked(false);
   };
 
   const handleGpsRememberToggle = (v: boolean) => {
     if (gpsLocked) return;
-    setGpsLocked(v);
-    if (!v) setGpsPrecision(false);
+    setGpsRemember(v);
+    if (!v) setGpsLocked(false);
   };
 
-  const cookieLockReady = cookieAutoAccept && cookieLocked;
-  const gpsLockReady = gpsPrecision && gpsLocked;
+  const cookieLockReady = cookieAutoAccept && cookieRemember;
+  const gpsLockReady = gpsPrecision && gpsRemember;
 
   const summary = [
     { label: "Today",     value: stats?.earnings_today ?? 0,    Icon: SandglassIcon },
@@ -197,13 +210,13 @@ export default function Dashboard() {
                     data-emerald="true"
                     disabled={!cookieAutoAccept || cookieLocked}
                     aria-label="Enable cookie reminder toggle"
-                    className="h-10 w-6 data-[state=checked]:bg-money data-[state=unchecked]:bg-input"
+                    className="h-10 w-6 rotate-90 origin-center data-[state=checked]:bg-money data-[state=unchecked]:bg-input"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => setCookieLocked(!cookieLocked)}
-                  disabled={!cookieLockReady}
+                  disabled={!cookieLockReady && !cookieLocked}
                   className={`inline-flex items-center justify-center rounded border transition-colors h-6 w-6 ${cookieLocked ? "border-money/60 bg-money/10 text-money" : cookieLockReady ? "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground" : "border-border/30 bg-secondary/20 text-muted-foreground/40 cursor-not-allowed"}`}
                   aria-pressed={cookieLocked}
                   aria-label="Lock cookie toggles in active position"
@@ -255,13 +268,13 @@ export default function Dashboard() {
                   data-emerald="true"
                   disabled={!gpsPrecision || gpsLocked}
                   aria-label="Enable GPS reminder toggle"
-                  className="h-10 w-6 data-[state=checked]:bg-money data-[state=unchecked]:bg-input"
+                  className="h-10 w-6 rotate-90 origin-center data-[state=checked]:bg-money data-[state=unchecked]:bg-input"
                 />
                 </div>
                 <button
                   type="button"
                   onClick={() => setGpsLocked(!gpsLocked)}
-                  disabled={!gpsLockReady}
+                  disabled={!gpsLockReady && !gpsLocked}
                   className={`inline-flex items-center justify-center rounded border transition-colors h-6 w-6 ${gpsLocked ? "border-money/60 bg-money/10 text-money" : gpsLockReady ? "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground" : "border-border/30 bg-secondary/20 text-muted-foreground/40 cursor-not-allowed"}`}
                   aria-pressed={gpsLocked}
                   aria-label="Lock GPS toggles in active position"
