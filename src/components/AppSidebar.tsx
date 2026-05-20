@@ -58,9 +58,46 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
+      <SidebarFooter className="p-3 space-y-2">
+        {/* Built-with-Lovable native co-promotion banner */}
+        <a
+          href={LOVABLE_REF_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Built with Lovable — create your own app"
+          title="Built with Lovable — make your own"
+          className={
+            collapsed
+              ? "flex items-center justify-center rounded-md border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors py-2"
+              : "block rounded-md border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent hover:from-primary/20 hover:via-primary/10 transition-colors px-2.5 py-2"
+          }
+        >
+          {collapsed ? (
+            <div className="relative">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <Heart className="h-2.5 w-2.5 absolute -bottom-1 -right-1 text-[hsl(var(--crimson))] fill-[hsl(var(--crimson))]" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="relative shrink-0">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">
+                  Built with
+                </p>
+                <p className="text-xs font-semibold text-gradient-gold leading-tight flex items-center gap-1">
+                  Lovable
+                  <Heart className="h-3 w-3 text-[hsl(var(--crimson))] fill-[hsl(var(--crimson))]" />
+                </p>
+              </div>
+              <span className="text-[9px] text-muted-foreground/70 shrink-0">Make&nbsp;yours</span>
+            </div>
+          )}
+        </a>
+
         {!collapsed && user && (
-          <div className="text-xs text-muted-foreground truncate mb-2 px-2">
+          <div className="text-xs text-muted-foreground truncate px-2">
             {user.email}
           </div>
         )}
