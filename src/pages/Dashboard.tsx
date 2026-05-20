@@ -197,7 +197,7 @@ export default function Dashboard() {
                     data-emerald="true"
                     disabled={!cookieAutoAccept || cookieLocked}
                     aria-label="Enable cookie reminder toggle"
-                    className="data-[state=checked]:bg-[hsl(var(--money))]"
+                    className="h-10 w-6 data-[state=checked]:bg-money data-[state=unchecked]:bg-input"
                   />
                 </div>
                 <button
@@ -255,7 +255,7 @@ export default function Dashboard() {
                   data-emerald="true"
                   disabled={!gpsPrecision || gpsLocked}
                   aria-label="Enable GPS reminder toggle"
-                  className="data-[state=checked]:bg-[hsl(var(--money))]"
+                  className="h-10 w-6 data-[state=checked]:bg-money data-[state=unchecked]:bg-input"
                 />
                 </div>
                 <button
