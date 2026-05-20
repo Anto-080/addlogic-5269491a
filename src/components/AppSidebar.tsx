@@ -1,4 +1,4 @@
-import { Users, Lock, LogOut, Tag } from "lucide-react";
+import { Users, Lock, LogOut, Tag, Heart, Sparkles } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import addlogicMark from "@/assets/addlogic-mark-square.jpg";
@@ -6,6 +6,8 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
+
+const LOVABLE_REF_URL = "https://lovable.dev/?utm_source=addlogic&utm_medium=sidebar&utm_campaign=self_referral";
 
 const secondaryItems = [
   { title: "Connections", url: "/connections", icon: Users },
