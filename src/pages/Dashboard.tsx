@@ -205,7 +205,7 @@ export default function Dashboard() {
                 <div className="flex flex-col items-center gap-2 pt-0.5">
                   <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" disabled={cookieLocked} />
                   <Switch
-                    checked={cookieLocked}
+                    checked={cookieRemember}
                     onCheckedChange={handleCookieRememberToggle}
                     data-emerald="true"
                     disabled={!cookieAutoAccept || cookieLocked}
@@ -263,7 +263,7 @@ export default function Dashboard() {
                   disabled={gpsLocked}
                 />
                 <Switch
-                  checked={gpsLocked}
+                    checked={gpsRemember}
                   onCheckedChange={handleGpsRememberToggle}
                   data-emerald="true"
                   disabled={!gpsPrecision || gpsLocked}
