@@ -104,7 +104,7 @@ export default function Research() {
             <ExperienceBar earning />
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time only while a Mistral-locked query is active. The <span className="text-crimson font-medium">Crimson Multiplier</span> comes from the locked query plus your active data permissions.
+              Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second based on your selected tier and active data permissions.
             </p>
 
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">

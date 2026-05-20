@@ -8,8 +8,9 @@ import { recordSearch } from "@/lib/userInterestProfiler";
 import { bumpSearchCount } from "@/lib/zeroPartyCookies";
 import { useWebSearch } from "@/hooks/useWebSearch";
 import { SearchResults, type SearchResultItem } from "@/components/SearchResults";
-import { useLockInterest } from "@/hooks/useLockInterest";
+import { useClassifyInterest, extractKeywords, persistKeywords, persistSubcategories } from "@/hooks/useClassifyInterest";
 import { useResearchSession } from "@/contexts/ResearchSessionContext";
+import { useAuth } from "@/hooks/useAuth";
 import { TIERS } from "@/lib/mockData";
 
 type BrowserPickerProps = {
@@ -25,17 +26,19 @@ const MIN_TIER_CONFIDENCE = 0.4;
  * We don't iframe DDG — every search engine sends X-Frame-Options: SAMEORIGIN,
  * which causes net::ERR_BLOCKED_BY_RESPONSE. Results render here as cards.
  *
- * Also: every submitted query is fed through the shared Mistral lock-in.
- * The detected tier becomes the active research session and the backend
- * stamps the global 5-minute multiplier window used across Research.
+ * Also: every submitted query is fed through HuggingFace zero-shot
+ * classification (`classify-interest` edge fn). The detected tier becomes
+ * the active research session (drives tier XP) and noun keywords are
+ * persisted as that tier's discovered subcategories.
  */
 export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerProps) {
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [classified, setClassified] = useState<{ tierId: number; tierName: string; confidence: number } | null>(null);
   const search = useWebSearch();
-  const lockInterest = useLockInterest();
+  const classify = useClassifyInterest();
   const session = useResearchSession();
 
   const runSearch = async (query: string) => {
@@ -43,20 +46,28 @@ export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerP
     recordSearch(query);
     bumpSearchCount();
 
-    // Fire lock-in + search in parallel; the Mistral lock drives the active
-    // research session and the backend multiplier window.
-    lockInterest(query).then((cls) => {
-      if (!cls?.tierId) {
+    // Fire classifier + search in parallel; the classifier drives the
+    // active research session and discovered subcategories.
+    classify.mutateAsync(query).then(async (cls) => {
+      if (!cls || !cls.tierId) {
         setClassified(null);
         return;
       }
       setClassified({ tierId: cls.tierId, tierName: cls.tierName ?? "", confidence: cls.confidence });
       if (cls.confidence >= MIN_TIER_CONFIDENCE) {
+        // Pulse the session so XP for this tier starts ticking,
+        // notify the parent so the chip row reflects the auto-detected tier,
+        // and persist keywords as zero-party personalised subcategories.
         session.pulse(cls.tierId, "search", 90_000);
         onTierClassified?.(cls.tierId);
+        if (user) {
+          const kws = extractKeywords(query);
+          persistKeywords(user.id, cls.tierId, kws).catch(() => undefined);
+          persistSubcategories(user.id, cls.tierId, cls.subcategories ?? []).catch(() => undefined);
+        }
       }
     }).catch(() => setClassified(null)).finally(() => {
-      qc.invalidateQueries({ queryKey: ["user_stats"] });
+      if (user) qc.invalidateQueries({ queryKey: ["user_stats", user.id] });
     });
 
     try {

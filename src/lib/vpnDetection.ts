@@ -47,7 +47,7 @@ const VPN_HOSTS = [
   "tunnelbear", "ivpn", "azirevpn", "perfect privacy", "hide.me", "hidemyass",
   "purevpn", "vyprvpn", "torguard", "cloudflare warp", " warp ", "mysterium",
   "digitalocean", "ovh", "hetzner", "linode", "vultr", "leaseweb", "m247",
-  "amazon", "amazon.com", "aws", "google cloud", "google llc", "google", "gcp", "microsoft azure", "azure", "alibaba", "tencent",
+  "amazon", "aws", "google cloud", "microsoft azure", "alibaba", "tencent",
   "oracle cloud", "ibm cloud", "gcore", "g-core", "choopa", "datacamp", "psychz",
   "constant", "contabo", "scaleway", "hostwinds", "quadranet", "colocrossing",
   "worldstream", "serverius", "host europe", "hostinger", "namecheap", "godaddy",
@@ -221,22 +221,7 @@ export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
       return verdict;
     }
 
-    // Cloudflare succeeded and says the IP is residential, but Fingerprint
-    // could not return signals. For this product we fail closed instead of
-    // silently allowing access, because missing Smart Signals leaves a hole
-    // for VPN/proxy traffic to slip through the approximate-location path.
-    if (cf.info && !fp.signals) {
-      const verdict: IpVerdict = {
-        status: "unverified",
-        info: cf.info,
-        unverifiedReason: fp.degraded ?? "Fingerprint verification unavailable",
-      };
-      cached = { at: Date.now(), verdict };
-      inflight = null;
-      return verdict;
-    }
-
-    // Both sources happy → ok.
+    // Both sources happy (or one happy + the other degraded) → ok.
     const verdict: IpVerdict = {
       status: "ok",
       info: cf.info ?? {
