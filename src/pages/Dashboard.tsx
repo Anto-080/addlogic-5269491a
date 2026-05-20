@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { TIERS } from "@/lib/mockData";
 import { useEffect, useState } from "react";
-import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info, Lock, Unlock } from "lucide-react";
+import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info, Lock } from "lucide-react";
 import { ShieldStar } from "@/components/icons/ShieldStar";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
@@ -35,7 +35,20 @@ function AnimatedCounter({ target }: { target: number }) {
 }
 
 export default function Dashboard() {
-  const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision, cookieLocked, gpsLocked, setCookieLocked, setGpsLocked } = useSettings();
+  const {
+    cookieAutoAccept,
+    gpsPrecision,
+    setCookieAutoAccept,
+    setGpsPrecision,
+    cookieRemember,
+    gpsRemember,
+    setCookieRemember,
+    setGpsRemember,
+    cookieLocked,
+    gpsLocked,
+    setCookieLocked,
+    setGpsLocked,
+  } = useSettings();
   const [couponsOpen, setCouponsOpen] = useState(false);
   const [permission, setPermission] = useState<GeolocationPermissionState>("prompt");
   const [adBlockSlideOpen, setAdBlockSlideOpen] = useState(false);
@@ -102,6 +115,7 @@ export default function Dashboard() {
   }, [cookieAutoAccept]);
 
   const handleCookieToggle = (v: boolean) => {
+    if (cookieLocked) return;
     setCookieAutoAccept(v);
     if (v) {
       // Always re-run the AdBlock gate when the user enables cookies — no
@@ -112,6 +126,7 @@ export default function Dashboard() {
   };
 
   const handleGpsToggle = (v: boolean) => {
+    if (gpsLocked) return;
     if (!v) {
       setGpsPrecision(false);
       return;
@@ -119,6 +134,21 @@ export default function Dashboard() {
     // Open the consent slide; it stays until coords are obtained.
     setGeoSlideOpen(true);
   };
+
+  const handleCookieRememberToggle = (v: boolean) => {
+    if (cookieLocked) return;
+    setCookieRemember(v);
+    if (!v) setCookieLocked(false);
+  };
+
+  const handleGpsRememberToggle = (v: boolean) => {
+    if (gpsLocked) return;
+    setGpsRemember(v);
+    if (!v) setGpsLocked(false);
+  };
+
+  const cookieLockReady = cookieAutoAccept && cookieRemember;
+  const gpsLockReady = gpsPrecision && gpsRemember;
 
   const summary = [
     { label: "Today",     value: stats?.earnings_today ?? 0,    Icon: SandglassIcon },
@@ -171,18 +201,28 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
+              <div className="flex items-start gap-2">
+                <div className="flex flex-col items-center gap-2 pt-0.5">
+                  <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" disabled={cookieLocked} />
+                  <Switch
+                    checked={cookieRemember}
+                    onCheckedChange={handleCookieRememberToggle}
+                    data-emerald="true"
+                    disabled={!cookieAutoAccept || cookieLocked}
+                    aria-label="Enable cookie reminder toggle"
+                    className="h-10 w-6 rotate-90 origin-center data-[state=checked]:bg-money data-[state=unchecked]:bg-input"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => setCookieLocked(!cookieLocked)}
-                  className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${cookieLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+                  disabled={!cookieLockReady && !cookieLocked}
+                  className={`inline-flex items-center justify-center rounded border transition-colors h-6 w-6 ${cookieLocked ? "border-money/60 bg-money/10 text-money" : cookieLockReady ? "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground" : "border-border/30 bg-secondary/20 text-muted-foreground/40 cursor-not-allowed"}`}
                   aria-pressed={cookieLocked}
-                  aria-label="Remember cookie choice across sessions"
-                  title={cookieLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
+                  aria-label="Lock cookie toggles in active position"
+                  title={cookieLocked ? "Cookie toggles locked in active position" : cookieLockReady ? "Lock cookie toggles in active position" : "Enable both cookie toggles first"}
                 >
-                  {cookieLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
-                  <span>{cookieLocked ? "saved" : "save"}</span>
+                  <Lock className="h-3 w-3" />
                 </button>
               </div>
             </div>
@@ -214,22 +254,33 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-1.5">
+              <div className="flex items-start gap-2">
+                <div className="flex flex-col items-center gap-2 pt-0.5">
                 <Switch
                   checked={gpsPrecision}
                   onCheckedChange={handleGpsToggle}
                   data-emerald="true"
+                  disabled={gpsLocked}
                 />
+                <Switch
+                    checked={gpsRemember}
+                  onCheckedChange={handleGpsRememberToggle}
+                  data-emerald="true"
+                  disabled={!gpsPrecision || gpsLocked}
+                  aria-label="Enable GPS reminder toggle"
+                  className="h-10 w-6 rotate-90 origin-center data-[state=checked]:bg-money data-[state=unchecked]:bg-input"
+                />
+                </div>
                 <button
                   type="button"
                   onClick={() => setGpsLocked(!gpsLocked)}
-                  className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${gpsLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+                  disabled={!gpsLockReady && !gpsLocked}
+                  className={`inline-flex items-center justify-center rounded border transition-colors h-6 w-6 ${gpsLocked ? "border-money/60 bg-money/10 text-money" : gpsLockReady ? "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground" : "border-border/30 bg-secondary/20 text-muted-foreground/40 cursor-not-allowed"}`}
                   aria-pressed={gpsLocked}
-                  aria-label="Remember GPS choice across sessions"
-                  title={gpsLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
+                  aria-label="Lock GPS toggles in active position"
+                  title={gpsLocked ? "GPS toggles locked in active position" : gpsLockReady ? "Lock GPS toggles in active position" : "Enable both GPS toggles first"}
                 >
-                  {gpsLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
-                  <span>{gpsLocked ? "saved" : "save"}</span>
+                  <Lock className="h-3 w-3" />
                 </button>
               </div>
             </div>
