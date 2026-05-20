@@ -4,6 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { persistKeywords, persistSubcategories, extractKeywords } from "@/hooks/useClassifyInterest";
 
+type LockInterestResult = {
+  tierId: number | null;
+  tierName: string | null;
+  confidence: number;
+  subcategories: string[];
+  text: string;
+};
+
 /**
  * Site-wide hook: every search bar (PLOS, DDG, OpenAlex) calls this with
  * the user's query. Mistral classifies → server stamps user_stats with
@@ -15,17 +23,26 @@ export function useLockInterest() {
   const { user } = useAuth();
   return useCallback(async (text: string) => {
     const trimmed = text.trim();
-    if (trimmed.length < 2 || !user) return;
+    if (trimmed.length < 2 || !user) return null;
     try {
       const { data } = await supabase.functions.invoke("classify-interest", {
         body: { text: trimmed },
       });
-      if (data?.tierId) {
-        await persistSubcategories(user.id, data.tierId, Array.isArray(data.subcategories) ? data.subcategories : []);
-        await persistKeywords(user.id, data.tierId, extractKeywords(trimmed));
+      const result: LockInterestResult | null = data ? {
+        tierId: data.tierId ?? null,
+        tierName: data.tierName ?? null,
+        confidence: Number(data.confidence) || 0,
+        subcategories: Array.isArray(data.subcategories) ? data.subcategories : [],
+        text: data.text ?? trimmed,
+      } : null;
+      if (result?.tierId) {
+        await persistSubcategories(user.id, result.tierId, result.subcategories);
+        await persistKeywords(user.id, result.tierId, extractKeywords(trimmed));
       }
+      return result;
     } catch (e) {
       console.warn("interest lock failed:", (e as Error).message);
+      return null;
     } finally {
       qc.invalidateQueries({ queryKey: ["user_stats", user.id] });
       qc.invalidateQueries({ queryKey: ["tier_keywords", user.id] });
