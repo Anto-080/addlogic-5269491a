@@ -1,7 +1,8 @@
-import { Users, Lock, LogOut, Tag, Heart, Sparkles } from "lucide-react";
+import { Users, Lock, LogOut, Tag, Heart } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import addlogicMark from "@/assets/addlogic-mark-square.jpg";
+import lovableBanner from "@/assets/lovable-banner.jpg";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
