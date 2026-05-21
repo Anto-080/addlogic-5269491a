@@ -10,12 +10,7 @@ import "./index.css";
 const FP_PUBLIC_API_KEY = "XjSfqoWu740uS0NA1nqr";
 
 createRoot(document.getElementById("root")!).render(
-  <FingerprintProvider
-    loadOptions={{
-      apiKey: FP_PUBLIC_API_KEY,
-      region: "eu",
-    }}
-  >
+  <FingerprintProvider apiKey={FP_PUBLIC_API_KEY} region="eu">
     <App />
   </FingerprintProvider>
 );
