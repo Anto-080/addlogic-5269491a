@@ -11,6 +11,7 @@
         "@capacitor/core": "^8.3.1",
         "@capacitor/geolocation": "^8.2.0",
         "@capacitor/ios": "^8.3.1",
+        "@fingerprint/react": "^3.0.0",
         "@fingerprintjs/fingerprintjs-pro": "^3.12.9",
         "@hookform/resolvers": "^3.10.0",
         "@lovable.dev/cloud-auth-js": "^1.1.1",
@@ -178,6 +179,10 @@
     "@eslint/object-schema": ["@eslint/object-schema@2.1.6", "", {}, "sha512-RBMg5FRL0I0gs51M/guSAj5/e14VQ4tpZnQNWwuDT66P14I43ItmPfIZRhO9fUVIPOAQXU47atlywZ/czoqFPA=="],
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.3.4", "", { "dependencies": { "@eslint/core": "^0.15.1", "levn": "^0.4.1" } }, "sha512-Ul5l+lHEcw3L5+k8POx6r74mxEYKG5kOb6Xpy2gCRW6zweT6TEhAf8vhxGgjhqrd/VO/Dirhsb+1hNpD1ue9hw=="],
+
+    "@fingerprint/agent": ["@fingerprint/agent@4.0.3", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@fingerprint/agent/-/agent-4.0.3.tgz", {}, "sha512-hYAk8gPKgW3i1zkZm62wPp31ibGwHao0QXU5F7ydiQwxhxPhfd4IjPIPxDkuQJgH3GaBkYn7Hgkgrq38K9aJzw=="],
+
+    "@fingerprint/react": ["@fingerprint/react@3.0.0", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@fingerprint/react/-/react-3.0.0.tgz", { "dependencies": { "@fingerprint/agent": "^4.0.0", "fast-deep-equal": "3.1.3" } }, "sha512-pnf31eSxKcRBDWLVi8Z3SkHJDO3nzk4yLkprQ1BqLQ6PPBkabAtY/v1JrhCz8pyuL3KxgnZGJGv5Z8htMNZy7g=="],
 
     "@fingerprintjs/fingerprintjs-pro": ["@fingerprintjs/fingerprintjs-pro@3.12.9", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@fingerprintjs/fingerprintjs-pro/-/fingerprintjs-pro-3.12.9.tgz", {}, "sha512-MiM8ASp9nQgY/abPK+1+LaZHvn6aaTX9Zze1ghCDO/Y86k1dbRnDeBr5Zg5fmEhwMda9J7+6zl54lds6GENZUw=="],
 
