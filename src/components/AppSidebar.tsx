@@ -67,33 +67,17 @@ export function AppSidebar() {
           rel="noopener noreferrer"
           aria-label="Built with Lovable — create your own app"
           title="Built with Lovable — make your own"
-          className={
-            collapsed
-              ? "flex items-center justify-center rounded-md border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors py-2"
-              : "block rounded-md border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent hover:from-primary/20 hover:via-primary/10 transition-colors px-2.5 py-2"
-          }
+          className="block rounded-lg overflow-hidden ring-1 ring-primary/30 hover:ring-primary/60 transition relative group"
         >
-          {collapsed ? (
-            <div className="relative">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <Heart className="h-2.5 w-2.5 absolute -bottom-1 -right-1 text-[hsl(var(--crimson))] fill-[hsl(var(--crimson))]" />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <div className="relative shrink-0">
-                <Sparkles className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">
-                  Built with
-                </p>
-                <p className="text-xs font-semibold text-gradient-gold leading-tight flex items-center gap-1">
-                  Lovable
-                  <Heart className="h-3 w-3 text-[hsl(var(--crimson))] fill-[hsl(var(--crimson))]" />
-                </p>
-              </div>
-              <span className="text-[9px] text-muted-foreground/70 shrink-0">Make&nbsp;yours</span>
-            </div>
+          <img
+            src={lovableBanner}
+            alt="Built with Lovable"
+            className="brand-asset w-full h-auto block"
+          />
+          {!collapsed && (
+            <span className="absolute bottom-1 right-1.5 text-[9px] font-medium text-white/95 bg-black/30 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1">
+              Make yours <Heart className="h-2.5 w-2.5 fill-white" />
+            </span>
           )}
         </a>
 
