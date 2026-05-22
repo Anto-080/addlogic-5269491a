@@ -30,9 +30,9 @@ export function VpnGuard({ children }: { children: ReactNode }) {
   const [gateActive, setGateActive] = useState(false);
 
   const fingerprintEvent = useMemo(() => ({
-    visitorId: fpData?.visitorId ?? null,
-    requestId: fpData?.requestId ?? null,
-  }), [fpData?.requestId, fpData?.visitorId]);
+    visitorId: fpData?.visitor_id ?? null,
+    requestId: fpData?.event_id ?? null,
+  }), [fpData?.event_id, fpData?.visitor_id]);
 
   const runCheck = useCallback(async (force = false, eventOverride?: { visitorId?: string | null; requestId?: string | null } | null) => {
     setChecking(true);
@@ -43,8 +43,8 @@ export function VpnGuard({ children }: { children: ReactNode }) {
       try {
         const refreshed = await getData();
         nextEvent = {
-          visitorId: refreshed?.visitorId ?? nextEvent?.visitorId ?? null,
-          requestId: refreshed?.requestId ?? nextEvent?.requestId ?? null,
+          visitorId: refreshed?.visitor_id ?? nextEvent?.visitorId ?? null,
+          requestId: refreshed?.event_id ?? nextEvent?.requestId ?? null,
         };
       } catch {
         // keep the latest known event and fall back to the existing edge checks
