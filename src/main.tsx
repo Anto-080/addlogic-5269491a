@@ -40,9 +40,10 @@ function FingerprintBootstrap() {
 
   const providerProps = useMemo(() => {
     const region = config?.region;
+    const safeRegion = region === "eu" || region === "us" || region === "ap" ? region : undefined;
     return {
       apiKey: config?.publicKey ?? FP_PUBLIC_API_KEY,
-      ...(region === "eu" || region === "us" || region === "ap" ? { region } : {}),
+      ...(safeRegion ? { region: safeRegion as "eu" | "us" | "ap" } : {}),
     };
   }, [config]);
 
