@@ -20,7 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
  * for the block decision.
  */
 
-export function VpnGuard({ children }: { children: ReactNode }) {
+export function ConnectionGate({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   const { data: fpData, error: fpError, isLoading: fpLoading, getData } = useVisitorData({ immediate: true });
   const [verdict, setVerdict] = useState<IpVerdict | null>(null);

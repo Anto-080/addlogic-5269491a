@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { ResearchSessionProvider } from "@/contexts/ResearchSessionContext";
 import { PostLoginGate } from "@/components/PostLoginGate";
-import { VpnGuard } from "@/components/VpnGuard";
+import { ConnectionGate } from "@/components/ConnectionGate";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
@@ -27,7 +27,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/login" replace />;
-  return <VpnGuard><PostLoginGate>{children}</PostLoginGate></VpnGuard>;
+  return <ConnectionGate><PostLoginGate>{children}</PostLoginGate></ConnectionGate>;
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {

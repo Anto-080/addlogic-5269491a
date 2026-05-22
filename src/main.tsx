@@ -7,7 +7,7 @@ import "./index.css";
 
 // FingerprintJS Pro public API key. Safe to ship in the bundle — the
 // secret key stays server-side in the `fingerprint-signals` edge function.
-// Loading the agent app-wide ensures the VPN block in <VpnGuard /> has
+// Loading the agent app-wide ensures the VPN block in <ConnectionGate /> has
 // the visitorId/requestId ready before the first verification check.
 const FP_PUBLIC_API_KEY = "XjSfqoWu740uS0NA1nqr";
 

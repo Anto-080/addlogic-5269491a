@@ -13,7 +13,7 @@
  *
  * Why: AddLogic's reward pool is region-priced. A user in a low-cost region
  * can otherwise spoof a high-CPM region (e.g. US/EU) via VPN and drain the
- * pool. Suspect IPs are hard-blocked app-wide by VpnGuard.
+ * pool. Suspect IPs are hard-blocked app-wide by ConnectionGate.
  *
  * Design rule: we never silently downgrade to a weaker keyless provider for
  * the block decision. If both authoritative sources are degraded we surface
@@ -339,7 +339,7 @@ export async function fetchIpVerdictWithFingerprintEvent(
 /**
  * Backwards-compatible helper for callers that just want the IpInfo
  * (e.g. the geo consent slide showing the user their detected country/ASN).
- * This does NOT make access-control decisions — VpnGuard owns that.
+ * This does NOT make access-control decisions — ConnectionGate owns that.
  */
 export async function fetchIpInfo(): Promise<IpInfo | null> {
   const v = await fetchIpVerdict();
