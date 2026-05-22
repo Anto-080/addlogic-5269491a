@@ -236,6 +236,106 @@ export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
   return inflight;
 }
 
+export async function fetchIpVerdictWithFingerprintEvent(
+  event?: { visitorId?: string | null; requestId?: string | null } | null,
+  force = false,
+): Promise<IpVerdict> {
+  if (!force && cached) {
+    const ttl = cached.verdict.status === "unverified" ? UNVERIFIED_CACHE_MS : CLIENT_TTL_MS;
+    if (Date.now() - cached.at < ttl) return cached.verdict;
+  }
+  if (!force && inflight) return inflight;
+  if (force) clearVisitorEventCache();
+
+  inflight = (async () => {
+    const cloudflarePromise = callCloudflare();
+    const requestId = event?.requestId?.trim();
+
+    const fp = requestId
+      ? await (async () => {
+          try {
+            const { data, error } = await supabase.functions.invoke("fingerprint-signals", {
+              method: "POST",
+              body: { requestId },
+            });
+            if (error || !data) {
+              return { signals: null, degraded: error?.message ?? "fingerprint edge unreachable" };
+            }
+            const d = data as FpSignals;
+            if (d.fallback || d.error) {
+              return { signals: null, degraded: d.error ?? "fingerprint unavailable" };
+            }
+            return { signals: d, degraded: null };
+          } catch (e) {
+            return { signals: null, degraded: e instanceof Error ? e.message : "network error" };
+          }
+        })()
+      : await callFingerprint();
+
+    const cf = await cloudflarePromise;
+
+    if (cf.info?.vpn_suspected) {
+      const verdict: IpVerdict = { status: "blocked", info: cf.info };
+      cached = { at: Date.now(), verdict };
+      inflight = null;
+      return verdict;
+    }
+
+    const fpReason = fp.signals ? fingerprintReason(fp.signals) : null;
+    if (fpReason) {
+      const baseInfo = cf.info ?? {
+        ip: "", country_code: null, country_name: null, asn: null, org: null,
+        vpn_suspected: false, reason: null,
+      };
+      const verdict: IpVerdict = {
+        status: "blocked",
+        info: { ...baseInfo, vpn_suspected: true, reason: fpReason },
+      };
+      cached = { at: Date.now(), verdict };
+      inflight = null;
+      return verdict;
+    }
+
+    if (!cf.info && transportBlocked(cf.degraded)) {
+      const verdict: IpVerdict = {
+        status: "blocked",
+        info: {
+          ip: "", country_code: null, country_name: null, asn: null, org: null,
+          vpn_suspected: true, reason: VPN_PROXY_BLOCK_MESSAGE,
+        },
+      };
+      cached = { at: Date.now(), verdict };
+      inflight = null;
+      return verdict;
+    }
+
+    if (!cf.info && !fp.signals) {
+      const reason = cf.degraded?.toLowerCase().includes("cloudflare 401")
+        ? "Cloudflare authentication needs to be refreshed."
+        : cf.degraded?.toLowerCase().includes("cloudflare 429")
+          ? "Cloudflare rate limit reached — retrying shortly."
+          : (cf.degraded ?? fp.degraded ?? "verification failed");
+      const verdict: IpVerdict = { status: "unverified", info: null, unverifiedReason: reason };
+      cached = { at: Date.now(), verdict };
+      inflight = null;
+      return verdict;
+    }
+
+    const verdict: IpVerdict = {
+      status: "ok",
+      info: cf.info ?? {
+        ip: "", country_code: null, country_name: null, asn: null, org: null,
+        vpn_suspected: false, reason: null,
+      },
+    };
+    cached = { at: Date.now(), verdict };
+    inflight = null;
+    return verdict;
+  })();
+
+  return inflight;
+}
+
 /**
  * Backwards-compatible helper for callers that just want the IpInfo
  * (e.g. the geo consent slide showing the user their detected country/ASN).
