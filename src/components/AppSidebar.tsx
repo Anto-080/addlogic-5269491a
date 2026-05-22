@@ -69,16 +69,16 @@ export function AppSidebar() {
           title="Built with Lovable — make your own"
           className="block rounded-lg overflow-hidden ring-1 ring-primary/30 hover:ring-primary/60 transition relative group"
         >
+          {!collapsed && (
+            <span className="absolute top-1.5 right-1.5 z-10 text-[9px] font-medium text-white/95 bg-black/30 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1">
+              Make yours <Heart className="h-2.5 w-2.5 fill-white" />
+            </span>
+          )}
           <img
             src={lovableBanner}
             alt="Built with Lovable"
             className="brand-asset w-full h-auto block"
           />
-          {!collapsed && (
-            <span className="absolute bottom-1 right-1.5 text-[9px] font-medium text-white/95 bg-black/30 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1">
-              Make yours <Heart className="h-2.5 w-2.5 fill-white" />
-            </span>
-          )}
         </a>
 
         {!collapsed && user && (
