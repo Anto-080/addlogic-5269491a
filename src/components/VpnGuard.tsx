@@ -1,8 +1,8 @@
-import { ReactNode, useCallback, useEffect, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { useVisitorData } from "@fingerprint/react";
 import { ShieldAlert, Loader2, RefreshCw, LogOut, ShieldQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { clearIpVerdictCache, fetchIpVerdict, type IpVerdict } from "@/lib/vpnDetection";
-import { getVisitorId } from "@/lib/fingerprint";
+import { clearIpVerdictCache, fetchIpVerdictWithFingerprintEvent, type IpVerdict } from "@/lib/vpnDetection";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,16 +22,37 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function VpnGuard({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
+  const { data: fpData, error: fpError, isLoading: fpLoading, getData } = useVisitorData({ immediate: true });
   const [verdict, setVerdict] = useState<IpVerdict | null>(null);
   const [checking, setChecking] = useState(true);
   const [fp, setFp] = useState<string | null>(null);
   const [continueReady, setContinueReady] = useState(false);
   const [gateActive, setGateActive] = useState(false);
 
-  const runCheck = useCallback(async (force = false) => {
+  const fingerprintEvent = useMemo(() => ({
+    visitorId: fpData?.visitor_id ?? null,
+    requestId: fpData?.event_id ?? null,
+  }), [fpData?.event_id, fpData?.visitor_id]);
+
+  const runCheck = useCallback(async (force = false, eventOverride?: { visitorId?: string | null; requestId?: string | null } | null) => {
     setChecking(true);
     if (force) clearIpVerdictCache();
-    const [next, visitorId] = await Promise.all([fetchIpVerdict(force), getVisitorId()]);
+    let nextEvent = eventOverride ?? fingerprintEvent;
+
+    if (force) {
+      try {
+        const refreshed = await getData();
+        nextEvent = {
+          visitorId: refreshed?.visitor_id ?? nextEvent?.visitorId ?? null,
+          requestId: refreshed?.event_id ?? nextEvent?.requestId ?? null,
+        };
+      } catch {
+        // keep the latest known event and fall back to the existing edge checks
+      }
+    }
+
+    const visitorId = nextEvent?.visitorId ?? null;
+    const next = await fetchIpVerdictWithFingerprintEvent(nextEvent, force);
     setFp(visitorId);
     setVerdict(next);
     setContinueReady(next.status === "ok");
@@ -56,24 +77,26 @@ export function VpnGuard({ children }: { children: ReactNode }) {
       } catch { /* ignore */ }
     }
     setChecking(false);
-  }, [user]);
+  }, [fingerprintEvent, getData, user]);
 
   useEffect(() => {
-    runCheck();
+    if (fpLoading) return;
+
+    runCheck(false, fingerprintEvent);
     // Re-check every 60s and whenever the tab regains focus, so a user who
     // turns on a VPN mid-session is caught without needing a reload.
-    const onFocus = () => runCheck();
+    const onFocus = () => runCheck(false, fingerprintEvent);
     window.addEventListener("focus", onFocus);
-    const interval = window.setInterval(runCheck, 60_000);
+    const interval = window.setInterval(() => runCheck(false, fingerprintEvent), 60_000);
     return () => {
       window.removeEventListener("focus", onFocus);
       window.clearInterval(interval);
     };
-  }, [runCheck]);
+  }, [fingerprintEvent, fpLoading, runCheck]);
 
   // While we're doing the very first check, render a small full-screen
   // splash so we don't flash the app to a VPN user.
-  if (!verdict && checking) {
+  if (!verdict && (checking || fpLoading)) {
     return (
       <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-4">
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -154,6 +177,11 @@ export function VpnGuard({ children }: { children: ReactNode }) {
             {unverified && verdict?.unverifiedReason && (
               <div className="text-muted-foreground">
                 <strong>Status</strong>: {verdict.unverifiedReason}
+              </div>
+            )}
+            {fpError && (
+              <div className="text-muted-foreground">
+                <strong>Fingerprint</strong>: {fpError.message}
               </div>
             )}
             {clear && (
