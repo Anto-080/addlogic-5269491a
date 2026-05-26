@@ -149,6 +149,28 @@ const ICONS: Record<number, JSX.Element> = {
       <path d="M10 16h4" />
     </>
   ),
+  // 19 — Sciences / test tube
+  19: (
+    <>
+      <path d="M9 3h6" />
+      <path d="M10 3v15a2 2 0 0 0 4 0V3" />
+      <path d="M10 12h4" />
+    </>
+  ),
+  // 20 — Energy / lightning bolt
+  20: (
+    <>
+      <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8Z" />
+    </>
+  ),
+  // 21 — Women's Interests / venus symbol
+  21: (
+    <>
+      <circle cx="12" cy="9" r="5" />
+      <path d="M12 14v8" />
+      <path d="M9 19h6" />
+    </>
+  ),
 };
 
 export function TierIcon({ tierId, size = 24, className }: Props) {

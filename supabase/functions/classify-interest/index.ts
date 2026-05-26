@@ -32,6 +32,9 @@ const TIER_LABELS: { id: number; name: string }[] = [
   { id: 16, name: "Betting Services" },
   { id: 17, name: "Adult Entertainment" },
   { id: 18, name: "Tourism & Travel" },
+  { id: 19, name: "Sciences (Chemistry, Botany, Mathematics)" },
+  { id: 20, name: "Energy (Electromagnetic Induction, Fuels, Renewables)" },
+  { id: 21, name: "Women's Interests" },
 ];
 
 const SYSTEM_PROMPT = `You are a strict research-query classifier. The user submits a free-form research query. You MUST:
@@ -202,6 +205,7 @@ Deno.serve(async (req) => {
         1: 10, 2: 9.2, 3: 8.5, 4: 7.5, 5: 6.5, 6: 5.8, 7: 5.2,
         8: 4.5, 9: 4.0, 10: 3.5, 11: 3.0, 12: 2.5, 13: 2.2,
         14: 1.8, 15: 1.4, 16: 0.8, 17: 0.5, 18: 3.2,
+        19: 8.0, 20: 7.8, 21: 4.2,
       };
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       if (serviceKey) {
