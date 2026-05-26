@@ -10,9 +10,9 @@
 //
 // verify_jwt = false (called pre-auth from VpnGuard).
 //
-// Region: defaults to "eu" (most likely for an Italian workspace). Override
-// with a FINGERPRINT_REGION secret set to "us" or "ap" if your FP workspace
-// is hosted elsewhere.
+// Region: defaults to "us" because this project's Fingerprint workspace is
+// currently resolving against the global/US API host. Override with a
+// FINGERPRINT_REGION secret set to "eu" or "ap" if the workspace is moved.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,7 +54,7 @@ const EVENT_TTL_MS = 5 * 60 * 1000;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const region = Deno.env.get("FINGERPRINT_REGION") ?? "eu";
+  const region = Deno.env.get("FINGERPRINT_REGION") ?? "us";
   const publicKey = Deno.env.get("FINGERPRINT_PUBLIC_API_KEY") ?? "";
   const secretKey = Deno.env.get("FINGERPRINT_SECRET_API_KEY") ?? "";
 
