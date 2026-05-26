@@ -10,7 +10,13 @@
 //
 // verify_jwt = false (called pre-auth from VpnGuard).
 //
-// Region: defaults to "us" because this project's Fingerprint workspace is
+// Secret mapping for this project:
+//   FINGERPRINT_PUBLIC_API_KEY  -> browser/public key
+//   FINGERPRINT_SERVER_API_KEY  -> preferred server-side Events API key
+//   FINGERPRINT_SECRET_API_KEY  -> legacy fallback name for the same server key
+//   sealed result keys are NOT used by this VPN block function.
+//
+// Region defaults to "us" because this project's Fingerprint workspace is
 // currently resolving against the global/US API host. Override with a
 // FINGERPRINT_REGION secret set to "eu" or "ap" if the workspace is moved.
 
@@ -56,7 +62,7 @@ Deno.serve(async (req) => {
 
   const region = Deno.env.get("FINGERPRINT_REGION") ?? "us";
   const publicKey = Deno.env.get("FINGERPRINT_PUBLIC_API_KEY") ?? "";
-  const secretKey = Deno.env.get("FINGERPRINT_SECRET_API_KEY") ?? "";
+  const secretKey = Deno.env.get("FINGERPRINT_SERVER_API_KEY") ?? Deno.env.get("FINGERPRINT_SECRET_API_KEY") ?? "";
 
   // ── GET: ship the publishable config to the browser ────────────────
   if (req.method === "GET") {
