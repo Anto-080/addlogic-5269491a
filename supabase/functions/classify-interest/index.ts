@@ -32,6 +32,9 @@ const TIER_LABELS: { id: number; name: string }[] = [
   { id: 16, name: "Betting Services" },
   { id: 17, name: "Adult Entertainment" },
   { id: 18, name: "Tourism & Travel" },
+  { id: 19, name: "Sciences (Chemistry, Botany, Mathematics)" },
+  { id: 20, name: "Energy (Electromagnetic Induction, Fuels, Renewables)" },
+  { id: 21, name: "Women's Interests" },
 ];
 
 const SYSTEM_PROMPT = `You are a strict research-query classifier. The user submits a free-form research query. You MUST:
