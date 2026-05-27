@@ -68,7 +68,7 @@ async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string
       vpn_suspected: !!d.vpn_suspected,
       reason: d.reason ?? null,
     };
-    return { info: applyLocalBlocklist(info), degraded: null };
+    return { info, degraded: null };
   } catch (e) {
     return { info: null, degraded: e instanceof Error ? e.message : "network error" };
   }
