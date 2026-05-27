@@ -208,64 +208,36 @@ export async function fetchIpVerdictWithFingerprintEvent(
 
     const cf = await cloudflarePromise;
 
-    if (cf.info?.vpn_suspected) {
-      const verdict: IpVerdict = { status: "blocked", info: cf.info };
-      cached = { at: Date.now(), verdict };
-      inflight = null;
-      return verdict;
-    }
-
+    // FingerprintJS Pro is the sole authority for blocking.
     const fpReason = fp.signals ? fingerprintReason(fp.signals) : null;
     if (fpReason) {
       const baseInfo = cf.info ?? {
         ip: "", country_code: null, country_name: null, asn: null, org: null,
         vpn_suspected: false, reason: null,
       };
-      const verdict: IpVerdict = {
+      return cacheVerdict({
         status: "blocked",
         info: { ...baseInfo, vpn_suspected: true, reason: fpReason },
-      };
-      cached = { at: Date.now(), verdict };
-      inflight = null;
-      return verdict;
+      });
     }
 
-    if (!cf.info && transportBlocked(cf.degraded)) {
-      const verdict: IpVerdict = {
-        status: "blocked",
-        info: {
-          ip: "", country_code: null, country_name: null, asn: null, org: null,
-          vpn_suspected: true, reason: VPN_PROXY_BLOCK_MESSAGE,
-        },
-      };
-      cached = { at: Date.now(), verdict };
-      inflight = null;
-      return verdict;
+    if (!fp.signals) {
+      return cacheVerdict({
+        status: "unverified",
+        info: cf.info,
+        unverifiedReason: fp.degraded ?? "Fingerprint verification unavailable",
+      });
     }
 
-    if (!cf.info && !fp.signals) {
-      const reason = cf.degraded?.toLowerCase().includes("cloudflare 401")
-        ? "Cloudflare authentication needs to be refreshed."
-        : cf.degraded?.toLowerCase().includes("cloudflare 429")
-          ? "Cloudflare rate limit reached — retrying shortly."
-          : (cf.degraded ?? fp.degraded ?? "verification failed");
-      const verdict: IpVerdict = { status: "unverified", info: null, unverifiedReason: reason };
-      cached = { at: Date.now(), verdict };
-      inflight = null;
-      return verdict;
-    }
-
-    const verdict: IpVerdict = {
+    return cacheVerdict({
       status: "ok",
       info: cf.info ?? {
         ip: "", country_code: null, country_name: null, asn: null, org: null,
         vpn_suspected: false, reason: null,
       },
-    };
-    cached = { at: Date.now(), verdict };
-    inflight = null;
-    return verdict;
+    });
   })();
+
 
   return inflight;
 }
