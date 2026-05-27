@@ -36,18 +36,12 @@ export type IpVerdict = {
 
 type EdgePayload = Partial<IpInfo> & { error?: string; fallback?: boolean };
 
-const UNVERIFIED_CACHE_MS = 90_000;
-const CLIENT_TTL_MS = 5 * 60 * 1000;
-const VPN_PROXY_BLOCK_MESSAGE = "VPN/Proxy traffic detected. Please deactivate your VPN to access the site.";
+const UNVERIFIED_CACHE_MS = 30_000;
+// `ok` results may be cached. `blocked` results are NEVER cached so that
+// a user who disables their VPN and hits "Re-check" gets a fresh lookup
+// instead of being stuck behind a stale ban.
+const CLIENT_TTL_MS = 60_000;
 
-function transportBlocked(reason: string | null): boolean {
-  const n = String(reason ?? "").toLowerCase();
-  return (
-    n.includes("failed to send a request to the edge function") ||
-    n.includes("edge function unreachable") ||
-    n.includes("network error")
-  );
-}
 
 async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string | null }> {
   try {
