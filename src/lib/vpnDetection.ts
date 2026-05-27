@@ -112,6 +112,18 @@ function fingerprintReason(s: FpSignals): string | null {
 let inflight: Promise<IpVerdict> | null = null;
 let cached: { at: number; verdict: IpVerdict } | null = null;
 
+function cacheVerdict(verdict: IpVerdict) {
+  // Never cache a `blocked` verdict — re-checks after disabling a VPN
+  // must always hit a fresh upstream lookup.
+  if (verdict.status !== "blocked") {
+    cached = { at: Date.now(), verdict };
+  } else {
+    cached = null;
+  }
+  inflight = null;
+  return verdict;
+}
+
 export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
   if (!force && cached) {
     const ttl = cached.verdict.status === "unverified" ? UNVERIFIED_CACHE_MS : CLIENT_TTL_MS;
@@ -123,71 +135,40 @@ export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
   inflight = (async () => {
     const [cf, fp] = await Promise.all([callCloudflare(), callFingerprint()]);
 
-    // Hard blocks — any source flagging wins.
-    if (cf.info?.vpn_suspected) {
-      const verdict: IpVerdict = { status: "blocked", info: cf.info };
-      cached = { at: Date.now(), verdict };
-      inflight = null;
-      return verdict;
-    }
+    // FingerprintJS Pro is the sole authority for blocking.
     const fpReason = fp.signals ? fingerprintReason(fp.signals) : null;
     if (fpReason) {
       const baseInfo = cf.info ?? {
         ip: "", country_code: null, country_name: null, asn: null, org: null,
         vpn_suspected: false, reason: null,
       };
-      const verdict: IpVerdict = {
+      return cacheVerdict({
         status: "blocked",
         info: { ...baseInfo, vpn_suspected: true, reason: fpReason },
-      };
-      cached = { at: Date.now(), verdict };
-      inflight = null;
-      return verdict;
+      });
     }
 
-    // Transport-level failure on Cloudflare while we have nothing else
-    // → treat as the friendly "VPN/proxy traffic detected" hard block, since
-    // some VPNs aggressively block our edge endpoint.
-    if (!cf.info && transportBlocked(cf.degraded)) {
-      const verdict: IpVerdict = {
-        status: "blocked",
-        info: {
-          ip: "", country_code: null, country_name: null, asn: null, org: null,
-          vpn_suspected: true, reason: VPN_PROXY_BLOCK_MESSAGE,
-        },
-      };
-      cached = { at: Date.now(), verdict };
-      inflight = null;
-      return verdict;
+    // Fingerprint couldn't deliver a verdict at all → unverified, never auto-block.
+    if (!fp.signals) {
+      return cacheVerdict({
+        status: "unverified",
+        info: cf.info,
+        unverifiedReason: fp.degraded ?? "Fingerprint verification unavailable",
+      });
     }
 
-    // Unverified — neither source could deliver a confident verdict.
-    if (!cf.info && !fp.signals) {
-      const reason = cf.degraded?.toLowerCase().includes("cloudflare 401")
-        ? "Cloudflare authentication needs to be refreshed."
-        : cf.degraded?.toLowerCase().includes("cloudflare 429")
-          ? "Cloudflare rate limit reached — retrying shortly."
-          : (cf.degraded ?? fp.degraded ?? "verification failed");
-      const verdict: IpVerdict = { status: "unverified", info: null, unverifiedReason: reason };
-      cached = { at: Date.now(), verdict };
-      inflight = null;
-      return verdict;
-    }
-
-    // Both sources happy (or one happy + the other degraded) → ok.
-    const verdict: IpVerdict = {
+    return cacheVerdict({
       status: "ok",
       info: cf.info ?? {
         ip: "", country_code: null, country_name: null, asn: null, org: null,
         vpn_suspected: false, reason: null,
       },
-    };
-    cached = { at: Date.now(), verdict };
-    inflight = null;
-    return verdict;
+    });
   })();
   return inflight;
 }
+
+
 
 export async function fetchIpVerdictWithFingerprintEvent(
   event?: { visitorId?: string | null; requestId?: string | null } | null,
