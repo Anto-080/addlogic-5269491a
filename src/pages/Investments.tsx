@@ -4,6 +4,7 @@ import { TrendingUp, Shield, Users, ChevronDown } from "lucide-react";
 import workInProgressImg from "@/assets/work-in-progress.png";
 import circularSeal from "@/assets/circular-economy-seal.jpg";
 import infinityLoop from "@/assets/infinity-loop.jpg";
+import fluxesMountain from "@/assets/fluxes-mountain.jpeg";
 import { useUserStats } from "@/hooks/useAppData";
 import { IdeasLibrary } from "@/components/IdeasLibrary";
 
@@ -71,6 +72,20 @@ export default function Investments() {
             </Card>
           ))}
         </div>
+
+        <Card className="bg-card border-border/50 opacity-90 sm:col-span-2">
+          <CardContent className="p-4 space-y-3">
+            <p className="text-sm italic text-foreground/90">
+              Follow the Fluxes against the Current, 'till the Mountain.
+            </p>
+            <img
+              src={fluxesMountain}
+              alt="Fluxes flowing against the current toward the mountain"
+              className="w-full rounded-lg object-cover"
+              loading="lazy"
+            />
+          </CardContent>
+        </Card>
 
         {/* Phase 4 — ∞ Circular Economy (Level 100) — collapsible */}
         <Card
