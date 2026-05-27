@@ -1,23 +1,14 @@
 /**
- * VPN / datacenter / proxy detection.
+ * VPN / proxy detection — FingerprintJS Pro Smart Signals is the sole
+ * authority that can return `blocked`. Cloudflare lookups still run to
+ * surface IP/ASN/country metadata for UI and telemetry, but a Cloudflare
+ * "vpn_suspected" flag no longer blocks on its own. MaxMind and the local
+ * datacenter ASN keyword blocklist have been removed from the
+ * access-control path entirely.
  *
- * Verdict pipeline (any single source flagging = hard block):
- *   1. Cloudflare Radar (`cloudflare-ip-check` edge fn) — IP type / ASN.
- *   2. FingerprintJS Pro Smart Signals (`fingerprint-signals` edge fn) —
- *      vpn/proxy/tor/relay flags from the browser event.
- *   3. Local datacenter / VPN ASN substring blocklist (escalates only).
- *
- * Abstract API (`ip-intelligence` edge fn) is paused on disk as an
- * emergency fallback — no code path calls it. Re-enable by adding a third
- * branch to the merge below.
- *
- * Why: AddLogic's reward pool is region-priced. A user in a low-cost region
- * can otherwise spoof a high-CPM region (e.g. US/EU) via VPN and drain the
- * pool. Suspect IPs are hard-blocked app-wide by ConnectionGate.
- *
- * Design rule: we never silently downgrade to a weaker keyless provider for
- * the block decision. If both authoritative sources are degraded we surface
- * an "unverified, retry" state — never auto-pass.
+ * Why: legacy IP heuristics produced sticky false-positives (a user who
+ * briefly enabled a VPN stayed banned even after disabling it). The
+ * Fingerprint Pro workspace rules are the user-controlled source of truth.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -41,39 +32,7 @@ export type IpVerdict = {
   unverifiedReason?: string;
 };
 
-const VPN_HOSTS = [
-  "nordvpn", "nord ", "expressvpn", "express vpn", "mullvad", "protonvpn", "proton ag",
-  "surfshark", "private internet access", "pia ", "windscribe", "cyberghost",
-  "tunnelbear", "ivpn", "azirevpn", "perfect privacy", "hide.me", "hidemyass",
-  "purevpn", "vyprvpn", "torguard", "cloudflare warp", " warp ", "mysterium",
-  "digitalocean", "ovh", "hetzner", "linode", "vultr", "leaseweb", "m247",
-  "amazon", "aws", "google cloud", "microsoft azure", "alibaba", "tencent",
-  "oracle cloud", "ibm cloud", "gcore", "g-core", "choopa", "datacamp", "psychz",
-  "constant", "contabo", "scaleway", "hostwinds", "quadranet", "colocrossing",
-  "worldstream", "serverius", "host europe", "hostinger", "namecheap", "godaddy",
-  "kamatera", "upcloud", "fastly", "akamai", "stackpath", "limestone", "hivelocity",
-  "pacificrack", "frantech", "buyvm", "bitlaunch", "racknerd",
-];
 
-const GENERIC_TOKENS = [
-  "vpn", "proxy", "hosting", "datacenter", "data center", "data-center",
-  "colocation", "colo ", "anonymizer", "tor exit", "exit node",
-];
-
-function applyLocalBlocklist(info: IpInfo): IpInfo {
-  if (info.vpn_suspected) return info;
-  const org = String(info.org ?? "").toLowerCase();
-  const asn = String(info.asn ?? "").toLowerCase();
-  const matchHost = VPN_HOSTS.find((h) => org.includes(h) || asn.includes(h));
-  if (matchHost) {
-    return { ...info, vpn_suspected: true, reason: `Datacenter / VPN ASN match: ${matchHost}` };
-  }
-  const matchGeneric = GENERIC_TOKENS.find((h) => org.includes(h));
-  if (matchGeneric) {
-    return { ...info, vpn_suspected: true, reason: `Non-residential network token: "${matchGeneric.trim()}"` };
-  }
-  return info;
-}
 
 type EdgePayload = Partial<IpInfo> & { error?: string; fallback?: boolean };
 
