@@ -68,8 +68,15 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
         toast.error(e instanceof Error ? e.message : "Failed to record telemetry");
       }
     }
+    // Seed the session watcher so mid-session IP changes for mobile users
+    // don't re-trigger the VPN block card.
+    try {
+      const visitorId = fp ?? (await getVisitorId());
+      setApprovedSession(user?.id ?? null, { visitorId, ip: ipInfo?.ip ?? null });
+    } catch { /* ignore */ }
     onSatisfied(c);
   };
+
 
   const tryGps = async () => {
     setWorking(true);
