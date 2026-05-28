@@ -201,37 +201,9 @@ export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
 
   inflight = (async () => {
     const [cf, fp] = await Promise.all([callCloudflare(), callFingerprint()]);
-
-    // FingerprintJS Pro is the sole authority for blocking.
-    const fpReason = fp.signals ? fingerprintReason(fp.signals) : null;
-    if (fpReason) {
-      const baseInfo = cf.info ?? {
-        ip: "", country_code: null, country_name: null, asn: null, org: null,
-        vpn_suspected: false, reason: null,
-      };
-      return cacheVerdict({
-        status: "blocked",
-        info: { ...baseInfo, vpn_suspected: true, reason: fpReason },
-      });
-    }
-
-    // Fingerprint couldn't deliver a verdict at all → unverified, never auto-block.
-    if (!fp.signals) {
-      return cacheVerdict({
-        status: "unverified",
-        info: cf.info,
-        unverifiedReason: fp.degraded ?? "Fingerprint verification unavailable",
-      });
-    }
-
-    return cacheVerdict({
-      status: "ok",
-      info: cf.info ?? {
-        ip: "", country_code: null, country_name: null, asn: null, org: null,
-        vpn_suspected: false, reason: null,
-      },
-    });
+    return applyFpEvaluation(fp, cf);
   })();
+
   return inflight;
 }
 
