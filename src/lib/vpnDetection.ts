@@ -283,8 +283,8 @@ export async function verifyIpForApproximateLocation(): Promise<{
   clearVisitorEventCache();
   const fp = await callFingerprint();
   if (fp.signals) {
-    const fpReason = fingerprintReason(fp.signals);
-    if (fpReason) return { ok: false, reason: fpReason };
+    const ev = evaluateFingerprint(fp.signals);
+    if (ev.kind === "block") return { ok: false, reason: ev.reason };
   }
   return { ok: true };
 }
