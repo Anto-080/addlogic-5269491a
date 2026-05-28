@@ -112,33 +112,28 @@ async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded:
  *
  * Returns:
  *   { kind: "block", reason } → hard block
- *   { kind: "allow" }         → pass through
- *   { kind: "unverified", reason } → caller should treat as unverified
- */
-type FpEvaluation =
-  | { kind: "block"; reason: string }
-  | { kind: "allow" }
-  | { kind: "unverified"; reason: string };
-
-const DATACENTER_PROXY_TYPES = new Set([
-  "datacenter", "data_center", "data-center", "hosting", "server", "cloud",
-]);
-const RESIDENTIAL_PROXY_TYPES = new Set([
-  "residential", "mobile", "isp", "cellular", "wireless", "broadband",
-]);
-
 export function evaluateFingerprint(s: FpSignals): FpEvaluation {
-  if (s.vpn) return { kind: "block", reason: "FingerprintJS: Public VPN detected" };
+  // Tor exit node → always block.
   if (s.tor) return { kind: "block", reason: "FingerprintJS: Tor exit node" };
+
+  // Datacenter / hosting proxy → block. This is the ONLY non-Tor block path.
+  // FingerprintJS Pro's `vpn` signal alone produces false positives on real
+  // residential ISPs (e.g. Tiscali / mobile carriers), so we no longer block
+  // on `vpn=true` unless it's corroborated by a datacenter-class proxy.
   if (s.proxy) {
     const t = (s.proxyType ?? "").toLowerCase();
     if (DATACENTER_PROXY_TYPES.has(t)) {
       return { kind: "block", reason: "FingerprintJS: Datacenter proxy detected" };
     }
-    if (RESIDENTIAL_PROXY_TYPES.has(t)) {
-      return { kind: "allow" };
-    }
-    // proxy=true with no type → don't auto-block residential users; surface as unverified
+    // residential / mobile / isp / unknown / privacy-relay → allow
+    return { kind: "allow" };
+  }
+
+  // vpn=true with no corroborating datacenter proxy → allow (false-positive guard).
+  // relay alone → allow.
+  return { kind: "allow" };
+}
+
     if (!t) return { kind: "unverified", reason: "Proxy type not provided" };
     // any other unknown classification → allow rather than risk false-positive
     return { kind: "allow" };
