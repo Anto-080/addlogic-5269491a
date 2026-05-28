@@ -71,12 +71,15 @@ async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string
 type FpSignals = {
   vpn: boolean;
   proxy: boolean;
+  proxyType?: string | null;
   tor: boolean;
   relay: boolean;
   incognito: boolean;
+  ipFromFp?: string | null;
   fallback?: boolean;
   error?: string;
 };
+
 
 async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded: string | null }> {
   try {
@@ -101,13 +104,77 @@ async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded:
   }
 }
 
-function fingerprintReason(s: FpSignals): string | null {
-  if (s.vpn) return "FingerprintJS: VPN detected";
-  if (s.proxy) return "FingerprintJS: Proxy detected";
-  if (s.tor) return "FingerprintJS: Tor exit node";
-  if (s.relay) return "FingerprintJS: Privacy relay (iCloud/etc.)";
-  return null;
+/**
+ * New block policy: only Public VPN, Tor, or Datacenter/Hosting-type proxy
+ * trigger a block. Residential / mobile / ISP proxies and privacy relays
+ * (e.g. iCloud Private Relay) are allowed — they're how real mobile users
+ * appear on the network.
+ *
+ * Returns:
+ *   { kind: "block", reason } → hard block
+ *   { kind: "allow" }         → pass through
+ *   { kind: "unverified", reason } → caller should treat as unverified
+ */
+type FpEvaluation =
+  | { kind: "block"; reason: string }
+  | { kind: "allow" }
+  | { kind: "unverified"; reason: string };
+
+const DATACENTER_PROXY_TYPES = new Set([
+  "datacenter", "data_center", "data-center", "hosting", "server", "cloud",
+]);
+const RESIDENTIAL_PROXY_TYPES = new Set([
+  "residential", "mobile", "isp", "cellular", "wireless", "broadband",
+]);
+
+export function evaluateFingerprint(s: FpSignals): FpEvaluation {
+  if (s.vpn) return { kind: "block", reason: "FingerprintJS: Public VPN detected" };
+  if (s.tor) return { kind: "block", reason: "FingerprintJS: Tor exit node" };
+  if (s.proxy) {
+    const t = (s.proxyType ?? "").toLowerCase();
+    if (DATACENTER_PROXY_TYPES.has(t)) {
+      return { kind: "block", reason: "FingerprintJS: Datacenter proxy detected" };
+    }
+    if (RESIDENTIAL_PROXY_TYPES.has(t)) {
+      return { kind: "allow" };
+    }
+    // proxy=true with no type → don't auto-block residential users; surface as unverified
+    if (!t) return { kind: "unverified", reason: "Proxy type not provided" };
+    // any other unknown classification → allow rather than risk false-positive
+    return { kind: "allow" };
+  }
+  // relay alone is not a block
+  return { kind: "allow" };
 }
+
+function applyFpEvaluation(
+  fp: { signals: FpSignals | null; degraded: string | null },
+  cf: { info: IpInfo | null; degraded: string | null },
+): IpVerdict {
+  const baseInfo: IpInfo = cf.info ?? {
+    ip: "", country_code: null, country_name: null, asn: null, org: null,
+    vpn_suspected: false, reason: null,
+  };
+  if (!fp.signals) {
+    return cacheVerdict({
+      status: "unverified",
+      info: cf.info,
+      unverifiedReason: fp.degraded ?? "Fingerprint verification unavailable",
+    });
+  }
+  const ev = evaluateFingerprint(fp.signals);
+  if (ev.kind === "block") {
+    return cacheVerdict({
+      status: "blocked",
+      info: { ...baseInfo, vpn_suspected: true, reason: ev.reason },
+    });
+  }
+  if (ev.kind === "unverified") {
+    return cacheVerdict({ status: "unverified", info: cf.info, unverifiedReason: ev.reason });
+  }
+  return cacheVerdict({ status: "ok", info: baseInfo });
+}
+
 
 let inflight: Promise<IpVerdict> | null = null;
 let cached: { at: number; verdict: IpVerdict } | null = null;
@@ -134,37 +201,9 @@ export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
 
   inflight = (async () => {
     const [cf, fp] = await Promise.all([callCloudflare(), callFingerprint()]);
-
-    // FingerprintJS Pro is the sole authority for blocking.
-    const fpReason = fp.signals ? fingerprintReason(fp.signals) : null;
-    if (fpReason) {
-      const baseInfo = cf.info ?? {
-        ip: "", country_code: null, country_name: null, asn: null, org: null,
-        vpn_suspected: false, reason: null,
-      };
-      return cacheVerdict({
-        status: "blocked",
-        info: { ...baseInfo, vpn_suspected: true, reason: fpReason },
-      });
-    }
-
-    // Fingerprint couldn't deliver a verdict at all → unverified, never auto-block.
-    if (!fp.signals) {
-      return cacheVerdict({
-        status: "unverified",
-        info: cf.info,
-        unverifiedReason: fp.degraded ?? "Fingerprint verification unavailable",
-      });
-    }
-
-    return cacheVerdict({
-      status: "ok",
-      info: cf.info ?? {
-        ip: "", country_code: null, country_name: null, asn: null, org: null,
-        vpn_suspected: false, reason: null,
-      },
-    });
+    return applyFpEvaluation(fp, cf);
   })();
+
   return inflight;
 }
 
@@ -207,35 +246,8 @@ export async function fetchIpVerdictWithFingerprintEvent(
       : await callFingerprint();
 
     const cf = await cloudflarePromise;
+    return applyFpEvaluation(fp, cf);
 
-    // FingerprintJS Pro is the sole authority for blocking.
-    const fpReason = fp.signals ? fingerprintReason(fp.signals) : null;
-    if (fpReason) {
-      const baseInfo = cf.info ?? {
-        ip: "", country_code: null, country_name: null, asn: null, org: null,
-        vpn_suspected: false, reason: null,
-      };
-      return cacheVerdict({
-        status: "blocked",
-        info: { ...baseInfo, vpn_suspected: true, reason: fpReason },
-      });
-    }
-
-    if (!fp.signals) {
-      return cacheVerdict({
-        status: "unverified",
-        info: cf.info,
-        unverifiedReason: fp.degraded ?? "Fingerprint verification unavailable",
-      });
-    }
-
-    return cacheVerdict({
-      status: "ok",
-      info: cf.info ?? {
-        ip: "", country_code: null, country_name: null, asn: null, org: null,
-        vpn_suspected: false, reason: null,
-      },
-    });
   })();
 
 
@@ -271,8 +283,8 @@ export async function verifyIpForApproximateLocation(): Promise<{
   clearVisitorEventCache();
   const fp = await callFingerprint();
   if (fp.signals) {
-    const fpReason = fingerprintReason(fp.signals);
-    if (fpReason) return { ok: false, reason: fpReason };
+    const ev = evaluateFingerprint(fp.signals);
+    if (ev.kind === "block") return { ok: false, reason: ev.reason };
   }
   return { ok: true };
 }

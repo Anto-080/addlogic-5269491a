@@ -41,18 +41,19 @@ function regionBase(region: string): string {
 }
 
 type ProductBool = { data?: { result?: boolean } };
+type ProxyProduct = { data?: { result?: boolean; type?: string } };
 type EventResp = {
   products?: {
     vpn?: ProductBool;
-    proxy?: ProductBool;
+    proxy?: ProxyProduct;
     tor?: ProductBool;
     privacySettings?: ProductBool;
     incognito?: ProductBool;
     suspectScore?: { data?: { result?: number } };
-    // FP also sometimes nests under "ipInfo" with "v4.geolocation.country.code"
-    // but we only care about the security flags here.
+    ipInfo?: { data?: { v4?: { address?: string; geolocation?: { country?: { code?: string } } } } };
   };
 };
+
 
 const eventCache = new Map<string, { at: number; payload: unknown }>();
 const EVENT_TTL_MS = 5 * 60 * 1000;
@@ -130,16 +131,21 @@ Deno.serve(async (req) => {
     }
     const j = (await r.json()) as EventResp;
     const p = j.products ?? {};
+    const proxyType = (p.proxy?.data?.type ?? null)?.toLowerCase() ?? null;
     const payload = {
       vpn: p.vpn?.data?.result === true,
       proxy: p.proxy?.data?.result === true,
+      proxyType, // "datacenter" | "hosting" | "residential" | "mobile" | "isp" | null
       tor: p.tor?.data?.result === true,
       relay: p.privacySettings?.data?.result === true,
       incognito: p.incognito?.data?.result === true,
       suspectScore: p.suspectScore?.data?.result ?? null,
+      ipFromFp: p.ipInfo?.data?.v4?.address ?? null,
+      ipCountryFromFp: p.ipInfo?.data?.v4?.geolocation?.country?.code ?? null,
       fallback: false as const,
     };
     eventCache.set(requestId, { at: Date.now(), payload });
+
     return new Response(JSON.stringify(payload), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json", "x-cache": "MISS" },
