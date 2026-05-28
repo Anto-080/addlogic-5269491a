@@ -105,42 +105,33 @@ async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded:
 }
 
 /**
- * New block policy: only Public VPN, Tor, or Datacenter/Hosting-type proxy
- * trigger a block. Residential / mobile / ISP proxies and privacy relays
- * (e.g. iCloud Private Relay) are allowed — they're how real mobile users
- * appear on the network.
- *
- * Returns:
- *   { kind: "block", reason } → hard block
-export function evaluateFingerprint(s: FpSignals): FpEvaluation {
-  // Tor exit node → always block.
-  if (s.tor) return { kind: "block", reason: "FingerprintJS: Tor exit node" };
+ * Block policy: only Tor exit nodes or Datacenter/Hosting-type proxies
+ * trigger a block. `vpn=true` alone is NOT enough — FingerprintJS Pro's
+ * VPN classifier produces false positives on real residential ISPs
+ * (Tiscali, mobile carriers, etc.). Residential / mobile / ISP proxies
+ * and privacy relays (iCloud Private Relay) are allowed.
+ */
+type FpEvaluation =
+  | { kind: "block"; reason: string }
+  | { kind: "allow" }
+  | { kind: "unverified"; reason: string };
 
-  // Datacenter / hosting proxy → block. This is the ONLY non-Tor block path.
-  // FingerprintJS Pro's `vpn` signal alone produces false positives on real
-  // residential ISPs (e.g. Tiscali / mobile carriers), so we no longer block
-  // on `vpn=true` unless it's corroborated by a datacenter-class proxy.
+const DATACENTER_PROXY_TYPES = new Set([
+  "datacenter", "data_center", "data-center", "hosting", "server", "cloud",
+]);
+
+export function evaluateFingerprint(s: FpSignals): FpEvaluation {
+  if (s.tor) return { kind: "block", reason: "FingerprintJS: Tor exit node" };
   if (s.proxy) {
     const t = (s.proxyType ?? "").toLowerCase();
     if (DATACENTER_PROXY_TYPES.has(t)) {
       return { kind: "block", reason: "FingerprintJS: Datacenter proxy detected" };
     }
-    // residential / mobile / isp / unknown / privacy-relay → allow
-    return { kind: "allow" };
   }
-
-  // vpn=true with no corroborating datacenter proxy → allow (false-positive guard).
-  // relay alone → allow.
+  // vpn=true alone, residential/mobile/isp proxies, relay → allow
   return { kind: "allow" };
 }
 
-    if (!t) return { kind: "unverified", reason: "Proxy type not provided" };
-    // any other unknown classification → allow rather than risk false-positive
-    return { kind: "allow" };
-  }
-  // relay alone is not a block
-  return { kind: "allow" };
-}
 
 function applyFpEvaluation(
   fp: { signals: FpSignals | null; degraded: string | null },
