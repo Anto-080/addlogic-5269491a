@@ -59,6 +59,15 @@ async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string
       country_name: d.country_name ?? null,
       asn: d.asn ?? null,
       org: d.org ?? null,
+      vpn_suspected: !!d.vpn_suspected,
+      reason: d.reason ?? null,
+    };
+    return { info, degraded: null };
+  } catch (e) {
+    return { info: null, degraded: e instanceof Error ? e.message : "network error" };
+  }
+}
+
 type FpSignals = {
   vpn: boolean;
   proxy: boolean;
@@ -70,6 +79,7 @@ type FpSignals = {
   fallback?: boolean;
   error?: string;
 };
+
 
 async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded: string | null }> {
   try {
