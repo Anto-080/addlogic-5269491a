@@ -31,7 +31,6 @@ export function ConnectionGate({ children }: { children: ReactNode }) {
   const [verdict, setVerdict] = useState<IpVerdict | null>(null);
   const [checking, setChecking] = useState(true);
   const [fp, setFp] = useState<string | null>(null);
-  const [continueReady, setContinueReady] = useState(false);
   const [gateActive, setGateActive] = useState(false);
 
   const fingerprintEvent = useMemo(() => ({
@@ -60,11 +59,11 @@ export function ConnectionGate({ children }: { children: ReactNode }) {
     const next = await fetchIpVerdictWithFingerprintEvent(nextEvent, force);
     setFp(visitorId);
     setVerdict(next);
-    setContinueReady(next.status === "ok");
-    if (next.status !== "ok") {
-      setGateActive(true);
+    const shouldBlock = next.status === "blocked";
+    setGateActive(shouldBlock);
+    if (shouldBlock) {
       if (next.status === "blocked") clearApprovedSession(user?.id ?? null);
-    } else {
+    } else if (next.status === "ok") {
       // Record the approved (visitorId, ip) pair so future drift checks can
       // tell apart "mobile IP rotated" from "user hopped onto a VPN".
       setApprovedSession(user?.id ?? null, {
@@ -132,11 +131,9 @@ export function ConnectionGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (verdict?.status === "ok" && !gateActive) return <>{children}</>;
+  if (verdict?.status !== "blocked" && !gateActive) return <>{children}</>;
 
   const blocked = verdict?.status === "blocked";
-  const unverified = verdict?.status === "unverified";
-  const clear = verdict?.status === "ok";
   const info = verdict?.info ?? null;
 
   return (
@@ -154,37 +151,24 @@ export function ConnectionGate({ children }: { children: ReactNode }) {
 
         <div className="text-center space-y-2">
           <h2 className="text-lg font-bold text-foreground">
-            {blocked ? "VPN or proxy detected" : clear ? "Connection verified" : "Connection not verified"}
+            VPN or proxy detected
           </h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            {blocked ? (
+            {verdict?.info?.reason === "VPN/Proxy traffic detected. Please deactivate your VPN to access the site." ? (
               <>
-                {verdict?.info?.reason === "VPN/Proxy traffic detected. Please deactivate your VPN to access the site." ? (
-                  <>
-                    <strong>VPN/Proxy traffic detected.</strong> Please deactivate your VPN to access the site.
-                  </>
-                ) : (
-                  <>
-                    Your connection is routed through a <strong>VPN, proxy, or datacenter</strong> network.
-                    To protect the regional reward pool from bot farms, AddLogic is unavailable on these
-                    connections. <strong>Please disable your VPN or proxy</strong>, then re-check.
-                  </>
-                )}
-              </>
-            ) : clear ? (
-              <>
-                Your connection has been verified. Continue to re-enter the site.
+                <strong>VPN/Proxy traffic detected.</strong> Please deactivate your VPN to access the site.
               </>
             ) : (
               <>
-                We couldn't verify your network is residential yet. This usually means the Cloudflare
-                verification service is temporarily unavailable or needs its token refreshed. Please retry.
+                Your connection is routed through a <strong>VPN, proxy, or datacenter</strong> network.
+                To protect the regional reward pool from bot farms, AddLogic is unavailable on these
+                connections. <strong>Please disable your VPN or proxy</strong>, then re-check.
               </>
             )}
           </p>
         </div>
 
-        {(blocked || unverified || clear) && (
+        {blocked && (
           <div className="rounded-lg border border-border/60 bg-secondary/30 p-3 text-[11px] text-foreground/90 space-y-1">
             <div>
               <strong>Network</strong>: {info?.org ?? info?.asn ?? "unknown"}
@@ -199,19 +183,9 @@ export function ConnectionGate({ children }: { children: ReactNode }) {
                 <strong>Reason</strong>: {verdict.info.reason}
               </div>
             )}
-            {unverified && verdict?.unverifiedReason && (
-              <div className="text-muted-foreground">
-                <strong>Status</strong>: {verdict.unverifiedReason}
-              </div>
-            )}
             {fpError && (
               <div className="text-muted-foreground">
                 <strong>Fingerprint</strong>: {fpError.message}
-              </div>
-            )}
-            {clear && (
-              <div className="text-money">
-                <strong>Status</strong>: residential connection confirmed
               </div>
             )}
             {fp && (
@@ -226,17 +200,6 @@ export function ConnectionGate({ children }: { children: ReactNode }) {
           <Button onClick={() => runCheck(true)} disabled={checking} className="w-full gap-2">
             {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Re-check connection
-          </Button>
-          <Button
-            disabled={!continueReady || checking}
-            onClick={() => {
-              setGateActive(false);
-              setContinueReady(false);
-            }}
-            variant="secondary"
-            className="w-full"
-          >
-            {continueReady ? "Continue" : blocked ? "Waiting for VPN to be disabled…" : "Waiting for verification…"}
           </Button>
           {user && (
             <Button onClick={signOut} variant="secondary" className="w-full gap-2">
