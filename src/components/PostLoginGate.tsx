@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { GeoConsentSlide } from "@/components/GeoConsentSlide";
 import { fetchIpInfo } from "@/lib/vpnDetection";
+import { getApprovedSession } from "@/lib/sessionWatcher";
 import { useSettings } from "@/contexts/SettingsContext";
 
 /**
@@ -28,13 +29,15 @@ export function PostLoginGate({ children }: { children: ReactNode }) {
       setSatisfied(false);
       return;
     }
-    // Re-validate that the approximate IP hasn't changed since the user
-    // satisfied the gate. If it has, force them through the card again.
+    // Re-validate using the approved-session watcher cache. An IP-only
+    // change is valid for residential/mobile users with rotating IPs.
     fetchIpInfo().then((info) => {
       if (cancelled) return;
       try {
         const parsed = JSON.parse(stored) as { ip?: string };
-        if (info?.ip && parsed.ip && info.ip === parsed.ip) {
+        const approved = getApprovedSession(user.id);
+        const ipOnlyRotationAllowed = !!approved?.ip && !!info?.ip && approved.ip === info.ip;
+        if ((info?.ip && parsed.ip && info.ip === parsed.ip) || ipOnlyRotationAllowed) {
           setSatisfied(true);
         } else {
           sessionStorage.removeItem(key);
