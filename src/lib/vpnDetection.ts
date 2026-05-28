@@ -147,14 +147,34 @@ export function evaluateFingerprint(s: FpSignals): FpEvaluation {
   return { kind: "allow" };
 }
 
-
-function fingerprintReason(s: FpSignals): string | null {
-  if (s.vpn) return "FingerprintJS: VPN detected";
-  if (s.proxy) return "FingerprintJS: Proxy detected";
-  if (s.tor) return "FingerprintJS: Tor exit node";
-  if (s.relay) return "FingerprintJS: Privacy relay (iCloud/etc.)";
-  return null;
+function applyFpEvaluation(
+  fp: { signals: FpSignals | null; degraded: string | null },
+  cf: { info: IpInfo | null; degraded: string | null },
+): IpVerdict {
+  const baseInfo: IpInfo = cf.info ?? {
+    ip: "", country_code: null, country_name: null, asn: null, org: null,
+    vpn_suspected: false, reason: null,
+  };
+  if (!fp.signals) {
+    return cacheVerdict({
+      status: "unverified",
+      info: cf.info,
+      unverifiedReason: fp.degraded ?? "Fingerprint verification unavailable",
+    });
+  }
+  const ev = evaluateFingerprint(fp.signals);
+  if (ev.kind === "block") {
+    return cacheVerdict({
+      status: "blocked",
+      info: { ...baseInfo, vpn_suspected: true, reason: ev.reason },
+    });
+  }
+  if (ev.kind === "unverified") {
+    return cacheVerdict({ status: "unverified", info: cf.info, unverifiedReason: ev.reason });
+  }
+  return cacheVerdict({ status: "ok", info: baseInfo });
 }
+
 
 let inflight: Promise<IpVerdict> | null = null;
 let cached: { at: number; verdict: IpVerdict } | null = null;
