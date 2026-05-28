@@ -246,35 +246,8 @@ export async function fetchIpVerdictWithFingerprintEvent(
       : await callFingerprint();
 
     const cf = await cloudflarePromise;
+    return applyFpEvaluation(fp, cf);
 
-    // FingerprintJS Pro is the sole authority for blocking.
-    const fpReason = fp.signals ? fingerprintReason(fp.signals) : null;
-    if (fpReason) {
-      const baseInfo = cf.info ?? {
-        ip: "", country_code: null, country_name: null, asn: null, org: null,
-        vpn_suspected: false, reason: null,
-      };
-      return cacheVerdict({
-        status: "blocked",
-        info: { ...baseInfo, vpn_suspected: true, reason: fpReason },
-      });
-    }
-
-    if (!fp.signals) {
-      return cacheVerdict({
-        status: "unverified",
-        info: cf.info,
-        unverifiedReason: fp.degraded ?? "Fingerprint verification unavailable",
-      });
-    }
-
-    return cacheVerdict({
-      status: "ok",
-      info: cf.info ?? {
-        ip: "", country_code: null, country_name: null, asn: null, org: null,
-        vpn_suspected: false, reason: null,
-      },
-    });
   })();
 
 
