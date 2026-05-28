@@ -63,6 +63,14 @@ export function ConnectionGate({ children }: { children: ReactNode }) {
     setContinueReady(next.status === "ok");
     if (next.status !== "ok") {
       setGateActive(true);
+      if (next.status === "blocked") clearApprovedSession(user?.id ?? null);
+    } else {
+      // Record the approved (visitorId, ip) pair so future drift checks can
+      // tell apart "mobile IP rotated" from "user hopped onto a VPN".
+      setApprovedSession(user?.id ?? null, {
+        visitorId,
+        ip: next.info?.ip ?? null,
+      });
     }
     if (next.status === "blocked" && user) {
       try {
@@ -88,16 +96,28 @@ export function ConnectionGate({ children }: { children: ReactNode }) {
     if (fpLoading) return;
 
     runCheck(false, fingerprintEvent);
-    // Re-check every 60s and whenever the tab regains focus, so a user who
-    // turns on a VPN mid-session is caught without needing a reload.
-    const onFocus = () => runCheck(false, fingerprintEvent);
+    // Lightweight drift watcher: every 60s and on tab focus, compare the
+    // current IP + visitorId against the approved session.
+    //  - IP only changed       → silently update cache, no Fingerprint call
+    //  - device only changed   → fresh Fingerprint event + full re-check
+    //  - both changed          → fresh Fingerprint event + full re-check
+    // This stops mobile-IP rotation from re-triggering the block card.
+    const tick = async () => {
+      const drift = await checkSessionDrift(user?.id ?? null);
+      if (drift === "device-changed" || drift === "both-changed" || drift === "no-session") {
+        runCheck(true);
+      }
+      // "same" and "ip-changed" → no action
+    };
+    const onFocus = () => { tick(); };
     window.addEventListener("focus", onFocus);
-    const interval = window.setInterval(() => runCheck(false, fingerprintEvent), 60_000);
+    const interval = window.setInterval(tick, 60_000);
     return () => {
       window.removeEventListener("focus", onFocus);
       window.clearInterval(interval);
     };
-  }, [fingerprintEvent, fpLoading, runCheck]);
+  }, [fingerprintEvent, fpLoading, runCheck, user]);
+
 
   // While we're doing the very first check, render a small full-screen
   // splash so we don't flash the app to a VPN user.
