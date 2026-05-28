@@ -12,7 +12,9 @@ import { persistTelemetry, snapshotDeviceProfile } from "@/lib/geolocation";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchIpInfo, reverseGeocodeCountry, verifyIpForApproximateLocation, type IpInfo } from "@/lib/vpnDetection";
+import { setApprovedSession } from "@/lib/sessionWatcher";
 import { getVisitorId } from "@/lib/fingerprint";
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 
