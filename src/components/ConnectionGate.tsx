@@ -3,6 +3,11 @@ import { useVisitorData } from "@fingerprint/react";
 import { ShieldAlert, Loader2, RefreshCw, LogOut, ShieldQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearIpVerdictCache, fetchIpVerdictWithFingerprintEvent, type IpVerdict } from "@/lib/vpnDetection";
+import {
+  checkSessionDrift,
+  clearApprovedSession,
+  setApprovedSession,
+} from "@/lib/sessionWatcher";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
