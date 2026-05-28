@@ -59,21 +59,14 @@ async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string
       country_name: d.country_name ?? null,
       asn: d.asn ?? null,
       org: d.org ?? null,
-      vpn_suspected: !!d.vpn_suspected,
-      reason: d.reason ?? null,
-    };
-    return { info, degraded: null };
-  } catch (e) {
-    return { info: null, degraded: e instanceof Error ? e.message : "network error" };
-  }
-}
-
 type FpSignals = {
   vpn: boolean;
   proxy: boolean;
+  proxyType?: string | null;
   tor: boolean;
   relay: boolean;
   incognito: boolean;
+  ipFromFp?: string | null;
   fallback?: boolean;
   error?: string;
 };
@@ -100,6 +93,50 @@ async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded:
     return { signals: null, degraded: e instanceof Error ? e.message : "network error" };
   }
 }
+
+/**
+ * New block policy: only Public VPN, Tor, or Datacenter/Hosting-type proxy
+ * trigger a block. Residential / mobile / ISP proxies and privacy relays
+ * (e.g. iCloud Private Relay) are allowed — they're how real mobile users
+ * appear on the network.
+ *
+ * Returns:
+ *   { kind: "block", reason } → hard block
+ *   { kind: "allow" }         → pass through
+ *   { kind: "unverified", reason } → caller should treat as unverified
+ */
+type FpEvaluation =
+  | { kind: "block"; reason: string }
+  | { kind: "allow" }
+  | { kind: "unverified"; reason: string };
+
+const DATACENTER_PROXY_TYPES = new Set([
+  "datacenter", "data_center", "data-center", "hosting", "server", "cloud",
+]);
+const RESIDENTIAL_PROXY_TYPES = new Set([
+  "residential", "mobile", "isp", "cellular", "wireless", "broadband",
+]);
+
+export function evaluateFingerprint(s: FpSignals): FpEvaluation {
+  if (s.vpn) return { kind: "block", reason: "FingerprintJS: Public VPN detected" };
+  if (s.tor) return { kind: "block", reason: "FingerprintJS: Tor exit node" };
+  if (s.proxy) {
+    const t = (s.proxyType ?? "").toLowerCase();
+    if (DATACENTER_PROXY_TYPES.has(t)) {
+      return { kind: "block", reason: "FingerprintJS: Datacenter proxy detected" };
+    }
+    if (RESIDENTIAL_PROXY_TYPES.has(t)) {
+      return { kind: "allow" };
+    }
+    // proxy=true with no type → don't auto-block residential users; surface as unverified
+    if (!t) return { kind: "unverified", reason: "Proxy type not provided" };
+    // any other unknown classification → allow rather than risk false-positive
+    return { kind: "allow" };
+  }
+  // relay alone is not a block
+  return { kind: "allow" };
+}
+
 
 function fingerprintReason(s: FpSignals): string | null {
   if (s.vpn) return "FingerprintJS: VPN detected";
