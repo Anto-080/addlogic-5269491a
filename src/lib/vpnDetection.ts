@@ -105,15 +105,11 @@ async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded:
 }
 
 /**
- * New block policy: only Public VPN, Tor, or Datacenter/Hosting-type proxy
- * trigger a block. Residential / mobile / ISP proxies and privacy relays
- * (e.g. iCloud Private Relay) are allowed — they're how real mobile users
- * appear on the network.
- *
- * Returns:
- *   { kind: "block", reason } → hard block
- *   { kind: "allow" }         → pass through
- *   { kind: "unverified", reason } → caller should treat as unverified
+ * Block policy: only Tor exit nodes or Datacenter/Hosting-type proxies
+ * trigger a block. `vpn=true` alone is NOT enough — FingerprintJS Pro's
+ * VPN classifier produces false positives on real residential ISPs
+ * (Tiscali, mobile carriers, etc.). Residential / mobile / ISP proxies
+ * and privacy relays (iCloud Private Relay) are allowed.
  */
 type FpEvaluation =
   | { kind: "block"; reason: string }
@@ -123,29 +119,19 @@ type FpEvaluation =
 const DATACENTER_PROXY_TYPES = new Set([
   "datacenter", "data_center", "data-center", "hosting", "server", "cloud",
 ]);
-const RESIDENTIAL_PROXY_TYPES = new Set([
-  "residential", "mobile", "isp", "cellular", "wireless", "broadband",
-]);
 
 export function evaluateFingerprint(s: FpSignals): FpEvaluation {
-  if (s.vpn) return { kind: "block", reason: "FingerprintJS: Public VPN detected" };
   if (s.tor) return { kind: "block", reason: "FingerprintJS: Tor exit node" };
   if (s.proxy) {
     const t = (s.proxyType ?? "").toLowerCase();
     if (DATACENTER_PROXY_TYPES.has(t)) {
       return { kind: "block", reason: "FingerprintJS: Datacenter proxy detected" };
     }
-    if (RESIDENTIAL_PROXY_TYPES.has(t)) {
-      return { kind: "allow" };
-    }
-    // proxy=true with no type → don't auto-block residential users; surface as unverified
-    if (!t) return { kind: "unverified", reason: "Proxy type not provided" };
-    // any other unknown classification → allow rather than risk false-positive
-    return { kind: "allow" };
   }
-  // relay alone is not a block
+  // vpn=true alone, residential/mobile/isp proxies, relay → allow
   return { kind: "allow" };
 }
+
 
 function applyFpEvaluation(
   fp: { signals: FpSignals | null; degraded: string | null },
