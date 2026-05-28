@@ -41,18 +41,19 @@ function regionBase(region: string): string {
 }
 
 type ProductBool = { data?: { result?: boolean } };
+type ProxyProduct = { data?: { result?: boolean; type?: string } };
 type EventResp = {
   products?: {
     vpn?: ProductBool;
-    proxy?: ProductBool;
+    proxy?: ProxyProduct;
     tor?: ProductBool;
     privacySettings?: ProductBool;
     incognito?: ProductBool;
     suspectScore?: { data?: { result?: number } };
-    // FP also sometimes nests under "ipInfo" with "v4.geolocation.country.code"
-    // but we only care about the security flags here.
+    ipInfo?: { data?: { v4?: { address?: string; geolocation?: { country?: { code?: string } } } } };
   };
 };
+
 
 const eventCache = new Map<string, { at: number; payload: unknown }>();
 const EVENT_TTL_MS = 5 * 60 * 1000;
