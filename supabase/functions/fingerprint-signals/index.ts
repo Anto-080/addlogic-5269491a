@@ -128,13 +128,14 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: `Fingerprint ${r.status}`, fallback: true }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
     const j = (await r.json()) as EventResp;
     const p = j.products ?? {};
     const proxyType = (p.proxy?.data?.type ?? null)?.toLowerCase() ?? null;
     const payload = {
       vpn: p.vpn?.data?.result === true,
       proxy: p.proxy?.data?.result === true,
-      proxyType, // e.g. "datacenter" | "hosting" | "residential" | "mobile" | "isp" | null
+      proxyType, // "datacenter" | "hosting" | "residential" | "mobile" | "isp" | null
       tor: p.tor?.data?.result === true,
       relay: p.privacySettings?.data?.result === true,
       incognito: p.incognito?.data?.result === true,
@@ -145,7 +146,6 @@ Deno.serve(async (req) => {
     };
     eventCache.set(requestId, { at: Date.now(), payload });
 
-    eventCache.set(requestId, { at: Date.now(), payload });
     return new Response(JSON.stringify(payload), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json", "x-cache": "MISS" },
