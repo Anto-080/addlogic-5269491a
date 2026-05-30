@@ -18,7 +18,7 @@
  * Fingerprint calls. The block decision always belongs to vpnDetection.ts.
  */
 
-import { fetchIpInfo } from "@/lib/vpnDetection";
+import { fetchTransportIpInfo } from "@/lib/vpnDetection";
 import { getVisitorId } from "@/lib/fingerprint";
 
 type ApprovedSession = { visitorId: string | null; ip: string | null; at: number };
@@ -69,7 +69,7 @@ export type DriftResult =
   | "no-session";
 
 /**
- * Lightweight drift check. Uses the IP-info lookup (Cloudflare metadata)
+ * Lightweight drift check. Uses the transport/IP metadata lookup only
  * and the cached Fingerprint visitorId — does NOT request a fresh
  * Fingerprint event. The caller escalates to a fresh event only when this
  * returns `device-changed` or `both-changed`.
@@ -78,7 +78,7 @@ export async function checkSessionDrift(userId: string | null): Promise<DriftRes
   const cached = getApprovedSession(userId);
   if (!cached) return "no-session";
 
-  const [info, visitorId] = await Promise.all([fetchIpInfo(), getVisitorId()]);
+  const [info, visitorId] = await Promise.all([fetchTransportIpInfo(), getVisitorId()]);
   const currentIp = info?.ip ?? null;
 
   const ipChanged = !!cached.ip && !!currentIp && cached.ip !== currentIp;
