@@ -120,15 +120,23 @@ const DATACENTER_PROXY_TYPES = new Set([
   "datacenter", "data_center", "data-center", "hosting", "server", "cloud",
 ]);
 
+const ALLOWED_PROXY_TYPES = new Set([
+  "residential", "mobile", "cellular", "isp",
+]);
+
 export function evaluateFingerprint(s: FpSignals): FpEvaluation {
   if (s.tor) return { kind: "block", reason: "FingerprintJS: Tor exit node" };
-  if (s.vpn) return { kind: "block", reason: "FingerprintJS: Public VPN detected" };
+  const t = (s.proxyType ?? "").toLowerCase();
   if (s.proxy) {
-    const t = (s.proxyType ?? "").toLowerCase();
     if (DATACENTER_PROXY_TYPES.has(t)) {
       return { kind: "block", reason: "FingerprintJS: Datacenter proxy detected" };
     }
+    if (ALLOWED_PROXY_TYPES.has(t)) {
+      return { kind: "allow" };
+    }
   }
+  if (s.relay) return { kind: "allow" };
+  if (s.vpn) return { kind: "block", reason: "FingerprintJS: Public VPN detected" };
   // residential/mobile/isp proxies, relay → allow
   return { kind: "allow" };
 }
@@ -249,6 +257,11 @@ export async function fetchIpVerdictWithFingerprintEvent(
 export async function fetchIpInfo(): Promise<IpInfo | null> {
   const v = await fetchIpVerdict();
   return v.info;
+}
+
+export async function fetchTransportIpInfo(): Promise<IpInfo | null> {
+  const { info } = await callCloudflare();
+  return info;
 }
 
 export function clearIpVerdictCache() {
