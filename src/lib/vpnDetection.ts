@@ -122,13 +122,14 @@ const DATACENTER_PROXY_TYPES = new Set([
 
 export function evaluateFingerprint(s: FpSignals): FpEvaluation {
   if (s.tor) return { kind: "block", reason: "FingerprintJS: Tor exit node" };
+  if (s.vpn) return { kind: "block", reason: "FingerprintJS: Public VPN detected" };
   if (s.proxy) {
     const t = (s.proxyType ?? "").toLowerCase();
     if (DATACENTER_PROXY_TYPES.has(t)) {
       return { kind: "block", reason: "FingerprintJS: Datacenter proxy detected" };
     }
   }
-  // vpn=true alone, residential/mobile/isp proxies, relay → allow
+  // residential/mobile/isp proxies, relay → allow
   return { kind: "allow" };
 }
 

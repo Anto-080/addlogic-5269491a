@@ -1,62 +1,82 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { GeoConsentSlide } from "@/components/GeoConsentSlide";
-import { fetchIpInfo } from "@/lib/vpnDetection";
-import { getApprovedSession } from "@/lib/sessionWatcher";
+import {
+  checkSessionDrift,
+  clearApprovedSession,
+  getApprovedSession,
+} from "@/lib/sessionWatcher";
 import { useSettings } from "@/contexts/SettingsContext";
 
 /**
- * Single post-login chokepoint: forces every authenticated user through the
- * GeoConsentSlide entrance card before they reach any protected page. Choice
- * is remembered for the browser session so it doesn't re-prompt on every
- * navigation, but a refresh re-checks that the IP hasn't changed (catches a
- * VPN being toggled mid-session).
+ * Single post-login chokepoint. The entrance card (GeoConsentSlide) is the
+ * ONLY place a VPN/Fingerprint check can run:
+ *   - Precise GPS    → no Fingerprint call, no IP verdict, instant unlock.
+ *   - Approximate IP → Fingerprint Smart Signals decide; on block the user
+ *                      stays on the card with a "Re-check" button.
+ *
+ * After entry, a lightweight watcher runs ONLY for approximate-branch
+ * users: IP-only rotation is silently allowed (mobile carriers); a
+ * device-id change forces a fresh Fingerprint event + re-evaluation by
+ * reopening the entrance card.
  */
 export function PostLoginGate({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { setGpsPrecision } = useSettings();
   const [satisfied, setSatisfied] = useState<boolean | null>(null);
+  const enteredViaIpRef = useRef(false);
 
   useEffect(() => {
     if (!user) {
       setSatisfied(false);
       return;
     }
-    let cancelled = false;
     const key = `addlogic.gate.satisfied.${user.id}`;
     const stored = sessionStorage.getItem(key);
     if (!stored) {
       setSatisfied(false);
       return;
     }
-    // Re-validate using the approved-session watcher cache. An IP-only
-    // change is valid for residential/mobile users with rotating IPs.
-    fetchIpInfo().then((info) => {
-      if (cancelled) return;
-      try {
-        const parsed = JSON.parse(stored) as { ip?: string };
-        const approved = getApprovedSession(user.id);
-        const ipOnlyRotationAllowed = !!approved?.ip && !!info?.ip && approved.ip === info.ip;
-        if ((info?.ip && parsed.ip && info.ip === parsed.ip) || ipOnlyRotationAllowed) {
-          setSatisfied(true);
-        } else {
-          sessionStorage.removeItem(key);
-          setSatisfied(false);
-        }
-      } catch {
-        sessionStorage.removeItem(key);
-        setSatisfied(false);
-      }
-    });
-    return () => { cancelled = true; };
+    try {
+      const parsed = JSON.parse(stored) as { source?: "gps" | "ip" };
+      enteredViaIpRef.current = parsed.source === "ip";
+      setSatisfied(true);
+    } catch {
+      sessionStorage.removeItem(key);
+      setSatisfied(false);
+    }
   }, [user]);
 
-  const onSatisfied = async () => {
+  // Drift watcher — armed only for approximate-branch users. GPS users
+  // never get a Fingerprint call, ever.
+  useEffect(() => {
+    if (!user || !satisfied || !enteredViaIpRef.current) return;
+    const tick = async () => {
+      const drift = await checkSessionDrift(user.id);
+      if (drift === "device-changed" || drift === "both-changed") {
+        // Force the user back through the entrance card; they'll re-pick
+        // Approximate and Fingerprint will re-evaluate.
+        clearApprovedSession(user.id);
+        sessionStorage.removeItem(`addlogic.gate.satisfied.${user.id}`);
+        setSatisfied(false);
+      }
+      // "same" / "ip-changed" / "no-session" → no action.
+    };
+    const onFocus = () => { tick(); };
+    window.addEventListener("focus", onFocus);
+    const interval = window.setInterval(tick, 60_000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(interval);
+    };
+  }, [user, satisfied]);
+
+  const onSatisfied = (source: "gps" | "ip") => {
     if (!user) return;
-    const info = await fetchIpInfo();
+    enteredViaIpRef.current = source === "ip";
     sessionStorage.setItem(
       `addlogic.gate.satisfied.${user.id}`,
-      JSON.stringify({ ip: info?.ip ?? null, at: Date.now() })
+      JSON.stringify({ source, at: Date.now() }),
     );
     setSatisfied(true);
   };
@@ -75,9 +95,8 @@ export function PostLoginGate({ children }: { children: ReactNode }) {
       <GeoConsentSlide
         open={!satisfied}
         onSatisfied={(coords) => {
-          // Precise GPS branch implicitly turns on the GPS-precision setting.
           if (coords.source === "gps") setGpsPrecision(true);
-          onSatisfied();
+          onSatisfied(coords.source === "gps" ? "gps" : "ip");
         }}
       />
     </>

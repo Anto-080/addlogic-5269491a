@@ -44,10 +44,19 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
     if (!open) return;
     let cancelled = false;
     readGeolocationPermission().then((s) => { if (!cancelled) setPermission(s); });
-    getVisitorId().then((id) => { if (!cancelled) setFp(id); });
-    fetchIpInfo().then((info) => { if (!cancelled) setIpInfo(info); });
     return () => { cancelled = true; };
   }, [open]);
+
+  // Lazy-load the anti-fraud details (visitorId + IP info) ONLY when the
+  // user opens the details panel. No Fingerprint/IP call fires on mount,
+  // and no call fires at all if the user picks Precise GPS.
+  useEffect(() => {
+    if (!open || !detailsOpen) return;
+    let cancelled = false;
+    if (!fp) getVisitorId().then((id) => { if (!cancelled) setFp(id); });
+    if (!ipInfo) fetchIpInfo().then((info) => { if (!cancelled) setIpInfo(info); });
+    return () => { cancelled = true; };
+  }, [open, detailsOpen, fp, ipInfo]);
 
   const finalize = async (c: Coords, resolvedGpsCountry: string | null = gpsCountry) => {
     setCoords(c);
