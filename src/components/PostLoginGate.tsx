@@ -64,7 +64,7 @@ export function PostLoginGate({ children }: { children: ReactNode }) {
     };
     const onFocus = () => { tick(); };
     window.addEventListener("focus", onFocus);
-    const interval = window.setInterval(tick, 60_000);
+    const interval = window.setInterval(tick, 30_000);
     return () => {
       window.removeEventListener("focus", onFocus);
       window.clearInterval(interval);
