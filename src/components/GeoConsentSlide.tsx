@@ -11,7 +11,7 @@ import {
 import { persistTelemetry, snapshotDeviceProfile } from "@/lib/geolocation";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchIpInfo, reverseGeocodeCountry, verifyIpForApproximateLocation, type IpInfo } from "@/lib/vpnDetection";
+import { fetchTransportIpInfo, reverseGeocodeCountry, verifyIpForApproximateLocation, type IpInfo } from "@/lib/vpnDetection";
 import { setApprovedSession } from "@/lib/sessionWatcher";
 import { getVisitorId } from "@/lib/fingerprint";
 
@@ -54,7 +54,7 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
     if (!open || !detailsOpen) return;
     let cancelled = false;
     if (!fp) getVisitorId().then((id) => { if (!cancelled) setFp(id); });
-    if (!ipInfo) fetchIpInfo().then((info) => { if (!cancelled) setIpInfo(info); });
+    if (!ipInfo) fetchTransportIpInfo().then((info) => { if (!cancelled) setIpInfo(info); });
     return () => { cancelled = true; };
   }, [open, detailsOpen, fp, ipInfo]);
 
