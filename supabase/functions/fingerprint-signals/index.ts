@@ -117,8 +117,11 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const rulesetId = Deno.env.get("FINGERPRINT_RULESET_ID") ?? "rs_kd5z5fhUgyMT49";
+    const url = new URL(`${regionBase(region)}/events/${encodeURIComponent(requestId)}`);
+    if (rulesetId) url.searchParams.set("ruleset_id", rulesetId);
     const r = await fetch(
-      `${regionBase(region)}/events/${encodeURIComponent(requestId)}`,
+      url.toString(),
       { headers: { "Auth-API-Key": secretKey, Accept: "application/json" } },
     );
     if (!r.ok) {
