@@ -132,9 +132,10 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const j = (await r.json()) as EventResp;
+    const j = (await r.json()) as EventResp & { products?: { ruleset?: { data?: { result?: { action?: string; ruleName?: string } } } } };
     const p = j.products ?? {};
     const proxyType = (p.proxy?.data?.type ?? null)?.toLowerCase() ?? null;
+    const rulesetResult = (p as { ruleset?: { data?: { result?: { action?: string; ruleName?: string } } } }).ruleset?.data?.result ?? null;
     const payload = {
       vpn: p.vpn?.data?.result === true,
       proxy: p.proxy?.data?.result === true,
@@ -145,6 +146,8 @@ Deno.serve(async (req) => {
       suspectScore: p.suspectScore?.data?.result ?? null,
       ipFromFp: p.ipInfo?.data?.v4?.address ?? null,
       ipCountryFromFp: p.ipInfo?.data?.v4?.geolocation?.country?.code ?? null,
+      rulesetAction: rulesetResult?.action ?? null, // e.g. "block" | "allow" from your workspace ruleset
+      rulesetRuleName: rulesetResult?.ruleName ?? null,
       fallback: false as const,
     };
     eventCache.set(requestId, { at: Date.now(), payload });
