@@ -11,9 +11,9 @@ import {
 import { persistTelemetry, snapshotDeviceProfile } from "@/lib/geolocation";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTransportIpInfo, reverseGeocodeCountry, verifyIpForApproximateLocation, type IpInfo } from "@/lib/vpnDetection";
-import { setApprovedSession } from "@/lib/sessionWatcher";
+import { fetchTransportIpInfo, reverseGeocodeCountry, type IpInfo } from "@/lib/vpnDetection";
 import { getVisitorId } from "@/lib/fingerprint";
+
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
@@ -77,13 +77,10 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
         toast.error(e instanceof Error ? e.message : "Failed to record telemetry");
       }
     }
-    // Seed the session watcher so mid-session IP changes for mobile users
-    // don't re-trigger the VPN block card.
-    try {
-      const visitorId = fp ?? (await getVisitorId());
-      setApprovedSession(user?.id ?? null, { visitorId, ip: ipInfo?.ip ?? null });
-    } catch { /* ignore */ }
+    // The site-wide PostLoginGate already verified the FingerprintJS
+    // ruleset and seeded the session watcher.
     onSatisfied(c);
+
   };
 
 
@@ -113,12 +110,7 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
     setWorking(true);
     setIpBlock(null);
     try {
-      const verdict = await verifyIpForApproximateLocation();
-      if (!verdict.ok) {
-        setIpBlock({ reason: verdict.reason ?? "VPN/proxy detected" });
-        toast.error("VPN or proxy detected — please disable it to continue.");
-        return;
-      }
+      // VPN/ruleset verification already happened site-wide in PostLoginGate.
       const c = await requestIpGeolocation();
       if (c) {
         await finalize(c);
@@ -126,6 +118,7 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
       } else {
         toast.error("IP-based lookup failed");
       }
+
     } finally {
       setWorking(false);
     }
@@ -198,7 +191,7 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
               </div>
               <div className="flex items-start gap-2">
                 <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                <span className="text-muted-foreground">No contacts, no IMEI, no browsing history, no name.</span>
+                <span className="text-muted-foreground">No contacts, no IMEI, no previous browsing history, no name.</span>
               </div>
             </div>
           </CollapsibleContent>

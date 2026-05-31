@@ -1,23 +1,14 @@
 /**
- * VPN / proxy detection — FingerprintJS Pro Smart Signals + the workspace
- * ruleset (rs_kd5z5fhUgyMT49) are the ONLY block authority.
+ * VPN / proxy detection — FingerprintJS Pro + the workspace ruleset
+ * (rs_kd5z5fhUgyMT49) are the SOLE block authority.
  *
- * Hard rules — no exceptions:
- *  - Allow: residential, mobile, cellular, ISP proxies; Privacy Relay (iCloud)
- *  - Allow: a raw `vpn=true` signal that is NOT accompanied by an explicit
- *    datacenter/hosting/server/cloud proxy classification (Tiscali, mobile
- *    carriers, residential ISPs sometimes get falsely flagged by the VPN
- *    classifier alone)
- *  - Block: Tor exit nodes
- *  - Block: proxy with proxyType in {datacenter, hosting, server, cloud}
- *  - Block: explicit ruleset action === "block"
- *
- * No Cloudflare/Abstract/MaxMind/heuristic deny path. No confidence
- * thresholds. No client-side IP cache for blocked verdicts.
+ * No client-side heuristics. No vpn/tor/proxyType checks here. The
+ * ruleset configured in the FingerprintJS workspace decides; we only
+ * read `rulesetAction`. If the upstream is degraded we fail-open.
  */
 
-import { supabase } from "@/integrations/supabase/client";
 import { clearVisitorEventCache, getVisitorEvent } from "@/lib/fingerprint";
+import { supabase } from "@/integrations/supabase/client";
 
 export type IpInfo = {
   ip: string;
@@ -27,7 +18,7 @@ export type IpInfo = {
   org: string | null;
 };
 
-type FpSignals = {
+export type FpSignals = {
   vpn: boolean;
   proxy: boolean;
   proxyType?: string | null;
@@ -42,85 +33,72 @@ type FpSignals = {
   error?: string;
 };
 
-const DATACENTER_PROXY_TYPES = new Set([
-  "datacenter", "data_center", "data-center", "hosting", "server", "cloud",
-]);
-
-const ALLOWED_PROXY_TYPES = new Set([
-  "residential", "mobile", "cellular", "isp",
-]);
-
 export type FpEvaluation =
-  | { kind: "block"; reason: string }
+  | { kind: "block"; reason: string; ruleName: string | null }
   | { kind: "allow" };
 
+/**
+ * The ruleset is the only thing that can block. Period.
+ */
 export function evaluateFingerprint(s: FpSignals): FpEvaluation {
-  // Workspace ruleset is the canonical authority.
   if ((s.rulesetAction ?? "").toLowerCase() === "block") {
-    return { kind: "block", reason: `FingerprintJS ruleset: ${s.rulesetRuleName ?? "blocked"}` };
+    return {
+      kind: "block",
+      reason: s.rulesetRuleName
+        ? `Blocked by FingerprintJS ruleset: ${s.rulesetRuleName}`
+        : "Blocked by FingerprintJS ruleset",
+      ruleName: s.rulesetRuleName ?? null,
+    };
   }
-  if (s.tor) return { kind: "block", reason: "FingerprintJS: Tor exit node" };
-  const t = (s.proxyType ?? "").toLowerCase();
-  if (s.proxy && DATACENTER_PROXY_TYPES.has(t)) {
-    return { kind: "block", reason: "FingerprintJS: Datacenter/hosting proxy" };
-  }
-  // Residential / mobile / ISP proxies → allow.
-  // Privacy Relay → allow.
-  // `vpn=true` alone (with no datacenter proxy classification) → allow.
-  void ALLOWED_PROXY_TYPES;
   return { kind: "allow" };
 }
 
 async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded: string | null }> {
   try {
     const { requestId } = await getVisitorEvent();
-    if (!requestId) {
-      return { signals: null, degraded: "Fingerprint requestId unavailable" };
-    }
+    if (!requestId) return { signals: null, degraded: "Fingerprint requestId unavailable" };
     const { data, error } = await supabase.functions.invoke("fingerprint-signals", {
       method: "POST",
       body: { requestId },
     });
-    if (error || !data) {
-      return { signals: null, degraded: error?.message ?? "Fingerprint edge unreachable" };
-    }
+    if (error || !data) return { signals: null, degraded: error?.message ?? "Fingerprint edge unreachable" };
     const d = data as FpSignals;
-    if (d.fallback || d.error) {
-      return { signals: null, degraded: d.error ?? "Fingerprint unavailable" };
-    }
+    if (d.fallback || d.error) return { signals: null, degraded: d.error ?? "Fingerprint unavailable" };
     return { signals: d, degraded: null };
   } catch (e) {
     return { signals: null, degraded: e instanceof Error ? e.message : "network error" };
   }
 }
 
-/**
- * The ONLY entry point used by the UI to decide allow/block. Called from
- * GeoConsentSlide.tryIp() when the user clicks "Use approximate location".
- * On any Fingerprint/network failure we ALLOW — we never block a user
- * because of a degraded upstream.
- */
-export async function verifyIpForApproximateLocation(): Promise<{
+export type RulesetVerdict = {
   ok: boolean;
   reason?: string;
+  ruleName?: string | null;
   signals?: FpSignals | null;
-}> {
-  // Force a fresh event so a user who just disabled their VPN gets a clean
-  // re-check instead of a stale visitor result.
+};
+
+/**
+ * Site-wide entry check used by PostLoginGate. Forces a fresh Fingerprint
+ * event so a user who just disabled their VPN gets a clean re-check.
+ * Fail-open on degraded upstream (never punish for our outage).
+ */
+export async function verifyFingerprintRuleset(): Promise<RulesetVerdict> {
   clearVisitorEventCache();
   const fp = await callFingerprint();
-  if (!fp.signals) {
-    return { ok: true, signals: null }; // fail-open
-  }
+  if (!fp.signals) return { ok: true, signals: null };
   const ev = evaluateFingerprint(fp.signals);
-  if (ev.kind === "block") return { ok: false, reason: ev.reason, signals: fp.signals };
+  if (ev.kind === "block") {
+    return { ok: false, reason: ev.reason, ruleName: ev.ruleName, signals: fp.signals };
+  }
   return { ok: true, signals: fp.signals };
 }
 
+/** Back-compat alias — same behaviour, ruleset is the only decider. */
+export const verifyIpForApproximateLocation = verifyFingerprintRuleset;
+
 /**
  * Lightweight transport-only IP lookup used by the drift watcher and the
- * "anti-fraud details" disclosure in GeoConsentSlide. Uses ipwho.is (no
- * key, no rate limit on light traffic) and NEVER influences allow/block.
+ * "anti-fraud details" disclosure. NEVER influences allow/block.
  */
 export async function fetchTransportIpInfo(): Promise<IpInfo | null> {
   try {
@@ -140,10 +118,6 @@ export async function fetchTransportIpInfo(): Promise<IpInfo | null> {
   }
 }
 
-/**
- * Reverse geocode via keyless geocode.maps.co. Used only to display the
- * GPS country in telemetry; not part of the block decision.
- */
 export async function reverseGeocodeCountry(lat: number, lng: number): Promise<string | null> {
   try {
     const r = await fetch(
