@@ -1,14 +1,19 @@
 /**
- * VPN / proxy detection — FingerprintJS Pro Smart Signals is the sole
- * authority that can return `blocked`. Cloudflare lookups still run to
- * surface IP/ASN/country metadata for UI and telemetry, but a Cloudflare
- * "vpn_suspected" flag no longer blocks on its own. MaxMind and the local
- * datacenter ASN keyword blocklist have been removed from the
- * access-control path entirely.
+ * VPN / proxy detection — FingerprintJS Pro Smart Signals + the workspace
+ * ruleset (rs_kd5z5fhUgyMT49) are the ONLY block authority.
  *
- * Why: legacy IP heuristics produced sticky false-positives (a user who
- * briefly enabled a VPN stayed banned even after disabling it). The
- * Fingerprint Pro workspace rules are the user-controlled source of truth.
+ * Hard rules — no exceptions:
+ *  - Allow: residential, mobile, cellular, ISP proxies; Privacy Relay (iCloud)
+ *  - Allow: a raw `vpn=true` signal that is NOT accompanied by an explicit
+ *    datacenter/hosting/server/cloud proxy classification (Tiscali, mobile
+ *    carriers, residential ISPs sometimes get falsely flagged by the VPN
+ *    classifier alone)
+ *  - Block: Tor exit nodes
+ *  - Block: proxy with proxyType in {datacenter, hosting, server, cloud}
+ *  - Block: explicit ruleset action === "block"
+ *
+ * No Cloudflare/Abstract/MaxMind/heuristic deny path. No confidence
+ * thresholds. No client-side IP cache for blocked verdicts.
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -20,53 +25,7 @@ export type IpInfo = {
   country_name: string | null;
   asn: string | null;
   org: string | null;
-  vpn_suspected: boolean;
-  reason: string | null;
 };
-
-export type VerdictStatus = "ok" | "blocked" | "unverified";
-
-export type IpVerdict = {
-  status: VerdictStatus;
-  info: IpInfo | null;
-  unverifiedReason?: string;
-};
-
-
-
-type EdgePayload = Partial<IpInfo> & { error?: string; fallback?: boolean };
-
-const UNVERIFIED_CACHE_MS = 30_000;
-// `ok` results may be cached. `blocked` results are NEVER cached so that
-// a user who disables their VPN and hits "Re-check" gets a fresh lookup
-// instead of being stuck behind a stale ban.
-const CLIENT_TTL_MS = 60_000;
-
-
-async function callCloudflare(): Promise<{ info: IpInfo | null; degraded: string | null }> {
-  try {
-    const { data, error } = await supabase.functions.invoke("cloudflare-ip-check", { method: "GET" });
-    if (error || !data) {
-      return { info: null, degraded: error?.message ?? "edge function unreachable" };
-    }
-    const d = data as EdgePayload;
-    if (d.fallback || d.error) {
-      return { info: null, degraded: d.error ?? "cloudflare unavailable" };
-    }
-    const info: IpInfo = {
-      ip: d.ip ?? "",
-      country_code: d.country_code ?? null,
-      country_name: d.country_name ?? null,
-      asn: d.asn ?? null,
-      org: d.org ?? null,
-      vpn_suspected: !!d.vpn_suspected,
-      reason: d.reason ?? null,
-    };
-    return { info, degraded: null };
-  } catch (e) {
-    return { info: null, degraded: e instanceof Error ? e.message : "network error" };
-  }
-}
 
 type FpSignals = {
   vpn: boolean;
@@ -76,45 +35,12 @@ type FpSignals = {
   relay: boolean;
   incognito: boolean;
   ipFromFp?: string | null;
+  ipCountryFromFp?: string | null;
+  rulesetAction?: string | null;
+  rulesetRuleName?: string | null;
   fallback?: boolean;
   error?: string;
 };
-
-
-async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded: string | null }> {
-  try {
-    const { requestId } = await getVisitorEvent();
-    if (!requestId) {
-      return { signals: null, degraded: "fingerprint requestId unavailable" };
-    }
-    const { data, error } = await supabase.functions.invoke("fingerprint-signals", {
-      method: "POST",
-      body: { requestId },
-    });
-    if (error || !data) {
-      return { signals: null, degraded: error?.message ?? "fingerprint edge unreachable" };
-    }
-    const d = data as FpSignals;
-    if (d.fallback || d.error) {
-      return { signals: null, degraded: d.error ?? "fingerprint unavailable" };
-    }
-    return { signals: d, degraded: null };
-  } catch (e) {
-    return { signals: null, degraded: e instanceof Error ? e.message : "network error" };
-  }
-}
-
-/**
- * Block policy: only Tor exit nodes or Datacenter/Hosting-type proxies
- * trigger a block. `vpn=true` alone is NOT enough — FingerprintJS Pro's
- * VPN classifier produces false positives on real residential ISPs
- * (Tiscali, mobile carriers, etc.). Residential / mobile / ISP proxies
- * and privacy relays (iCloud Private Relay) are allowed.
- */
-type FpEvaluation =
-  | { kind: "block"; reason: string }
-  | { kind: "allow" }
-  | { kind: "unverified"; reason: string };
 
 const DATACENTER_PROXY_TYPES = new Set([
   "datacenter", "data_center", "data-center", "hosting", "server", "cloud",
@@ -124,181 +50,105 @@ const ALLOWED_PROXY_TYPES = new Set([
   "residential", "mobile", "cellular", "isp",
 ]);
 
+export type FpEvaluation =
+  | { kind: "block"; reason: string }
+  | { kind: "allow" };
+
 export function evaluateFingerprint(s: FpSignals): FpEvaluation {
+  // Workspace ruleset is the canonical authority.
+  if ((s.rulesetAction ?? "").toLowerCase() === "block") {
+    return { kind: "block", reason: `FingerprintJS ruleset: ${s.rulesetRuleName ?? "blocked"}` };
+  }
   if (s.tor) return { kind: "block", reason: "FingerprintJS: Tor exit node" };
   const t = (s.proxyType ?? "").toLowerCase();
-  if (s.proxy) {
-    if (DATACENTER_PROXY_TYPES.has(t)) {
-      return { kind: "block", reason: "FingerprintJS: Datacenter proxy detected" };
-    }
-    if (ALLOWED_PROXY_TYPES.has(t)) {
-      return { kind: "allow" };
-    }
+  if (s.proxy && DATACENTER_PROXY_TYPES.has(t)) {
+    return { kind: "block", reason: "FingerprintJS: Datacenter/hosting proxy" };
   }
-  if (s.relay) return { kind: "allow" };
-  if (s.vpn) return { kind: "block", reason: "FingerprintJS: Public VPN detected" };
-  // residential/mobile/isp proxies, relay → allow
+  // Residential / mobile / ISP proxies → allow.
+  // Privacy Relay → allow.
+  // `vpn=true` alone (with no datacenter proxy classification) → allow.
+  void ALLOWED_PROXY_TYPES;
   return { kind: "allow" };
 }
 
-
-function applyFpEvaluation(
-  fp: { signals: FpSignals | null; degraded: string | null },
-  cf: { info: IpInfo | null; degraded: string | null },
-): IpVerdict {
-  const baseInfo: IpInfo = cf.info ?? {
-    ip: "", country_code: null, country_name: null, asn: null, org: null,
-    vpn_suspected: false, reason: null,
-  };
-  if (!fp.signals) {
-    return cacheVerdict({
-      status: "unverified",
-      info: cf.info,
-      unverifiedReason: fp.degraded ?? "Fingerprint verification unavailable",
+async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded: string | null }> {
+  try {
+    const { requestId } = await getVisitorEvent();
+    if (!requestId) {
+      return { signals: null, degraded: "Fingerprint requestId unavailable" };
+    }
+    const { data, error } = await supabase.functions.invoke("fingerprint-signals", {
+      method: "POST",
+      body: { requestId },
     });
+    if (error || !data) {
+      return { signals: null, degraded: error?.message ?? "Fingerprint edge unreachable" };
+    }
+    const d = data as FpSignals;
+    if (d.fallback || d.error) {
+      return { signals: null, degraded: d.error ?? "Fingerprint unavailable" };
+    }
+    return { signals: d, degraded: null };
+  } catch (e) {
+    return { signals: null, degraded: e instanceof Error ? e.message : "network error" };
   }
-  const ev = evaluateFingerprint(fp.signals);
-  if (ev.kind === "block") {
-    return cacheVerdict({
-      status: "blocked",
-      info: { ...baseInfo, vpn_suspected: true, reason: ev.reason },
-    });
-  }
-  if (ev.kind === "unverified") {
-    return cacheVerdict({ status: "unverified", info: cf.info, unverifiedReason: ev.reason });
-  }
-  return cacheVerdict({ status: "ok", info: baseInfo });
-}
-
-
-let inflight: Promise<IpVerdict> | null = null;
-let cached: { at: number; verdict: IpVerdict } | null = null;
-
-function cacheVerdict(verdict: IpVerdict) {
-  // Never cache a `blocked` verdict — re-checks after disabling a VPN
-  // must always hit a fresh upstream lookup.
-  if (verdict.status !== "blocked") {
-    cached = { at: Date.now(), verdict };
-  } else {
-    cached = null;
-  }
-  inflight = null;
-  return verdict;
-}
-
-export async function fetchIpVerdict(force = false): Promise<IpVerdict> {
-  if (!force && cached) {
-    const ttl = cached.verdict.status === "unverified" ? UNVERIFIED_CACHE_MS : CLIENT_TTL_MS;
-    if (Date.now() - cached.at < ttl) return cached.verdict;
-  }
-  if (!force && inflight) return inflight;
-  if (force) clearVisitorEventCache();
-
-  inflight = (async () => {
-    const [cf, fp] = await Promise.all([callCloudflare(), callFingerprint()]);
-    return applyFpEvaluation(fp, cf);
-  })();
-
-  return inflight;
-}
-
-
-
-export async function fetchIpVerdictWithFingerprintEvent(
-  event?: { visitorId?: string | null; requestId?: string | null } | null,
-  force = false,
-): Promise<IpVerdict> {
-  if (!force && cached) {
-    const ttl = cached.verdict.status === "unverified" ? UNVERIFIED_CACHE_MS : CLIENT_TTL_MS;
-    if (Date.now() - cached.at < ttl) return cached.verdict;
-  }
-  if (!force && inflight) return inflight;
-  if (force) clearVisitorEventCache();
-
-  inflight = (async () => {
-    const cloudflarePromise = callCloudflare();
-    const requestId = event?.requestId?.trim();
-
-    const fp = requestId
-      ? await (async () => {
-          try {
-            const { data, error } = await supabase.functions.invoke("fingerprint-signals", {
-              method: "POST",
-              body: { requestId },
-            });
-            if (error || !data) {
-              return { signals: null, degraded: error?.message ?? "fingerprint edge unreachable" };
-            }
-            const d = data as FpSignals;
-            if (d.fallback || d.error) {
-              return { signals: null, degraded: d.error ?? "fingerprint unavailable" };
-            }
-            return { signals: d, degraded: null };
-          } catch (e) {
-            return { signals: null, degraded: e instanceof Error ? e.message : "network error" };
-          }
-        })()
-      : await callFingerprint();
-
-    const cf = await cloudflarePromise;
-    return applyFpEvaluation(fp, cf);
-
-  })();
-
-
-  return inflight;
 }
 
 /**
- * Backwards-compatible helper for callers that just want the IpInfo
- * (e.g. the geo consent slide showing the user their detected country/ASN).
- * This does NOT make access-control decisions — ConnectionGate owns that.
- */
-export async function fetchIpInfo(): Promise<IpInfo | null> {
-  const v = await fetchIpVerdict();
-  return v.info;
-}
-
-export async function fetchTransportIpInfo(): Promise<IpInfo | null> {
-  const { info } = await callCloudflare();
-  return info;
-}
-
-export function clearIpVerdictCache() {
-  cached = null;
-  inflight = null;
-  clearVisitorEventCache();
-}
-
-/**
- * IP-branch fraud check used by the post-login entrance card. Uses
- * FingerprintJS Pro Smart Signals as the only authority — MaxMind and the
- * local datacenter ASN blocklist have been removed so users can no longer
- * be stuck behind stale IP heuristics after disabling a VPN.
+ * The ONLY entry point used by the UI to decide allow/block. Called from
+ * GeoConsentSlide.tryIp() when the user clicks "Use approximate location".
+ * On any Fingerprint/network failure we ALLOW — we never block a user
+ * because of a degraded upstream.
  */
 export async function verifyIpForApproximateLocation(): Promise<{
   ok: boolean;
   reason?: string;
+  signals?: FpSignals | null;
 }> {
+  // Force a fresh event so a user who just disabled their VPN gets a clean
+  // re-check instead of a stale visitor result.
   clearVisitorEventCache();
   const fp = await callFingerprint();
-  if (fp.signals) {
-    const ev = evaluateFingerprint(fp.signals);
-    if (ev.kind === "block") return { ok: false, reason: ev.reason };
+  if (!fp.signals) {
+    return { ok: true, signals: null }; // fail-open
   }
-  return { ok: true };
+  const ev = evaluateFingerprint(fp.signals);
+  if (ev.kind === "block") return { ok: false, reason: ev.reason, signals: fp.signals };
+  return { ok: true, signals: fp.signals };
 }
 
+/**
+ * Lightweight transport-only IP lookup used by the drift watcher and the
+ * "anti-fraud details" disclosure in GeoConsentSlide. Uses ipwho.is (no
+ * key, no rate limit on light traffic) and NEVER influences allow/block.
+ */
+export async function fetchTransportIpInfo(): Promise<IpInfo | null> {
+  try {
+    const r = await fetch("https://ipwho.is/", { headers: { Accept: "application/json" } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (!j || j.success === false) return null;
+    return {
+      ip: String(j.ip ?? ""),
+      country_code: j.country_code ?? null,
+      country_name: j.country ?? null,
+      asn: j.connection?.asn != null ? String(j.connection.asn) : null,
+      org: j.connection?.isp ?? j.connection?.org ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /**
- * Reverse geocode using keyless geocode.maps.co (free tier). Returns ISO
- * country code, used to cross-check against the IP-derived country.
+ * Reverse geocode via keyless geocode.maps.co. Used only to display the
+ * GPS country in telemetry; not part of the block decision.
  */
 export async function reverseGeocodeCountry(lat: number, lng: number): Promise<string | null> {
   try {
     const r = await fetch(
       `https://geocode.maps.co/reverse?lat=${lat}&lon=${lng}&format=json`,
-      { headers: { Accept: "application/json" } }
+      { headers: { Accept: "application/json" } },
     );
     if (!r.ok) return null;
     const j = await r.json();
