@@ -1,48 +1,58 @@
 ## Goal
 
-The VPN/proxy block must only ever happen on the **Approximate (IP) location** branch of the entrance card. Picking **Precise GPS** must never call Fingerprint and never show the "VPN or proxy detected" card. Today the app-wide `ConnectionGate` runs first and triggers the block regardless of the user's choice.
+Rebuild the VPN/proxy gate from a clean baseline so the site only blocks on the Fingerprint ruleset after the user chooses approximate location, while precise GPS always passes without any Fingerprint call.
 
-## Root cause
+## Plan
 
-`src/App.tsx` wraps every protected route as `<ConnectionGate><PostLoginGate>…</PostLoginGate></ConnectionGate>`. `ConnectionGate` immediately fires a Fingerprint event + IP verdict on mount, so the block card can appear before the user ever sees the entrance card. That's why the screenshot keeps showing "VPN or proxy detected" even though the rule should only trigger from the Approximate branch.
+1. Remove legacy and unused runtime paths
 
-## Changes
+- Delete the old app-wide gate code that can still influence behavior (`ConnectionGate` and any leftover helper paths tied to it).
+- Remove unused legacy IP-intelligence/blocking paths from the active flow, including any stale Abstract/MaxMind/VPNGuard-style heuristics that can still shape a verdict.
+- Remove the global Fingerprint preload wrapper from `main.tsx` so the browser is not fingerprinted before the GeoConsent choice.
 
-1. **`src/App.tsx`** — remove `ConnectionGate` from `ProtectedRoute`. The only gate left is `PostLoginGate` → `GeoConsentSlide`. (We will keep `ConnectionGate.tsx` on disk for now but unused, so nothing else accidentally imports it.)
+2. Rebuild Fingerprint usage around the approximate-location button only
 
-2. **`src/components/GeoConsentSlide.tsx`** — make the entrance card the single decision point:
-   - Remove the eager `getVisitorId()` and `fetchIpInfo()` calls in the open effect (they currently warm up Fingerprint before the user clicks anything).
-   - `tryGps()` (Precise GPS) stays as today: **no Fingerprint call, no IP verdict**, finalize and unlock.
-   - `tryIp()` (Approximate) is the **only** path that calls Fingerprint:
-     - Force a fresh Fingerprint event (`clearVisitorEventCache()` then `getVisitorEvent()`).
-     - Evaluate with `evaluateFingerprint`: block only on Public VPN=true, Tor=true, or Proxy=true with `proxyType ∈ {datacenter, hosting, server, cloud}`. Residential / mobile / ISP proxies, Privacy Relay, and `vpn=false` → allow.
-     - On block: show the existing in-card red strip ("VPN/Proxy traffic detected…") and switch the IP button to "Re-check (after disabling VPN)" — exactly as already wired.
-     - On allow: finalize, seed `setApprovedSession({ visitorId, ip })`, unlock.
+- Keep the official Fingerprint Pro SDK, but load it lazily only when the user clicks the approximate-location button.
+- Update the backend function call so it fetches the Fingerprint event exactly from the clicked flow and supports your provided ruleset-driven event lookup.
+- Make Cloudflare metadata-only: IP, ASN, and country can be shown/logged, but Cloudflare must never decide allow/block.
 
-3. **`src/lib/vpnDetection.ts`** — keep `evaluateFingerprint` as-is (block list = Tor + datacenter/hosting/server/cloud proxy + explicit `vpn=true`). Update `verifyIpForApproximateLocation()` to include `vpn=true` in the block set so the Approximate branch enforces the rule the user asked for:
-   - Block: Public VPN OR Tor OR (Proxy with datacenter/hosting type).
-   - Allow: residential / mobile / ISP proxy, Privacy Relay alone, no signals.
-   - This function is only called from `tryIp()`, so GPS users still bypass it.
+3. Simplify the allow/block policy to explicit Fingerprint signals only
 
-4. **`src/components/PostLoginGate.tsx`** — no longer needs to call `fetchIpInfo()` to re-validate the satisfied flag (that call was effectively a stealth IP lookup). Replace with: if `sessionStorage` has the satisfied marker for this user, trust it for the session; if `getApprovedSession` has a cached `{visitorId, ip}` and the visitorId hasn't changed, keep trusting it. No Fingerprint call here — drift is handled by the session watcher *after* entry.
+- Remove confidence-style or heuristic deny logic from the client flow.
+- Make the block decision come only from the Fingerprint event/ruleset path.
+- Preserve your intended outcome: GPS branch always allows; approximate branch evaluates the Fingerprint result; after VPN is disabled the next re-check can pass immediately.
 
-5. **Session watcher (`src/lib/sessionWatcher.ts` + watcher loop)** — move the 60s + focus drift loop out of `ConnectionGate` (which we're removing from the tree) and into `PostLoginGate`, but only arm it for users who entered via the **Approximate** branch (i.e. only when `getApprovedSession` was seeded by `tryIp`). GPS users never get a watcher and never get a block card. Rules unchanged:
-   - IP same / IP-only changed → silent, no Fingerprint call.
-   - visitorId changed (or both changed) → fresh Fingerprint event + re-evaluate; on block, surface the same in-card block UI by reopening `GeoConsentSlide` in its blocked state.
+4. Rebuild the post-login watcher exactly around session drift
 
-6. **`src/pages/Dashboard.tsx`** — remove the second `GeoConsentSlide` instance (`geoSlideOpen`). There must be exactly one entrance card, owned by `PostLoginGate`.
+- Cache `{ visitorId/Device ID, ip }` after a successful approximate-location entry.
+- Run the watcher every 30s and on focus.
+- If only IP changes, silently refresh cache with no new Fingerprint event and no block.
+- If device changes, or both device and IP change, clear the approved session, reopen the gate, and force a fresh Fingerprint event on the next approximate-location choice.
 
-7. **`mem://index.md`** — update the Core rule to reflect: "VPN/Fingerprint check runs **only** on the Approximate branch of the entrance card. Precise GPS bypasses Fingerprint entirely and never triggers the block card."
+5. Deliver a deletion audit with the implementation
 
-## Out of scope
+- After the reset, provide a concrete list of the files/lines removed and what replaced them, so you can verify that the old logic is truly gone.
 
-- No backend / edge-function changes. The `fingerprint-signals` function already returns the granular `proxyType` we need.
-- No "mobile location spoofing" signal added (Fingerprint's current payload to this project doesn't expose a dedicated one; you confirmed: block only on explicit signals).
-- No UI restyle of the block card; only its placement and trigger conditions change.
+## Technical details
 
-## Verification
+- Likely touch points: `src/main.tsx`, `src/lib/fingerprint.ts`, `src/lib/vpnDetection.ts`, `src/components/GeoConsentSlide.tsx`, `src/components/PostLoginGate.tsx`, `src/lib/sessionWatcher.ts`, and the active backend function used for Fingerprint event lookup.
+- Current contradictions already found in code:
+  - `src/lib/vpnDetection.ts` still blocks on raw `vpn=true`.
+  - Fingerprint is still initialized globally in `src/main.tsx`.
+  - Legacy IP-intelligence functions still exist in the project and need to be removed from the active runtime path.
+- I will keep the runtime centered on one source of truth for blocking and remove any parallel deny logic.
 
-- Reload as a residential/mobile user → entrance card shows, GPS unlocks instantly, no Fingerprint network call in DevTools.
-- Reload behind a real VPN, pick Approximate → Fingerprint POST fires, block strip appears in the entrance card with the "Re-check" button. Disable VPN, click Re-check → unlocks.
-- Reload behind a residential proxy / Privacy Relay, pick Approximate → unlocks.
-- After entry, rotate the mobile IP → no block, no Fingerprint call. Switch to a real VPN mid-session → device changes → watcher re-evaluates and reopens the entrance card in blocked state.
+## Result
+
+After implementation, the flow will be:
+
+```text
+Login
+→ GeoConsentSlide opens
+  → GPS chosen and succeeds: allow immediately, no Fingerprint call
+  → Approximate chosen: create Fingerprint event, fetch ruleset result, allow or block
+→ After entry, watcher only monitors drift
+  → IP-only change: stay in
+  → device change or both: gate reopens and re-check happens
+[NO POST VPN DETECTION BLOCKING OF NON-VPN USERS]
+```

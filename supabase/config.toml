@@ -3,7 +3,7 @@ project_id = "qkzbevzmplhnwjuregsc"
 [functions.classify-interest]
 verify_jwt = false
 
-[functions.ip-intelligence]
+[functions.fingerprint-signals]
 verify_jwt = false
 
 [functions.promo-codes]
