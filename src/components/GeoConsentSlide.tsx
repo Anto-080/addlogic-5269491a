@@ -110,12 +110,7 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
     setWorking(true);
     setIpBlock(null);
     try {
-      const verdict = await verifyIpForApproximateLocation();
-      if (!verdict.ok) {
-        setIpBlock({ reason: verdict.reason ?? "VPN/proxy detected" });
-        toast.error("VPN or proxy detected — please disable it to continue.");
-        return;
-      }
+      // VPN/ruleset verification already happened site-wide in PostLoginGate.
       const c = await requestIpGeolocation();
       if (c) {
         await finalize(c);
@@ -123,6 +118,7 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
       } else {
         toast.error("IP-based lookup failed");
       }
+
     } finally {
       setWorking(false);
     }
