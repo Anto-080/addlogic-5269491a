@@ -191,7 +191,7 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
               </div>
               <div className="flex items-start gap-2">
                 <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                <span className="text-muted-foreground">No contacts, no IMEI, no browsing history, no name.</span>
+                <span className="text-muted-foreground">No contacts, no IMEI, no previous browsing history, no name.</span>
               </div>
             </div>
           </CollapsibleContent>
