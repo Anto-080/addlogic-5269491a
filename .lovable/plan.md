@@ -1,58 +1,78 @@
-## Goal
-
-Rebuild the VPN/proxy gate from a clean baseline so the site only blocks on the Fingerprint ruleset after the user chooses approximate location, while precise GPS always passes without any Fingerprint call.
-
 ## Plan
 
-1. Remove legacy and unused runtime paths
+### 1. FingerprintJS Pro via env vars + global context
 
-- Delete the old app-wide gate code that can still influence behavior (`ConnectionGate` and any leftover helper paths tied to it).
-- Remove unused legacy IP-intelligence/blocking paths from the active flow, including any stale Abstract/MaxMind/VPNGuard-style heuristics that can still shape a verdict.
-- Remove the global Fingerprint preload wrapper from `main.tsx` so the browser is not fingerprinted before the GeoConsent choice.
+**Package**
+- `@fingerprintjs/fingerprintjs-pro` is already installed. Keep it.
 
-2. Rebuild Fingerprint usage around the approximate-location button only
+**Env vars (build-time, Vite)**
+Two new env vars are required:
+- `VITE_FP_PUBLIC_KEY` — your Fingerprint Pro **public** browser key
+- `VITE_FP_ENDPOINT` — your Pro endpoint URL (e.g. `https://fp.add-logic.com` if you have a custom subdomain, or `https://eu.api.fpjs.io` for the default EU endpoint)
 
-- Keep the official Fingerprint Pro SDK, but load it lazily only when the user clicks the approximate-location button.
-- Update the backend function call so it fetches the Fingerprint event exactly from the clicked flow and supports your provided ruleset-driven event lookup.
-- Make Cloudflare metadata-only: IP, ASN, and country can be shown/logged, but Cloudflare must never decide allow/block.
+Because the project's `.env` is auto-managed by Lovable Cloud and cannot be edited, these must be added in **Workspace Settings → Build Secrets** (they need the `VITE_` prefix so Vite bundles them at build time). I'll instruct you exactly where to paste them once you approve.
 
-3. Simplify the allow/block policy to explicit Fingerprint signals only
+**New files**
+- `src/contexts/FingerprintContext.tsx` — `FingerprintProvider` + `useFingerprint()` hook.
+  - Reads `import.meta.env.VITE_FP_PUBLIC_KEY` and `import.meta.env.VITE_FP_ENDPOINT`.
+  - Calls `FingerprintJS.load({ apiKey, endpoint: [VITE_FP_ENDPOINT, FingerprintJS.defaultEndpoint] })` once on mount.
+  - Exposes `{ visitorId, requestId, loading, error, refresh() }` via context.
+  - `refresh()` forces a fresh `.get()` (used by PostLoginGate "Re-check" and the drift watcher when device changes).
 
-- Remove confidence-style or heuristic deny logic from the client flow.
-- Make the block decision come only from the Fingerprint event/ruleset path.
-- Preserve your intended outcome: GPS branch always allows; approximate branch evaluates the Fingerprint result; after VPN is disabled the next re-check can pass immediately.
+**Refactor**
+- `src/lib/fingerprint.ts` becomes a thin adapter over the new context (keeps `getVisitorId` / `getVisitorEvent` for the watcher and edge call) so the existing edge-function fetch of the public key is removed.
+- `src/App.tsx` wraps the tree in `<FingerprintProvider>` above `<PostLoginGate>`.
+- `supabase/functions/fingerprint-signals/index.ts` keeps its **POST** branch only (server-side Smart Signals lookup by `requestId` with the workspace ruleset). The GET config branch is removed because the public key now lives in env.
 
-4. Rebuild the post-login watcher exactly around session drift
+**Block logic** stays exactly as it is today: only `rulesetAction === "block"` from the workspace ruleset `rs_kd5z5fhUgyMT49` blocks. No local heuristics.
 
-- Cache `{ visitorId/Device ID, ip }` after a successful approximate-location entry.
-- Run the watcher every 30s and on focus.
-- If only IP changes, silently refresh cache with no new Fingerprint event and no block.
-- If device changes, or both device and IP change, clear the approved session, reopen the gate, and force a fresh Fingerprint event on the next approximate-location choice.
+### 2. Permanent phone-OTP link on Withdraw (Twilio)
 
-5. Deliver a deletion audit with the implementation
+**Approach**
+- Use the **Twilio connector** (via Lovable connector gateway) to send and verify OTP codes from an edge function. This is the cleanest path since the Twilio connector is already available in the workspace and avoids needing you to wire Twilio into the Supabase Auth dashboard separately.
+- The verified phone is attached **permanently** to the user via `supabase.auth.updateUser({ phone })` (and mirrored to `profiles.phone` for display).
 
-- After the reset, provide a concrete list of the files/lines removed and what replaced them, so you can verify that the old logic is truly gone.
+**Backend**
+- New edge function `phone-otp` with two actions:
+  - `start`: validates phone (E.164, zod), generates 6-digit code, stores `{user_id, phone, code_hash, expires_at, attempts}` in a new `phone_otp_challenges` table, sends SMS via Twilio gateway (`/Messages.json`).
+  - `verify`: checks code + expiry + attempts, on success writes `phone` to `auth.users` via service role + upserts `profiles.phone`, deletes the challenge.
+- New table `public.phone_otp_challenges` with RLS (users can only read their own), proper GRANTs, 10-minute expiry, max 5 attempts.
+- Twilio connector linked via `standard_connectors--connect` (you'll see the picker).
 
-## Technical details
+**Frontend**
+- New `src/components/PhoneOtpDialog.tsx`:
+  - Step 1: country code + phone input → calls `phone-otp` `start`.
+  - Step 2: 6-digit OTP input → calls `phone-otp` `verify`.
+  - Step 3 (success screen): shows masked phone + user ID + a "Log out" button.
+- `src/components/StablecoinWithdraw.tsx`:
+  - Reads `profiles.phone`. If absent → Withdraw button opens `PhoneOtpDialog`. After success, the actual withdrawal proceeds. If present → Withdraw runs directly (one-time setup, as requested).
 
-- Likely touch points: `src/main.tsx`, `src/lib/fingerprint.ts`, `src/lib/vpnDetection.ts`, `src/components/GeoConsentSlide.tsx`, `src/components/PostLoginGate.tsx`, `src/lib/sessionWatcher.ts`, and the active backend function used for Fingerprint event lookup.
-- Current contradictions already found in code:
-  - `src/lib/vpnDetection.ts` still blocks on raw `vpn=true`.
-  - Fingerprint is still initialized globally in `src/main.tsx`.
-  - Legacy IP-intelligence functions still exist in the project and need to be removed from the active runtime path.
-- I will keep the runtime centered on one source of truth for blocking and remove any parallel deny logic.
+### 3. Sidebar logout
 
-## Result
+- Add a "Log out" button at the bottom of `src/components/AppSidebar.tsx` (icon + label, collapses to icon-only in compact mode) that calls `signOut()` from `useAuth` and navigates to `/auth`.
 
-After implementation, the flow will be:
+### What I'll need from you after approval
+
+1. Add **build secrets** in Workspace Settings → Build Secrets:
+   - `VITE_FP_PUBLIC_KEY` = your Fingerprint Pro public browser key
+   - `VITE_FP_ENDPOINT` = your Fingerprint Pro endpoint (custom subdomain or `https://eu.api.fpjs.io`)
+2. Approve the Twilio connector link prompt when it appears.
+3. Make sure the Twilio number you use is **SMS-capable** for the destination countries, and enable **SMS Pumping Protection** + **Geo Permissions** in the Twilio console before going live.
+
+### Files touched
 
 ```text
-Login
-→ GeoConsentSlide opens
-  → GPS chosen and succeeds: allow immediately, no Fingerprint call
-  → Approximate chosen: create Fingerprint event, fetch ruleset result, allow or block
-→ After entry, watcher only monitors drift
-  → IP-only change: stay in
-  → device change or both: gate reopens and re-check happens
-[NO POST VPN DETECTION BLOCKING OF NON-VPN USERS]
+NEW   src/contexts/FingerprintContext.tsx
+NEW   src/components/PhoneOtpDialog.tsx
+NEW   supabase/functions/phone-otp/index.ts
+NEW   supabase/migrations/<ts>_phone_otp.sql        (phone_otp_challenges + profiles.phone)
+EDIT  src/lib/fingerprint.ts                        (use context, drop edge-key fetch)
+EDIT  src/App.tsx                                   (wrap in FingerprintProvider)
+EDIT  src/components/AppSidebar.tsx                 (logout button)
+EDIT  src/components/StablecoinWithdraw.tsx         (gate behind phone link)
+EDIT  src/components/PostLoginGate.tsx              (use useFingerprint().refresh)
+EDIT  src/lib/sessionWatcher.ts                     (read visitorId from context cache)
+EDIT  supabase/functions/fingerprint-signals/index.ts  (POST-only, drop GET config)
 ```
+
+No changes to the existing block ruleset, GeoConsentSlide UX, or any other unrelated screen.
