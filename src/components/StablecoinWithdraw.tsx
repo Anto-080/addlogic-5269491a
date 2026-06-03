@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Coins, Smartphone, Wallet } from "lucide-react";
+import { Coins, Smartphone, Wallet, Phone, ShieldCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { PhoneOtpDialog } from "@/components/PhoneOtpDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 type Provider = {
   id: string;
@@ -20,8 +23,12 @@ const PROVIDERS: Provider[] = [
 ];
 
 export function StablecoinWithdraw({ available }: { available: number }) {
+  const { user } = useAuth();
   const [provider, setProvider] = useState<string>("minipay");
   const [amount, setAmount] = useState<string>("");
+  const [linkedPhone, setLinkedPhone] = useState<string | null>(null);
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(true);
 
   const selected = PROVIDERS.find((p) => p.id === provider)!;
   const numericAmount = parseFloat(amount) || 0;
@@ -29,7 +36,23 @@ export function StablecoinWithdraw({ available }: { available: number }) {
   const fee = numericAmount * feePct;
   const net = Math.max(0, numericAmount - fee);
 
-  const submit = () => {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user) { setCheckingPhone(false); return; }
+      const { data } = await supabase
+        .from("profiles")
+        .select("phone")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      setLinkedPhone((data?.phone as string | null) ?? user.phone ?? null);
+      setCheckingPhone(false);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const doWithdraw = () => {
     if (numericAmount <= 0 || numericAmount > available) {
       toast({ title: "Invalid amount", description: `Enter an amount between $0.01 and $${available.toFixed(2)}.`, variant: "destructive" });
       return;
@@ -39,6 +62,14 @@ export function StablecoinWithdraw({ available }: { available: number }) {
       description: `${net.toFixed(2)} ${selected.coin} → ${selected.name}. Settlement typically completes within 2 minutes.`,
     });
     setAmount("");
+  };
+
+  const onWithdrawClick = () => {
+    if (!linkedPhone) {
+      setOtpOpen(true);
+      return;
+    }
+    doWithdraw();
   };
 
   return (
@@ -104,10 +135,25 @@ export function StablecoinWithdraw({ available }: { available: number }) {
           <div className="flex justify-between font-semibold pt-1 border-t border-border/40"><span className="text-foreground">You receive</span><span className="text-money">${net.toFixed(2)} {selected.coin}</span></div>
         </div>
 
-        <Button onClick={submit} className="w-full gap-2 bg-money hover:bg-money/90 text-white">
-          <selected.icon className="h-4 w-4" />
-          Send to {selected.name}
+        {!checkingPhone && (
+          <div className={`flex items-center gap-2 text-[11px] ${linkedPhone ? "text-money" : "text-muted-foreground"}`}>
+            {linkedPhone ? <ShieldCheck className="h-3.5 w-3.5" /> : <Phone className="h-3.5 w-3.5" />}
+            {linkedPhone
+              ? <>Phone linked: <span className="text-foreground font-medium">{linkedPhone}</span></>
+              : <>Phone verification required before first withdrawal.</>}
+          </div>
+        )}
+
+        <Button onClick={onWithdrawClick} disabled={checkingPhone} className="w-full gap-2 bg-money hover:bg-money/90 text-white">
+          {linkedPhone ? <selected.icon className="h-4 w-4" /> : <Phone className="h-4 w-4" />}
+          {linkedPhone ? `Send to ${selected.name}` : "Link phone to withdraw"}
         </Button>
+
+        <PhoneOtpDialog
+          open={otpOpen}
+          onOpenChange={setOtpOpen}
+          onVerified={(p) => setLinkedPhone(p)}
+        />
       </CardContent>
     </Card>
   );
