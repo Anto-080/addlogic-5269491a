@@ -1,61 +1,35 @@
 /**
- * FingerprintJS Pro wrapper.
+ * FingerprintJS Pro client — initialized from build-time env vars.
  *
- * Loads the Pro agent with a publishable key fetched once from the
- * `fingerprint-signals` edge function (so the bundle never carries the
- * secret server key). Exposes:
- *   - getVisitorId()    → stable visitorId (back-compat with OSS API)
- *   - getVisitorEvent() → { visitorId, requestId } — `requestId` is what
- *                         the server uses to look up Smart Signals
- *                         (vpn/proxy/tor/relay/incognito).
+ *   VITE_FP_PUBLIC_KEY  — browser public key (workspace publishable)
+ *   VITE_FP_ENDPOINT    — Pro endpoint (custom subdomain or eg https://eu.api.fpjs.io)
  *
- * Used to:
- *  - Tag every research session with a stable visitorId
- *  - Cross-check the same browser doesn't repeatedly create accounts
- *  - Be persisted on `device_telemetry.fingerprint` and `tier_progress.fingerprint`
- *  - Drive the VPN/proxy hard block in vpnDetection.ts
+ * Block decisions are made server-side via the `fingerprint-signals` edge
+ * function using the workspace ruleset (rs_kd5z5fhUgyMT49). This module
+ * only loads the agent and exposes visitorId / requestId.
  */
 
-import {
-  load,
-  type Agent,
-} from "@fingerprintjs/fingerprintjs-pro";
-import { supabase } from "@/integrations/supabase/client";
+import { load, type Agent, defaultEndpoint } from "@fingerprintjs/fingerprintjs-pro";
 
-type ConfigResp = { publicKey?: string; region?: string; configured?: boolean };
+const PUBLIC_KEY = import.meta.env.VITE_FP_PUBLIC_KEY as string | undefined;
+const ENDPOINT = import.meta.env.VITE_FP_ENDPOINT as string | undefined;
 
-let configPromise: Promise<ConfigResp | null> | null = null;
 let agentPromise: Promise<Agent | null> | null = null;
 
-async function getConfig(): Promise<ConfigResp | null> {
-  if (configPromise) return configPromise;
-  configPromise = (async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("fingerprint-signals", {
-        method: "GET",
-      });
-      if (error || !data) return null;
-      const c = data as ConfigResp;
-      if (!c.publicKey) return null;
-      return c;
-    } catch {
-      return null;
-    }
-  })();
-  return configPromise;
-}
-
-async function getAgent(): Promise<Agent | null> {
+function getAgent(): Promise<Agent | null> {
   if (agentPromise) return agentPromise;
   agentPromise = (async () => {
-    const cfg = await getConfig();
-    if (!cfg?.publicKey) return null;
+    if (!PUBLIC_KEY) {
+      console.warn("[fingerprint] VITE_FP_PUBLIC_KEY missing — Fingerprint disabled, all sessions allowed");
+      return null;
+    }
     try {
       return await load({
-        apiKey: cfg.publicKey,
-        region: (cfg.region ?? "eu") as "eu" | "us" | "ap",
+        apiKey: PUBLIC_KEY,
+        endpoint: ENDPOINT ? [ENDPOINT, defaultEndpoint] : undefined,
       });
-    } catch {
+    } catch (e) {
+      console.error("[fingerprint] load failed", e);
       return null;
     }
   })();
@@ -70,11 +44,8 @@ export function getVisitorEvent(): Promise<{ visitorId: string | null; requestId
     try {
       const agent = await getAgent();
       if (!agent) return { visitorId: null, requestId: null };
-      const result = await agent.get();
-      return {
-        visitorId: result.visitorId ?? null,
-        requestId: result.requestId ?? null,
-      };
+      const r = await agent.get();
+      return { visitorId: r.visitorId ?? null, requestId: r.requestId ?? null };
     } catch {
       return { visitorId: null, requestId: null };
     }
@@ -90,4 +61,8 @@ export async function getVisitorId(): Promise<string | null> {
 /** Force a fresh event (e.g. after the user disables their VPN and retries). */
 export function clearVisitorEventCache() {
   visitorEventPromise = null;
+}
+
+export function isFingerprintConfigured(): boolean {
+  return !!PUBLIC_KEY;
 }
