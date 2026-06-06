@@ -59,8 +59,8 @@ export default function Investments() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
-            { Icon: TrendingUp, title: "Stablecoin Staking", desc: "Deposit earnings into staking pools. Earn passive yield while stabilizing the platform's transaction flow. Delta-neutral strategies minimize risk." },
-            { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by researcher earnings and private investors. Access institutional-grade passive strategies." },
+            { Icon: TrendingUp, title: "Stablecoin Staking", desc: "Deposit earnings into staking pools. Earn passive yield while stabilizing the platform's transaction flow." },
+            { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by researcher earnings and private investors. Access institutional-grade passive strategies. Delta-neutral strategies minimize risk." },
             { Icon: Shield, title: "Sector-Based Investing", desc: "Invest in companies matching your research tier. Top-tier researchers can back breakthroughs in their area of expertise." },
           ].map(({ Icon, title, desc }) => (
             <Card key={title} className="bg-card border-border/50 opacity-60">
