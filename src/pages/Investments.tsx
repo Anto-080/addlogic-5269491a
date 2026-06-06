@@ -60,7 +60,7 @@ export default function Investments() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
             { Icon: TrendingUp, title: "Stablecoin Staking", desc: "Deposit earnings into staking pools. Earn passive yield while stabilizing the platform's transaction flow." },
-            { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by Researchers' earnings and private investors liquidity. Access institutional-grade passive yealds, Delta-neutral strategies minimize risk. \u2206" },
+            { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by Researchers' earnings and private investors liquidity. Access institutional-grade passive yealds, \u2206Delta-Neutral strategies minimize risk." },
             { Icon: Shield, title: "Sector-Based Investing", desc: "Invest in companies matching your research tier. Top-tier researchers can back breakthroughs in their area of expertise." },
           ].map(({ Icon, title, desc }) => (
             <Card key={title} className="bg-card border-border/50 opacity-60">
@@ -81,8 +81,10 @@ export default function Investments() {
             <img
               src={fluxesMountain}
               alt="Fluxes flowing against the current toward the mountain"
-              className="w-full rounded-lg object-cover"
+              className="w-full rounded-lg object-cover cursor-pointer"
               loading="lazy"
+              onDoubleClick={() => window.open("https://mountainprotocol.com/usdm/", "_blank", "noopener,noreferrer")}
+              title="Double-click to visit Mountain Protocol"
             />
           </CardContent>
         </Card>
