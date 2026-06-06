@@ -71,7 +71,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Secret Service Typewriter', 'Courier New', Courier, monospace;
   }
 }
 
