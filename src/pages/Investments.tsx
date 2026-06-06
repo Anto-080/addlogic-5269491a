@@ -81,8 +81,10 @@ export default function Investments() {
             <img
               src={fluxesMountain}
               alt="Fluxes flowing against the current toward the mountain"
-              className="w-full rounded-lg object-cover"
+              className="w-full rounded-lg object-cover cursor-pointer"
               loading="lazy"
+              onDoubleClick={() => window.open("https://mountainprotocol.com/usdm/", "_blank", "noopener,noreferrer")}
+              title="Double-click to visit Mountain Protocol"
             />
           </CardContent>
         </Card>
