@@ -1,6 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 
 @layer base {
   html {
@@ -74,8 +77,19 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Secret Service Typewriter', 'Courier New', Courier, monospace;
+    font-family: 'Greater Theory', 'Oswald', 'Impact', 'Arial Narrow', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
   }
+
+  /* Preserve typewriter font on specific surfaces (location card + vault page) */
+  [data-keep-font="typewriter"],
+  [data-keep-font="typewriter"] * {
+    font-family: 'Secret Service Typewriter', 'Courier New', Courier, monospace !important;
+    font-weight: 400 !important;
+    letter-spacing: normal !important;
+  }
+
 }
 
 @layer utilities {
