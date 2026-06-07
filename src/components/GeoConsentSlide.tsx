@@ -127,7 +127,7 @@ export function GeoConsentSlide({ open, onSatisfied }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur flex items-center justify-center p-4 overflow-y-auto">
+    <div data-keep-font="typewriter" className="fixed inset-0 z-[60] bg-background/95 backdrop-blur flex items-center justify-center p-4 overflow-y-auto">
       <div className="max-w-md w-full bg-card border border-[#9A7246]/50 rounded-2xl p-6 space-y-4 shadow-2xl my-8">
         <div className="flex justify-center">
           <div className="h-14 w-14 rounded-full bg-[#9A7246]/15 flex items-center justify-center">
