@@ -3,27 +3,30 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    font-size: 106.25%; /* 17px base — slight readability bump */
+  }
   :root {
     --background: 150 100% 3%;
-    --foreground: 140 20% 90%;
+    --foreground: 140 20% 96%;
 
     --card: 150 40% 6%;
-    --card-foreground: 140 20% 90%;
+    --card-foreground: 140 20% 96%;
 
     --popover: 150 40% 6%;
-    --popover-foreground: 140 20% 90%;
+    --popover-foreground: 140 20% 96%;
 
     --primary: 38 92% 50%;
     --primary-foreground: 150 100% 3%;
 
     --secondary: 150 20% 12%;
-    --secondary-foreground: 140 20% 85%;
+    --secondary-foreground: 140 20% 92%;
 
     --muted: 150 15% 10%;
-    --muted-foreground: 150 10% 55%;
+    --muted-foreground: 150 10% 70%;
 
     --accent: 150 20% 12%;
-    --accent-foreground: 140 20% 90%;
+    --accent-foreground: 140 20% 96%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 140 20% 95%;
@@ -44,11 +47,11 @@
     --radius: 0.75rem;
 
     --sidebar-background: 150 40% 4%;
-    --sidebar-foreground: 140 20% 85%;
+    --sidebar-foreground: 140 20% 92%;
     --sidebar-primary: 38 92% 50%;
     --sidebar-primary-foreground: 150 100% 3%;
     --sidebar-accent: 150 20% 8%;
-    --sidebar-accent-foreground: 140 20% 90%;
+    --sidebar-accent-foreground: 140 20% 96%;
     --sidebar-border: 150 15% 12%;
     --sidebar-ring: 38 92% 50%;
 
