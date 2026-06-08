@@ -234,7 +234,7 @@ export default function Earnings() {
           </CardContent>
         </Card>
 
-        <ConnectWallets />
+        
 
         <StablecoinWithdraw available={earningsAllTime} />
       </div>
