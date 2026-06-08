@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS minipay_address text, ADD COLUMN IF NOT EXISTS google_wallet_email text;

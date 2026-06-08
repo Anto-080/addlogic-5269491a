@@ -340,7 +340,9 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          google_wallet_email: string | null
           id: string
+          minipay_address: string | null
           phone: string | null
           preferences: Json
           updated_at: string
@@ -350,7 +352,9 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          google_wallet_email?: string | null
           id?: string
+          minipay_address?: string | null
           phone?: string | null
           preferences?: Json
           updated_at?: string
@@ -360,7 +364,9 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          google_wallet_email?: string | null
           id?: string
+          minipay_address?: string | null
           phone?: string | null
           preferences?: Json
           updated_at?: string
