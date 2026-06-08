@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recha
 import { ArrowUpRight, Wallet, ShieldCheck, TrendingUp } from "lucide-react";
 import { RoundVault } from "@/components/icons/RoundVault";
 import { StablecoinWithdraw } from "@/components/StablecoinWithdraw";
-import { ConnectWallets } from "@/components/ConnectWallets";
+
 import { TierIcon } from "@/components/TierIcon";
 import { NavLink } from "react-router-dom";
 
