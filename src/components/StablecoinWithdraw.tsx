@@ -156,13 +156,13 @@ export function StablecoinWithdraw({ available }: { available: number }) {
               <button
                 key={p.id}
                 onClick={() => setProvider(p.id)}
-                className={`rounded-lg border text-left transition-colors overflow-visible ${
+                className={`rounded-lg border text-left transition-colors overflow-hidden ${
                   isSelected
                     ? "border-[#9A7246] bg-[#9A7246]/10"
                     : "border-border/50 bg-secondary/30 hover:bg-secondary/50"
                 }`}
               >
-                <div className="p-3">
+                <div className="p-3 pb-2">
                   <div className="flex items-center gap-2 mb-1">
                     <p.icon className="h-5 w-5 text-money" />
                     <p className="text-xs font-semibold text-foreground">{p.name}</p>
@@ -171,30 +171,32 @@ export function StablecoinWithdraw({ available }: { available: number }) {
                   <p className="text-[10px] text-muted-foreground leading-tight">{p.desc}</p>
                   <p className="text-[10px] text-foreground/70 mt-2">Fee {p.fee} · {p.coin}</p>
                 </div>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); openLink(p.id); }}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); openLink(p.id); } }}
-                  className="relative -mx-px -mb-3 px-3 py-1 cursor-pointer flex items-center justify-between gap-2 transition-colors"
-                  style={
-                    dest
-                      ? { background: "hsl(140 70% 30%)", borderTop: "1px solid hsl(140 80% 45%)", borderBottom: "1px solid hsl(140 80% 45%)" }
-                      : { background: "hsl(0 75% 40%)", borderTop: "1px solid hsl(0 85% 55%)", borderBottom: "1px solid hsl(0 85% 55%)" }
-                  }
-                >
-                  <span
-                    className="text-[11px] font-bold uppercase tracking-wide truncate"
-                    style={{ color: dest ? "#F5C518" : "#000" }}
+                <div className="px-2 pb-2">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); openLink(p.id); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); openLink(p.id); } }}
+                    className="cursor-pointer flex items-center justify-between gap-2 rounded-md px-2 py-0.5 backdrop-blur-md transition-colors"
+                    style={
+                      dest
+                        ? { background: "hsl(140 60% 32% / 0.55)", boxShadow: "inset 0 0 0 1px hsl(140 60% 50% / 0.35)" }
+                        : { background: "hsl(0 65% 42% / 0.55)", boxShadow: "inset 0 0 0 1px hsl(0 70% 55% / 0.35)" }
+                    }
                   >
-                    {dest ? <>Linked: <span className="font-mono normal-case tracking-normal">{dest}</span></> : "Not linked yet"}
-                  </span>
-                  <span
-                    className="text-[11px] font-bold uppercase tracking-wide shrink-0"
-                    style={{ color: dest ? "#F5C518" : "#000" }}
-                  >
-                    {dest ? "Edit" : "Link"}
-                  </span>
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wide truncate"
+                      style={{ color: dest ? "#F5C518" : "#0a0a0a" }}
+                    >
+                      {dest ? <>Linked: <span className="font-mono normal-case tracking-normal">{dest}</span></> : "Not linked yet"}
+                    </span>
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wide shrink-0"
+                      style={{ color: dest ? "#F5C518" : "#0a0a0a" }}
+                    >
+                      {dest ? "Edit" : "Link"}
+                    </span>
+                  </div>
                 </div>
               </button>
             );
