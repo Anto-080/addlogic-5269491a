@@ -156,29 +156,31 @@ export function StablecoinWithdraw({ available }: { available: number }) {
               <button
                 key={p.id}
                 onClick={() => setProvider(p.id)}
-                className={`p-3 rounded-lg border text-left transition-colors ${
+                className={`rounded-lg border text-left transition-colors overflow-visible ${
                   isSelected
                     ? "border-[#9A7246] bg-[#9A7246]/10"
                     : "border-border/50 bg-secondary/30 hover:bg-secondary/50"
                 }`}
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <p.icon className="h-5 w-5 text-money" />
-                  <p className="text-xs font-semibold text-foreground">{p.name}</p>
-                  {dest && <CheckCircle2 className="h-3.5 w-3.5 text-money ml-auto" />}
+                <div className="p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p.icon className="h-5 w-5 text-money" />
+                    <p className="text-xs font-semibold text-foreground">{p.name}</p>
+                    {dest && <CheckCircle2 className="h-3.5 w-3.5 text-money ml-auto" />}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{p.desc}</p>
+                  <p className="text-[10px] text-foreground/70 mt-2">Fee {p.fee} · {p.coin}</p>
                 </div>
-                <p className="text-[10px] text-muted-foreground leading-tight">{p.desc}</p>
-                <p className="text-[10px] text-foreground/70 mt-2">Fee {p.fee} · {p.coin}</p>
                 <div
                   role="button"
                   tabIndex={0}
                   onClick={(e) => { e.stopPropagation(); openLink(p.id); }}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); openLink(p.id); } }}
-                  className="mt-3 w-full rounded-full px-3 py-2 cursor-pointer flex items-center justify-between gap-2 transition-colors shadow-inner"
+                  className="relative -mx-px -mb-3 px-3 py-1 cursor-pointer flex items-center justify-between gap-2 transition-colors"
                   style={
                     dest
-                      ? { background: "linear-gradient(90deg, hsl(140 70% 28%), hsl(140 75% 38%))", border: "1px solid hsl(140 80% 45%)" }
-                      : { background: "linear-gradient(90deg, hsl(0 75% 38%), hsl(0 80% 48%))", border: "1px solid hsl(0 85% 55%)" }
+                      ? { background: "hsl(140 70% 30%)", borderTop: "1px solid hsl(140 80% 45%)", borderBottom: "1px solid hsl(140 80% 45%)" }
+                      : { background: "hsl(0 75% 40%)", borderTop: "1px solid hsl(0 85% 55%)", borderBottom: "1px solid hsl(0 85% 55%)" }
                   }
                 >
                   <span
