@@ -169,16 +169,27 @@ export function StablecoinWithdraw({ available }: { available: number }) {
                 </div>
                 <p className="text-[10px] text-muted-foreground leading-tight">{p.desc}</p>
                 <p className="text-[10px] text-foreground/70 mt-2">Fee {p.fee} · {p.coin}</p>
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {dest ? <>Linked: <span className="text-foreground font-mono">{dest}</span></> : "Not linked yet"}
-                  </p>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); openLink(p.id); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); openLink(p.id); } }}
+                  className="mt-3 w-full rounded-full px-3 py-2 cursor-pointer flex items-center justify-between gap-2 transition-colors shadow-inner"
+                  style={
+                    dest
+                      ? { background: "linear-gradient(90deg, hsl(140 70% 28%), hsl(140 75% 38%))", border: "1px solid hsl(140 80% 45%)" }
+                      : { background: "linear-gradient(90deg, hsl(0 75% 38%), hsl(0 80% 48%))", border: "1px solid hsl(0 85% 55%)" }
+                  }
+                >
                   <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => { e.stopPropagation(); openLink(p.id); }}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); openLink(p.id); } }}
-                    className="text-[10px] text-money hover:underline shrink-0 cursor-pointer"
+                    className="text-[11px] font-bold uppercase tracking-wide truncate"
+                    style={{ color: dest ? "#F5C518" : "#000" }}
+                  >
+                    {dest ? <>Linked: <span className="font-mono normal-case tracking-normal">{dest}</span></> : "Not linked yet"}
+                  </span>
+                  <span
+                    className="text-[11px] font-bold uppercase tracking-wide shrink-0"
+                    style={{ color: dest ? "#F5C518" : "#000" }}
                   >
                     {dest ? "Edit" : "Link"}
                   </span>
