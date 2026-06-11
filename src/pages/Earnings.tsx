@@ -44,7 +44,7 @@ export default function Earnings() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-6 max-w-5xl mx-auto font-typewriter">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <RoundVault size={26} style={{ color: VAULT_GOLD }} /> Vault &amp; Earnings
