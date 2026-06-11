@@ -17,7 +17,7 @@ export default function VaultDiff() {
   const [color, setColor] = useState("#B0903D");
 
   return (
-    <div className="min-h-screen bg-background p-6 space-y-6">
+    <div className="min-h-screen bg-background p-6 space-y-6 font-typewriter">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Vault Icon Diff</h1>
         <p className="text-sm text-muted-foreground">

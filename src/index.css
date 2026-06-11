@@ -74,7 +74,11 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Secret Service Typewriter', 'Courier New', Courier, monospace;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
+  }
+  .font-typewriter,
+  .font-typewriter * {
+    font-family: 'Secret Service Typewriter', 'Courier New', Courier, monospace !important;
   }
 }
 
