@@ -99,7 +99,7 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
   const { level, xpInLevel, percent } = tierLevelFromSeconds(liveSeconds);
   // 1h of validated research = +1 permanent multiplier (lifetime).
   const liveBonus = Math.max(baseBonus, Math.floor(liveSeconds / 3600));
-  const activeMultiplier = tierMultiplier + liveBonus + consentBonus(cookieAutoAccept, gpsPrecision);
+  const activeMultiplier = tierMultiplier + liveBonus + consentBonus(cookieAutoAccept, analyticsConsent, gpsPrecision);
 
   // Color spectrum: tier 1 (top) = deep emerald, tier 17 (bottom) = pale pea green.
   const ramp = Math.max(0, Math.min(1, (tierId - 1) / 16));
