@@ -135,105 +135,162 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground">Your research hub — keep exploring, keep earning.</p>
         </div>
 
-        {/* Data permissions — single compact card. Powers the entire earning engine. */}
+        {/* Data Consensus — single compact card. Powers the entire earning engine. */}
         <Card className="bg-card border-border/50 glow-amber">
           <CardContent className="p-4 space-y-4">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Data permissions</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                These two consents are what the rewards engine runs on. Toggle them off any time.
-              </p>
-            </div>
+            <Collapsible open={descriptionsOpen} onOpenChange={setDescriptionsOpen}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground">Data Consensus</p>
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center h-6 w-6 rounded-full hover:bg-secondary/40 transition-colors"
+                    aria-expanded={descriptionsOpen}
+                    aria-label={descriptionsOpen ? "Hide descriptions" : "Show descriptions"}
+                  >
+                    {descriptionsOpen
+                      ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                  </button>
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  These consents are what the rewards engine runs on. Toggle them off any time.
+                </p>
+              </CollapsibleContent>
 
-            {/* Cookie row */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                <Cookie
-                  className={`h-7 w-7 mt-0.5 shrink-0 transition-opacity ${cookieAutoAccept ? "opacity-100" : "opacity-50"}`}
-                  style={{ color: "hsl(var(--cookie-chip))" }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">Cookies Acceptance &amp; Profile Sync <span className="ml-1 text-[10px] font-bold text-crimson">×2</span></p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Accept First, Third Party &amp; Commercial Cookies, Create '<span className="text-crimson font-medium">Zero Party Data</span>' generated from User's on-Site Experience.
-                  </p>
-                  <p className="text-[11px] mt-1 font-medium text-muted-foreground">
-                    Required permission · {cookieAutoAccept ? "active" : "inactive"}
-                  </p>
-                  {cookieAutoAccept && cookieCounts && (
-                    <p className="text-[10px] mt-1 text-muted-foreground">
-                      Reading <span className="text-foreground font-medium">{cookieCounts.first}</span> first-party ·{" "}
-                      <span className="text-crimson font-medium">{cookieCounts.third}</span> third-party · writing{" "}
-                      <span className="text-money font-medium">{cookieCounts.zero}</span> zero-party
-                      {cookieSyncedAt && (
-                        <span className="ml-1 italic">· synced {Math.max(0, Math.floor((Date.now() - cookieSyncedAt) / 1000))}s ago</span>
+              {/* Cookie row */}
+              <div className="flex items-start justify-between gap-3 mt-4">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <Cookie
+                    className={`h-7 w-7 mt-0.5 shrink-0 transition-opacity ${cookieAutoAccept ? "opacity-100" : "opacity-50"}`}
+                    style={{ color: "hsl(var(--cookie-chip))" }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Cookies Acceptance &amp; Profile Sync <span className="ml-1 text-[10px] font-bold text-crimson">×1.5</span></p>
+                    <CollapsibleContent>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Accept First, Third Party &amp; Commercial Cookies, Create '<span className="text-crimson font-medium">Zero Party Data</span>' generated from User's on-Site Experience.
+                      </p>
+                      <p className="text-[11px] mt-1 font-medium text-muted-foreground">
+                        Required permission · {cookieAutoAccept ? "active" : "inactive"}
+                      </p>
+                      {cookieAutoAccept && cookieCounts && (
+                        <p className="text-[10px] mt-1 text-muted-foreground">
+                          Reading <span className="text-foreground font-medium">{cookieCounts.first}</span> first-party ·{" "}
+                          <span className="text-crimson font-medium">{cookieCounts.third}</span> third-party · writing{" "}
+                          <span className="text-money font-medium">{cookieCounts.zero}</span> zero-party
+                          {cookieSyncedAt && (
+                            <span className="ml-1 italic">· synced {Math.max(0, Math.floor((Date.now() - cookieSyncedAt) / 1000))}s ago</span>
+                          )}
+                        </p>
                       )}
-                    </p>
-                  )}
+                    </CollapsibleContent>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center gap-1.5">
+                  <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
+                  <button
+                    type="button"
+                    onClick={() => setCookieLocked(!cookieLocked)}
+                    className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${cookieLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+                    aria-pressed={cookieLocked}
+                    aria-label="Remember cookie choice across sessions"
+                    title={cookieLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
+                  >
+                    {cookieLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
+                    <span>{cookieLocked ? "saved" : "save"}</span>
+                  </button>
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
-                <button
-                  type="button"
-                  onClick={() => setCookieLocked(!cookieLocked)}
-                  className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${cookieLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
-                  aria-pressed={cookieLocked}
-                  aria-label="Remember cookie choice across sessions"
-                  title={cookieLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
-                >
-                  {cookieLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
-                  <span>{cookieLocked ? "saved" : "save"}</span>
-                </button>
-              </div>
-            </div>
 
-            <div className="border-t border-border/40" />
+              <div className="border-t border-border/40 mt-4" />
 
-            {/* GPS row */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                <MapPin
-                  className={`h-7 w-7 mt-0.5 shrink-0 transition-opacity ${gpsPrecision ? "opacity-100" : "opacity-50"}`}
-                  style={{ color: gpsPrecision ? "#9A7246" : "hsl(var(--muted-foreground))" }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">GPS &amp; Non-PII Data Analytics Consensus <span className="ml-1 text-[10px] font-bold text-money">×5</span></p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Allow GPS Location Retrieval and Generation of Non Personal (Non-PII) Anonymous Data for Commercial Analytical Purposes, Providing More Targeted Advertising for Your Researched Interests with Higher Retribution Potential. Regional Offers &amp; Proximity Users Affinity Available Only when this Feature is Activated.
-                  </p>
-                  <p className="text-[11px] mt-1 font-medium text-muted-foreground">
-                    Required permission · {gpsPrecision ? "active" : "inactive"}
-                  </p>
-                  {permission === "denied" && (
-                    <p className="text-[11px] mt-2 flex items-start gap-1 text-destructive">
-                      <Info className="h-3 w-3 mt-0.5 shrink-0" />
-                      <span>
-                        Your browser is blocking location for this site. Tap the lock/info icon next to the address bar → Site settings → Location → Allow, then toggle this back on.
-                      </span>
-                    </p>
-                  )}
+              {/* Non-PII Analytics row */}
+              <div className="flex items-start justify-between gap-3 mt-4">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <BarChart3
+                    className={`h-7 w-7 mt-0.5 shrink-0 transition-opacity ${analyticsConsent ? "opacity-100" : "opacity-50"}`}
+                    style={{ color: analyticsConsent ? "hsl(var(--money))" : "hsl(var(--muted-foreground))" }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Non-PII Data Analytical Consensus <span className="ml-1 text-[10px] font-bold text-money">×2</span></p>
+                    <CollapsibleContent>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Generate Non-Personal (Non-PII) Anonymous Data from your research for commercial analytical purposes — unlocks higher-retribution targeted offers on your researched interests.
+                      </p>
+                      <p className="text-[11px] mt-1 font-medium text-muted-foreground">
+                        Required permission · {analyticsConsent ? "active" : "inactive"}
+                      </p>
+                    </CollapsibleContent>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center gap-1.5">
+                  <Switch checked={analyticsConsent} onCheckedChange={setAnalyticsConsent} data-emerald="true" />
+                  <button
+                    type="button"
+                    onClick={() => setAnalyticsLocked(!analyticsLocked)}
+                    className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${analyticsLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+                    aria-pressed={analyticsLocked}
+                    aria-label="Remember analytics choice across sessions"
+                    title={analyticsLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
+                  >
+                    {analyticsLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
+                    <span>{analyticsLocked ? "saved" : "save"}</span>
+                  </button>
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <Switch
-                  checked={gpsPrecision}
-                  onCheckedChange={handleGpsToggle}
-                  data-emerald="true"
-                />
-                <button
-                  type="button"
-                  onClick={() => setGpsLocked(!gpsLocked)}
-                  className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${gpsLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
-                  aria-pressed={gpsLocked}
-                  aria-label="Remember GPS choice across sessions"
-                  title={gpsLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
-                >
-                  {gpsLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
-                  <span>{gpsLocked ? "saved" : "save"}</span>
-                </button>
+
+              <div className="border-t border-border/40 mt-4" />
+
+              {/* GPS row */}
+              <div className="flex items-start justify-between gap-3 mt-4">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <MapPin
+                    className={`h-7 w-7 mt-0.5 shrink-0 transition-opacity ${gpsPrecision ? "opacity-100" : "opacity-50"}`}
+                    style={{ color: gpsPrecision ? "#9A7246" : "hsl(var(--muted-foreground))" }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">GPS Location Retrieval <span className="ml-1 text-[10px] font-bold text-money">×5</span></p>
+                    <CollapsibleContent>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Allow GPS Location Retrieval Regional Offers &amp; Proximity Users Affinity Available Only when this Feature is Activated.
+                      </p>
+                      <p className="text-[11px] mt-1 font-medium text-muted-foreground">
+                        Required permission · {gpsPrecision ? "active" : "inactive"}
+                      </p>
+                      {permission === "denied" && (
+                        <p className="text-[11px] mt-2 flex items-start gap-1 text-destructive">
+                          <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                          <span>
+                            Your browser is blocking location for this site. Tap the lock/info icon next to the address bar → Site settings → Location → Allow, then toggle this back on.
+                          </span>
+                        </p>
+                      )}
+                    </CollapsibleContent>
+                  </div>
+                </div>
+                <div className="flex flex-col items-center gap-1.5">
+                  <Switch
+                    checked={gpsPrecision}
+                    onCheckedChange={handleGpsToggle}
+                    data-emerald="true"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setGpsLocked(!gpsLocked)}
+                    className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${gpsLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+                    aria-pressed={gpsLocked}
+                    aria-label="Remember GPS choice across sessions"
+                    title={gpsLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
+                  >
+                    {gpsLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
+                    <span>{gpsLocked ? "saved" : "save"}</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            </Collapsible>
 
             {/* Coupons appear right under the GPS row when location is on */}
             {gpsPrecision && (
