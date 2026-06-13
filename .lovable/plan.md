@@ -1,78 +1,41 @@
-## Plan
+# Data Consensus card — collapse text + add 3rd toggle
 
-### 1. FingerprintJS Pro via env vars + global context
+## Goal
+On the Dashboard "Data permissions" card:
+1. Rename header to **Data Consensus**, add a single‑click chevron next to it that collapses/expands ALL descriptive text.
+2. When collapsed, only the toggle rows remain (icon + title + ×multiplier chip + switch + save lock).
+3. Split today's combined row into two independent toggles, so the card now has **three** consents:
+   - **Cookies Acceptance & Profile Sync** — ×1.5
+   - **Non‑PII Data Analytical Consensus** — ×2  *(new)*
+   - **GPS Location Retrieval** — ×5  *(separated)*
 
-**Package**
-- `@fingerprintjs/fingerprintjs-pro` is already installed. Keep it.
+## UI changes — `src/pages/Dashboard.tsx`
+- Wrap the card body in a `Collapsible` controlled by new state `descriptionsOpen` (default `true`).
+- Header row: rename "Data permissions" → "Data Consensus"; right‑side `CollapsibleTrigger` is a chevron button (`ChevronDown`/`ChevronUp`, no extra text, aria‑expanded).
+- All `<p>` paragraphs (card subtitle, per‑row description, "Required permission · active/inactive", cookie live counters, denied‑permission hint) move inside `CollapsibleContent` slots local to each row, so the collapse hides them everywhere at once.
+- The toggle rows themselves (icon + title line with ×N chip + Switch + save lock) stay outside the collapsible and remain visible.
+- Cookie ×2 chip → ×1.5. Add the new Analytics row between Cookies and GPS with chip ×2; GPS row keeps ×5.
+- GPS row description text becomes exactly: *"Allow GPS Location Retrieval Regional Offers & Proximity Users Affinity Available Only when this Feature is Activated."*
+- Analytics row description: *"Generate Non‑Personal (Non‑PII) Anonymous Data from your research for commercial analytical purposes — unlocks higher‑retribution targeted offers on your researched interests."*
+- Regional Coupons panel stays gated on `gpsPrecision`.
 
-**Env vars (build-time, Vite)**
-Two new env vars are required:
-- `VITE_FP_PUBLIC_KEY` — your Fingerprint Pro **public** browser key
-- `VITE_FP_ENDPOINT` — your Pro endpoint URL (e.g. `https://fp.add-logic.com` if you have a custom subdomain, or `https://eu.api.fpjs.io` for the default EU endpoint)
+## State / wiring — `src/contexts/SettingsContext.tsx`
+- Add `analyticsConsent: boolean` + `setAnalyticsConsent` + `analyticsLocked` + `setAnalyticsLocked`, following the same localStorage lock pattern (`rr.analyticsLocked`, `rr.analyticsConsent.remembered`).
+- Update bonus constants: `COOKIE_BONUS = 1.5`, add `ANALYTICS_BONUS = 2`, `GPS_BONUS = 5` (unchanged).
+- `consentBonus(cookies, analytics, gps)` → sums the three; update its single caller in `TierExperienceBar.tsx`.
+- Mirror the new flag into `profiles.preferences` JSON as `analytics` / `analytics_locked` alongside today's `cookies` / `gps`.
+- `deriveInterestTiers` gate (`userInterestProfiler.ts`) keeps requiring cookies + gps (no change), since GPS data is the geographic signal.
 
-Because the project's `.env` is auto-managed by Lovable Cloud and cannot be edited, these must be added in **Workspace Settings → Build Secrets** (they need the `VITE_` prefix so Vite bundles them at build time). I'll instruct you exactly where to paste them once you approve.
+## Handler
+- New `handleAnalyticsToggle(v)` — pure setter, no slide (no browser permission needed).
+- GPS toggle keeps opening `GeoConsentSlide` exactly as today.
 
-**New files**
-- `src/contexts/FingerprintContext.tsx` — `FingerprintProvider` + `useFingerprint()` hook.
-  - Reads `import.meta.env.VITE_FP_PUBLIC_KEY` and `import.meta.env.VITE_FP_ENDPOINT`.
-  - Calls `FingerprintJS.load({ apiKey, endpoint: [VITE_FP_ENDPOINT, FingerprintJS.defaultEndpoint] })` once on mount.
-  - Exposes `{ visitorId, requestId, loading, error, refresh() }` via context.
-  - `refresh()` forces a fresh `.get()` (used by PostLoginGate "Re-check" and the drift watcher when device changes).
+## Files touched
+- `src/pages/Dashboard.tsx` — header rename, chevron, collapsible wrap, new row, chip values.
+- `src/contexts/SettingsContext.tsx` — new flag, new bonus constant, updated `consentBonus`.
+- `src/components/TierExperienceBar.tsx` — pass the third arg to `consentBonus`.
 
-**Refactor**
-- `src/lib/fingerprint.ts` becomes a thin adapter over the new context (keeps `getVisitorId` / `getVisitorEvent` for the watcher and edge call) so the existing edge-function fetch of the public key is removed.
-- `src/App.tsx` wraps the tree in `<FingerprintProvider>` above `<PostLoginGate>`.
-- `supabase/functions/fingerprint-signals/index.ts` keeps its **POST** branch only (server-side Smart Signals lookup by `requestId` with the workspace ruleset). The GET config branch is removed because the public key now lives in env.
-
-**Block logic** stays exactly as it is today: only `rulesetAction === "block"` from the workspace ruleset `rs_kd5z5fhUgyMT49` blocks. No local heuristics.
-
-### 2. Permanent phone-OTP link on Withdraw (Twilio)
-
-**Approach**
-- Use the **Twilio connector** (via Lovable connector gateway) to send and verify OTP codes from an edge function. This is the cleanest path since the Twilio connector is already available in the workspace and avoids needing you to wire Twilio into the Supabase Auth dashboard separately.
-- The verified phone is attached **permanently** to the user via `supabase.auth.updateUser({ phone })` (and mirrored to `profiles.phone` for display).
-
-**Backend**
-- New edge function `phone-otp` with two actions:
-  - `start`: validates phone (E.164, zod), generates 6-digit code, stores `{user_id, phone, code_hash, expires_at, attempts}` in a new `phone_otp_challenges` table, sends SMS via Twilio gateway (`/Messages.json`).
-  - `verify`: checks code + expiry + attempts, on success writes `phone` to `auth.users` via service role + upserts `profiles.phone`, deletes the challenge.
-- New table `public.phone_otp_challenges` with RLS (users can only read their own), proper GRANTs, 10-minute expiry, max 5 attempts.
-- Twilio connector linked via `standard_connectors--connect` (you'll see the picker).
-
-**Frontend**
-- New `src/components/PhoneOtpDialog.tsx`:
-  - Step 1: country code + phone input → calls `phone-otp` `start`.
-  - Step 2: 6-digit OTP input → calls `phone-otp` `verify`.
-  - Step 3 (success screen): shows masked phone + user ID + a "Log out" button.
-- `src/components/StablecoinWithdraw.tsx`:
-  - Reads `profiles.phone`. If absent → Withdraw button opens `PhoneOtpDialog`. After success, the actual withdrawal proceeds. If present → Withdraw runs directly (one-time setup, as requested).
-
-### 3. Sidebar logout
-
-- Add a "Log out" button at the bottom of `src/components/AppSidebar.tsx` (icon + label, collapses to icon-only in compact mode) that calls `signOut()` from `useAuth` and navigates to `/auth`.
-
-### What I'll need from you after approval
-
-1. Add **build secrets** in Workspace Settings → Build Secrets:
-   - `VITE_FP_PUBLIC_KEY` = your Fingerprint Pro public browser key
-   - `VITE_FP_ENDPOINT` = your Fingerprint Pro endpoint (custom subdomain or `https://eu.api.fpjs.io`)
-2. Approve the Twilio connector link prompt when it appears.
-3. Make sure the Twilio number you use is **SMS-capable** for the destination countries, and enable **SMS Pumping Protection** + **Geo Permissions** in the Twilio console before going live.
-
-### Files touched
-
-```text
-NEW   src/contexts/FingerprintContext.tsx
-NEW   src/components/PhoneOtpDialog.tsx
-NEW   supabase/functions/phone-otp/index.ts
-NEW   supabase/migrations/<ts>_phone_otp.sql        (phone_otp_challenges + profiles.phone)
-EDIT  src/lib/fingerprint.ts                        (use context, drop edge-key fetch)
-EDIT  src/App.tsx                                   (wrap in FingerprintProvider)
-EDIT  src/components/AppSidebar.tsx                 (logout button)
-EDIT  src/components/StablecoinWithdraw.tsx         (gate behind phone link)
-EDIT  src/components/PostLoginGate.tsx              (use useFingerprint().refresh)
-EDIT  src/lib/sessionWatcher.ts                     (read visitorId from context cache)
-EDIT  supabase/functions/fingerprint-signals/index.ts  (POST-only, drop GET config)
-```
-
-No changes to the existing block ruleset, GeoConsentSlide UX, or any other unrelated screen.
+## Out of scope
+- No DB schema change (preferences is JSON).
+- No server multiplier formula change (Mistral classifier remains the sole writer of `current_multiplier`; the bonus constants only affect the on‑screen `TierExperienceBar` overlay, matching current behavior).
+- No memory file update needed unless you want me to record the 1.5 / 2 / 5 split.

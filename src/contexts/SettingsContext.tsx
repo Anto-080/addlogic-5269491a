@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 export const XP_PER_LEVEL = 1_000_000;
-export const COOKIE_BONUS = 2;
+export const COOKIE_BONUS = 1.5;
+export const ANALYTICS_BONUS = 2;
 export const GPS_BONUS = 5;
 
 type DeviceProfile = {
@@ -22,13 +23,17 @@ type DeviceProfile = {
 type SettingsState = {
   cookieAutoAccept: boolean;
   gpsPrecision: boolean;
+  analyticsConsent: boolean;
   setCookieAutoAccept: (v: boolean) => void;
   setGpsPrecision: (v: boolean) => void;
+  setAnalyticsConsent: (v: boolean) => void;
   /** Lock = remember this choice for future sessions. */
   cookieLocked: boolean;
   gpsLocked: boolean;
+  analyticsLocked: boolean;
   setCookieLocked: (v: boolean) => void;
   setGpsLocked: (v: boolean) => void;
+  setAnalyticsLocked: (v: boolean) => void;
   coords: { lat: number; lng: number } | null;
   deviceProfile: DeviceProfile | null;
   topInterestTiers: number[];
@@ -38,8 +43,10 @@ const SettingsContext = createContext<SettingsState | undefined>(undefined);
 
 const KEY_COOKIE_LOCK = "rr.cookieLocked";
 const KEY_GPS_LOCK = "rr.gpsLocked";
+const KEY_ANALYTICS_LOCK = "rr.analyticsLocked";
 const KEY_COOKIE_REMEMBERED = "rr.cookieAutoAccept.remembered";
 const KEY_GPS_REMEMBERED = "rr.gpsPrecision.remembered";
+const KEY_ANALYTICS_REMEMBERED = "rr.analyticsConsent.remembered";
 
 function snapshotDeviceProfile(): DeviceProfile {
   const nav = navigator as Navigator & {
@@ -72,6 +79,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(KEY_GPS_LOCK) === "1";
   });
+  const [analyticsLocked, setAnalyticsLockedState] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(KEY_ANALYTICS_LOCK) === "1";
+  });
 
   // Permission choices — only restored across sessions if the lock is on.
   const [cookieAutoAccept, setCookieAutoAcceptState] = useState<boolean>(() => {
@@ -88,6 +99,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
     return false;
   });
+  const [analyticsConsent, setAnalyticsConsentState] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    if (localStorage.getItem(KEY_ANALYTICS_LOCK) === "1") {
+      return localStorage.getItem(KEY_ANALYTICS_REMEMBERED) === "1";
+    }
+    return false;
+  });
 
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [deviceProfile, setDeviceProfile] = useState<DeviceProfile | null>(null);
@@ -96,6 +114,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // Persist lock flags.
   useEffect(() => { localStorage.setItem(KEY_COOKIE_LOCK, cookieLocked ? "1" : "0"); }, [cookieLocked]);
   useEffect(() => { localStorage.setItem(KEY_GPS_LOCK, gpsLocked ? "1" : "0"); }, [gpsLocked]);
+  useEffect(() => { localStorage.setItem(KEY_ANALYTICS_LOCK, analyticsLocked ? "1" : "0"); }, [analyticsLocked]);
 
   // Persist the remembered value only while locked.
   useEffect(() => {
@@ -106,6 +125,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (gpsLocked) localStorage.setItem(KEY_GPS_REMEMBERED, gpsPrecision ? "1" : "0");
     else localStorage.removeItem(KEY_GPS_REMEMBERED);
   }, [gpsPrecision, gpsLocked]);
+  useEffect(() => {
+    if (analyticsLocked) localStorage.setItem(KEY_ANALYTICS_REMEMBERED, analyticsConsent ? "1" : "0");
+    else localStorage.removeItem(KEY_ANALYTICS_REMEMBERED);
+  }, [analyticsConsent, analyticsLocked]);
 
   // Mirror to profiles.preferences so the server-side multiplier sees them.
   useEffect(() => {
@@ -116,13 +139,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         preferences: {
           cookies: cookieAutoAccept,
           gps: gpsPrecision,
+          analytics: analyticsConsent,
           cookies_locked: cookieLocked,
           gps_locked: gpsLocked,
+          analytics_locked: analyticsLocked,
         },
       } as never)
       .eq("user_id", user.id)
       .then(() => undefined);
-  }, [user, cookieAutoAccept, gpsPrecision, cookieLocked, gpsLocked]);
+  }, [user, cookieAutoAccept, gpsPrecision, analyticsConsent, cookieLocked, gpsLocked, analyticsLocked]);
 
   useEffect(() => {
     if (!cookieAutoAccept) return;
@@ -151,20 +176,26 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const setCookieAutoAccept = useCallback((v: boolean) => setCookieAutoAcceptState(v), []);
   const setGpsPrecision = useCallback((v: boolean) => setGpsPrecisionState(v), []);
+  const setAnalyticsConsent = useCallback((v: boolean) => setAnalyticsConsentState(v), []);
   const setCookieLocked = useCallback((v: boolean) => setCookieLockedState(v), []);
   const setGpsLocked = useCallback((v: boolean) => setGpsLockedState(v), []);
+  const setAnalyticsLocked = useCallback((v: boolean) => setAnalyticsLockedState(v), []);
 
   return (
     <SettingsContext.Provider
       value={{
         cookieAutoAccept,
         gpsPrecision,
+        analyticsConsent,
         setCookieAutoAccept,
         setGpsPrecision,
+        setAnalyticsConsent,
         cookieLocked,
         gpsLocked,
+        analyticsLocked,
         setCookieLocked,
         setGpsLocked,
+        setAnalyticsLocked,
         coords,
         deviceProfile,
         topInterestTiers,
@@ -181,6 +212,7 @@ export function useSettings() {
   return ctx;
 }
 
-export function consentBonus(cookies: boolean, gps: boolean): number {
-  return (cookies ? COOKIE_BONUS : 0) + (gps ? GPS_BONUS : 0);
+export function consentBonus(cookies: boolean, analytics: boolean, gps: boolean): number {
+  return (cookies ? COOKIE_BONUS : 0) + (analytics ? ANALYTICS_BONUS : 0) + (gps ? GPS_BONUS : 0);
 }
+
