@@ -35,7 +35,8 @@ function AnimatedCounter({ target }: { target: number }) {
 }
 
 export default function Dashboard() {
-  const { cookieAutoAccept, gpsPrecision, setCookieAutoAccept, setGpsPrecision, cookieLocked, gpsLocked, setCookieLocked, setGpsLocked } = useSettings();
+  const { cookieAutoAccept, gpsPrecision, analyticsConsent, setCookieAutoAccept, setGpsPrecision, setAnalyticsConsent, cookieLocked, gpsLocked, analyticsLocked, setCookieLocked, setGpsLocked, setAnalyticsLocked } = useSettings();
+  const [descriptionsOpen, setDescriptionsOpen] = useState(true);
   const [couponsOpen, setCouponsOpen] = useState(false);
   const [permission, setPermission] = useState<GeolocationPermissionState>("prompt");
   const [adBlockSlideOpen, setAdBlockSlideOpen] = useState(false);
