@@ -23,13 +23,17 @@ type DeviceProfile = {
 type SettingsState = {
   cookieAutoAccept: boolean;
   gpsPrecision: boolean;
+  analyticsConsent: boolean;
   setCookieAutoAccept: (v: boolean) => void;
   setGpsPrecision: (v: boolean) => void;
+  setAnalyticsConsent: (v: boolean) => void;
   /** Lock = remember this choice for future sessions. */
   cookieLocked: boolean;
   gpsLocked: boolean;
+  analyticsLocked: boolean;
   setCookieLocked: (v: boolean) => void;
   setGpsLocked: (v: boolean) => void;
+  setAnalyticsLocked: (v: boolean) => void;
   coords: { lat: number; lng: number } | null;
   deviceProfile: DeviceProfile | null;
   topInterestTiers: number[];
@@ -39,8 +43,10 @@ const SettingsContext = createContext<SettingsState | undefined>(undefined);
 
 const KEY_COOKIE_LOCK = "rr.cookieLocked";
 const KEY_GPS_LOCK = "rr.gpsLocked";
+const KEY_ANALYTICS_LOCK = "rr.analyticsLocked";
 const KEY_COOKIE_REMEMBERED = "rr.cookieAutoAccept.remembered";
 const KEY_GPS_REMEMBERED = "rr.gpsPrecision.remembered";
+const KEY_ANALYTICS_REMEMBERED = "rr.analyticsConsent.remembered";
 
 function snapshotDeviceProfile(): DeviceProfile {
   const nav = navigator as Navigator & {
