@@ -30,7 +30,7 @@ const HEARTBEAT_MS = 15_000;
  */
 export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
   const { user } = useAuth();
-  const { cookieAutoAccept, gpsPrecision } = useSettings();
+  const { cookieAutoAccept, gpsPrecision, analyticsConsent } = useSettings();
   const { active: session } = useResearchSession();
   const { data: row } = useTierProgress(tierId);
   const update = useUpdateTierProgress();
