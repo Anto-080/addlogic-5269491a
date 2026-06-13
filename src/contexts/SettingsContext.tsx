@@ -79,6 +79,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(KEY_GPS_LOCK) === "1";
   });
+  const [analyticsLocked, setAnalyticsLockedState] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(KEY_ANALYTICS_LOCK) === "1";
+  });
 
   // Permission choices — only restored across sessions if the lock is on.
   const [cookieAutoAccept, setCookieAutoAcceptState] = useState<boolean>(() => {
@@ -92,6 +96,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return false;
     if (localStorage.getItem(KEY_GPS_LOCK) === "1") {
       return localStorage.getItem(KEY_GPS_REMEMBERED) === "1";
+    }
+    return false;
+  });
+  const [analyticsConsent, setAnalyticsConsentState] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    if (localStorage.getItem(KEY_ANALYTICS_LOCK) === "1") {
+      return localStorage.getItem(KEY_ANALYTICS_REMEMBERED) === "1";
     }
     return false;
   });
