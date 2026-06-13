@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 export const XP_PER_LEVEL = 1_000_000;
-export const COOKIE_BONUS = 2;
+export const COOKIE_BONUS = 1.5;
+export const ANALYTICS_BONUS = 2;
 export const GPS_BONUS = 5;
 
 type DeviceProfile = {
