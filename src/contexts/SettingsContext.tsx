@@ -114,6 +114,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // Persist lock flags.
   useEffect(() => { localStorage.setItem(KEY_COOKIE_LOCK, cookieLocked ? "1" : "0"); }, [cookieLocked]);
   useEffect(() => { localStorage.setItem(KEY_GPS_LOCK, gpsLocked ? "1" : "0"); }, [gpsLocked]);
+  useEffect(() => { localStorage.setItem(KEY_ANALYTICS_LOCK, analyticsLocked ? "1" : "0"); }, [analyticsLocked]);
 
   // Persist the remembered value only while locked.
   useEffect(() => {
@@ -124,6 +125,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (gpsLocked) localStorage.setItem(KEY_GPS_REMEMBERED, gpsPrecision ? "1" : "0");
     else localStorage.removeItem(KEY_GPS_REMEMBERED);
   }, [gpsPrecision, gpsLocked]);
+  useEffect(() => {
+    if (analyticsLocked) localStorage.setItem(KEY_ANALYTICS_REMEMBERED, analyticsConsent ? "1" : "0");
+    else localStorage.removeItem(KEY_ANALYTICS_REMEMBERED);
+  }, [analyticsConsent, analyticsLocked]);
 
   // Mirror to profiles.preferences so the server-side multiplier sees them.
   useEffect(() => {
@@ -134,13 +139,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         preferences: {
           cookies: cookieAutoAccept,
           gps: gpsPrecision,
+          analytics: analyticsConsent,
           cookies_locked: cookieLocked,
           gps_locked: gpsLocked,
+          analytics_locked: analyticsLocked,
         },
       } as never)
       .eq("user_id", user.id)
       .then(() => undefined);
-  }, [user, cookieAutoAccept, gpsPrecision, cookieLocked, gpsLocked]);
+  }, [user, cookieAutoAccept, gpsPrecision, analyticsConsent, cookieLocked, gpsLocked, analyticsLocked]);
 
   useEffect(() => {
     if (!cookieAutoAccept) return;
@@ -169,20 +176,26 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const setCookieAutoAccept = useCallback((v: boolean) => setCookieAutoAcceptState(v), []);
   const setGpsPrecision = useCallback((v: boolean) => setGpsPrecisionState(v), []);
+  const setAnalyticsConsent = useCallback((v: boolean) => setAnalyticsConsentState(v), []);
   const setCookieLocked = useCallback((v: boolean) => setCookieLockedState(v), []);
   const setGpsLocked = useCallback((v: boolean) => setGpsLockedState(v), []);
+  const setAnalyticsLocked = useCallback((v: boolean) => setAnalyticsLockedState(v), []);
 
   return (
     <SettingsContext.Provider
       value={{
         cookieAutoAccept,
         gpsPrecision,
+        analyticsConsent,
         setCookieAutoAccept,
         setGpsPrecision,
+        setAnalyticsConsent,
         cookieLocked,
         gpsLocked,
+        analyticsLocked,
         setCookieLocked,
         setGpsLocked,
+        setAnalyticsLocked,
         coords,
         deviceProfile,
         topInterestTiers,
@@ -199,6 +212,7 @@ export function useSettings() {
   return ctx;
 }
 
-export function consentBonus(cookies: boolean, gps: boolean): number {
-  return (cookies ? COOKIE_BONUS : 0) + (gps ? GPS_BONUS : 0);
+export function consentBonus(cookies: boolean, analytics: boolean, gps: boolean): number {
+  return (cookies ? COOKIE_BONUS : 0) + (analytics ? ANALYTICS_BONUS : 0) + (gps ? GPS_BONUS : 0);
 }
+
