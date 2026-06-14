@@ -191,24 +191,6 @@ export default function Dashboard() {
                 </div>
                 <div className="flex flex-col items-center gap-1.5">
                   <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
-                  <label
-                    className="inline-flex items-center gap-1 text-[9px] cursor-pointer select-none"
-                    title={cookieLocked ? "Decision cached — toggle stays active between sessions" : "Decision resets next session"}
-                  >
-                    <Switch
-                      checked={cookieLocked}
-                      onCheckedChange={(v) => {
-                        setCookieLocked(v);
-                        if (v) { setCookieAutoAccept(true); handleCookieToggle(true); }
-                        else { setCookieAutoAccept(false); }
-                      }}
-                      className="h-3 w-6 [&>span]:h-2.5 [&>span]:w-2.5 [&>span]:data-[state=checked]:translate-x-3"
-                      data-emerald="true"
-                      aria-label="Cache & lock cookie consent across sessions"
-                    />
-                    {cookieLocked ? <Lock className="h-2.5 w-2.5 text-money" /> : <Unlock className="h-2.5 w-2.5 text-muted-foreground" />}
-                    <span className={cookieLocked ? "text-money" : "text-muted-foreground"}>{cookieLocked ? "saved" : "save"}</span>
-                  </label>
                 </div>
               </div>
 
