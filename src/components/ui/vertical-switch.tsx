@@ -55,10 +55,10 @@ export const VerticalSwitch = React.forwardRef<HTMLButtonElement, Props>(
           onPointerUp={handleEnd}
           onPointerCancel={handleEnd}
           className={cn(
-            "relative h-16 w-8 rounded-full border-2 transition-colors duration-200 touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            "relative h-20 w-10 rounded-full border-2 transition-colors duration-200 touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             checked
-              ? "bg-emerald-500/30 border-emerald-500"
-              : "bg-red-500/25 border-red-500/80",
+              ? "bg-emerald-600/40 border-emerald-500"
+              : "bg-red-600/35 border-red-500/80",
           )}
         >
           <span
