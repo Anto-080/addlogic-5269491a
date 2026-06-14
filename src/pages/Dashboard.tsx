@@ -187,6 +187,18 @@ export default function Dashboard() {
                           )}
                         </p>
                       )}
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-[10px] text-muted-foreground">Permanent Save</span>
+                        <VerticalSwitch
+                          checked={cookieLocked}
+                          onCheckedChange={(v) => {
+                            setCookieLocked(v);
+                            if (v) { setCookieAutoAccept(true); handleCookieToggle(true); }
+                            else { setCookieAutoAccept(false); }
+                          }}
+                          ariaLabel="Cache & lock cookie consent across sessions"
+                        />
+                      </div>
                     </CollapsibleContent>
                   </div>
                 </div>
@@ -213,6 +225,18 @@ export default function Dashboard() {
                       <p className="text-[11px] mt-1 font-medium text-muted-foreground">
                         Required permission · {analyticsConsent ? "active" : "inactive"}
                       </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-[10px] text-muted-foreground">Permanent Save</span>
+                        <VerticalSwitch
+                          checked={analyticsLocked}
+                          onCheckedChange={(v) => {
+                            setAnalyticsLocked(v);
+                            if (v) setAnalyticsConsent(true);
+                            else setAnalyticsConsent(false);
+                          }}
+                          ariaLabel="Cache & lock analytics consent across sessions"
+                        />
+                      </div>
                     </CollapsibleContent>
                   </div>
                 </div>
@@ -247,6 +271,18 @@ export default function Dashboard() {
                           </span>
                         </p>
                       )}
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-[10px] text-muted-foreground">Permanent Save</span>
+                        <VerticalSwitch
+                          checked={gpsLocked}
+                          onCheckedChange={(v) => {
+                            setGpsLocked(v);
+                            if (v) setGpsPrecision(true);
+                            else setGpsPrecision(false);
+                          }}
+                          ariaLabel="Cache & lock GPS consent across sessions"
+                        />
+                      </div>
                     </CollapsibleContent>
                   </div>
                 </div>
