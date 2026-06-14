@@ -217,24 +217,6 @@ export default function Dashboard() {
                 </div>
                 <div className="flex flex-col items-center gap-1.5">
                   <Switch checked={analyticsConsent} onCheckedChange={setAnalyticsConsent} data-emerald="true" />
-                  <label
-                    className="inline-flex items-center gap-1 text-[9px] cursor-pointer select-none"
-                    title={analyticsLocked ? "Decision cached — toggle stays active between sessions" : "Decision resets next session"}
-                  >
-                    <Switch
-                      checked={analyticsLocked}
-                      onCheckedChange={(v) => {
-                        setAnalyticsLocked(v);
-                        if (v) setAnalyticsConsent(true);
-                        else setAnalyticsConsent(false);
-                      }}
-                      className="h-3 w-6 [&>span]:h-2.5 [&>span]:w-2.5 [&>span]:data-[state=checked]:translate-x-3"
-                      data-emerald="true"
-                      aria-label="Cache & lock analytics consent across sessions"
-                    />
-                    {analyticsLocked ? <Lock className="h-2.5 w-2.5 text-money" /> : <Unlock className="h-2.5 w-2.5 text-muted-foreground" />}
-                    <span className={analyticsLocked ? "text-money" : "text-muted-foreground"}>{analyticsLocked ? "saved" : "save"}</span>
-                  </label>
                 </div>
               </div>
 
@@ -273,17 +255,6 @@ export default function Dashboard() {
                     onCheckedChange={handleGpsToggle}
                     data-emerald="true"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setGpsLocked(!gpsLocked)}
-                    className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${gpsLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
-                    aria-pressed={gpsLocked}
-                    aria-label="Remember GPS choice across sessions"
-                    title={gpsLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
-                  >
-                    {gpsLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
-                    <span>{gpsLocked ? "saved" : "save"}</span>
-                  </button>
                 </div>
               </div>
             </Collapsible>
