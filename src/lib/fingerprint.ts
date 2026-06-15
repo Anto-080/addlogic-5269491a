@@ -1,33 +1,21 @@
 /**
- * FingerprintJS Pro client — initialized from build-time env vars.
+ * FingerprintJS (open-source, v4) client.
  *
- *   VITE_FP_PUBLIC_KEY  — browser public key (workspace publishable)
- *   VITE_FP_ENDPOINT    — Pro endpoint (custom subdomain or eg https://eu.api.fpjs.io)
- *
- * Block decisions are made server-side via the `fingerprint-signals` edge
- * function using the workspace ruleset (rs_kd5z5fhUgyMT49). This module
- * only loads the agent and exposes visitorId / requestId.
+ * The Pro/Smart-Signals tier is no longer used in the bundle. This module
+ * exposes a stable per-browser visitorId for the post-entry drift watcher
+ * and anti-duplicate-account logic. VPN/proxy detection is intentionally
+ * NOT performed here — the free agent cannot reliably detect VPNs.
  */
 
-import { load, type Agent, defaultEndpoint } from "@fingerprintjs/fingerprintjs-pro";
-
-const PUBLIC_KEY = import.meta.env.VITE_FP_PUBLIC_KEY as string | undefined;
-const ENDPOINT = import.meta.env.VITE_FP_ENDPOINT as string | undefined;
+import FingerprintJS, { type Agent } from "@fingerprintjs/fingerprintjs";
 
 let agentPromise: Promise<Agent | null> | null = null;
 
 function getAgent(): Promise<Agent | null> {
   if (agentPromise) return agentPromise;
   agentPromise = (async () => {
-    if (!PUBLIC_KEY) {
-      console.warn("[fingerprint] VITE_FP_PUBLIC_KEY missing — Fingerprint disabled, all sessions allowed");
-      return null;
-    }
     try {
-      return await load({
-        apiKey: PUBLIC_KEY,
-        endpoint: ENDPOINT ? [ENDPOINT, defaultEndpoint] : undefined,
-      });
+      return await FingerprintJS.load();
     } catch (e) {
       console.error("[fingerprint] load failed", e);
       return null;
@@ -45,7 +33,8 @@ export function getVisitorEvent(): Promise<{ visitorId: string | null; requestId
       const agent = await getAgent();
       if (!agent) return { visitorId: null, requestId: null };
       const r = await agent.get();
-      return { visitorId: r.visitorId ?? null, requestId: r.requestId ?? null };
+      // The OSS agent has no Pro requestId; we mirror visitorId for compatibility.
+      return { visitorId: r.visitorId ?? null, requestId: r.visitorId ?? null };
     } catch {
       return { visitorId: null, requestId: null };
     }
@@ -58,11 +47,10 @@ export async function getVisitorId(): Promise<string | null> {
   return visitorId;
 }
 
-/** Force a fresh event (e.g. after the user disables their VPN and retries). */
 export function clearVisitorEventCache() {
   visitorEventPromise = null;
 }
 
 export function isFingerprintConfigured(): boolean {
-  return !!PUBLIC_KEY;
+  return true;
 }

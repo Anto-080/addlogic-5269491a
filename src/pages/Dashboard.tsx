@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/AppLayout";
 import { TIERS } from "@/lib/mockData";
 import { useEffect, useState } from "react";
-import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info, Lock, Unlock, BarChart3 } from "lucide-react";
+import { Star, ShieldAlert, Newspaper, Tag, ChevronDown, ChevronUp, ExternalLink, Cookie, MapPin, Info, Lock, BarChart3 } from "lucide-react";
 import { ShieldStar } from "@/components/icons/ShieldStar";
 import { HexDollar } from "@/components/icons/HexDollar";
 import { SandglassIcon } from "@/components/icons/SandglassIcon";
@@ -34,8 +34,46 @@ function AnimatedCounter({ target }: { target: number }) {
   );
 }
 
+/**
+ * 40×40 lock block beneath the cookie and Non-PII toggles.
+ * - Inactive: black background, opaque gold padlock.
+ * - Active: lit emerald background, vivid (opaque) gold padlock; locks
+ *   the main toggle in its ON position. Clicking again unlocks, turns
+ *   the consent OFF, and clears the cached decision.
+ */
+function ConsentLockBlock({
+  active,
+  label,
+  onToggle,
+}: {
+  active: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={active}
+      aria-label={label}
+      title={active ? "Locked — click to unlock and erase cached decision" : "Lock decision across sessions"}
+      className={`h-10 w-10 rounded-md flex items-center justify-center border transition-colors ${
+        active
+          ? "bg-money/30 border-money/70 shadow-[0_0_12px_hsl(var(--money)/0.35)]"
+          : "bg-black border-border/60 hover:border-money/40"
+      }`}
+    >
+      <Lock
+        className="h-5 w-5"
+        style={{ color: active ? "#F2C14E" : "#9A7246" }}
+        strokeWidth={2.4}
+      />
+    </button>
+  );
+}
+
 export default function Dashboard() {
-  const { cookieAutoAccept, gpsPrecision, analyticsConsent, setCookieAutoAccept, setGpsPrecision, setAnalyticsConsent, cookieLocked, gpsLocked, analyticsLocked, setCookieLocked, setGpsLocked, setAnalyticsLocked } = useSettings();
+  const { cookieAutoAccept, gpsPrecision, analyticsConsent, setCookieAutoAccept, setGpsPrecision, setAnalyticsConsent, cookieLocked, analyticsLocked, setCookieLocked, setAnalyticsLocked } = useSettings();
   const [descriptionsOpen, setDescriptionsOpen] = useState(true);
   const [couponsOpen, setCouponsOpen] = useState(false);
   const [permission, setPermission] = useState<GeolocationPermissionState>("prompt");
@@ -189,26 +227,29 @@ export default function Dashboard() {
                     </CollapsibleContent>
                   </div>
                 </div>
-                <div className="flex flex-col items-center gap-1.5">
-                  <Switch checked={cookieAutoAccept} onCheckedChange={handleCookieToggle} data-emerald="true" />
-                  <label
-                    className="inline-flex items-center gap-1 text-[9px] cursor-pointer select-none"
-                    title={cookieLocked ? "Decision cached — toggle stays active between sessions" : "Decision resets next session"}
-                  >
-                    <Switch
-                      checked={cookieLocked}
-                      onCheckedChange={(v) => {
-                        setCookieLocked(v);
-                        if (v) { setCookieAutoAccept(true); handleCookieToggle(true); }
-                        else { setCookieAutoAccept(false); }
+                <div className="flex flex-col items-center gap-2">
+                  <Switch
+                    checked={cookieAutoAccept}
+                    onCheckedChange={handleCookieToggle}
+                    disabled={cookieLocked}
+                    data-emerald="true"
+                  />
+                  <CollapsibleContent>
+                    <ConsentLockBlock
+                      active={cookieLocked}
+                      label="Lock cookie consent across sessions"
+                      onToggle={() => {
+                        if (cookieLocked) {
+                          setCookieLocked(false);
+                          setCookieAutoAccept(false);
+                        } else {
+                          setCookieLocked(true);
+                          setCookieAutoAccept(true);
+                          handleCookieToggle(true);
+                        }
                       }}
-                      className="h-3 w-6 [&>span]:h-2.5 [&>span]:w-2.5 [&>span]:data-[state=checked]:translate-x-3"
-                      data-emerald="true"
-                      aria-label="Cache & lock cookie consent across sessions"
                     />
-                    {cookieLocked ? <Lock className="h-2.5 w-2.5 text-money" /> : <Unlock className="h-2.5 w-2.5 text-muted-foreground" />}
-                    <span className={cookieLocked ? "text-money" : "text-muted-foreground"}>{cookieLocked ? "saved" : "save"}</span>
-                  </label>
+                  </CollapsibleContent>
                 </div>
               </div>
 
@@ -233,26 +274,28 @@ export default function Dashboard() {
                     </CollapsibleContent>
                   </div>
                 </div>
-                <div className="flex flex-col items-center gap-1.5">
-                  <Switch checked={analyticsConsent} onCheckedChange={setAnalyticsConsent} data-emerald="true" />
-                  <label
-                    className="inline-flex items-center gap-1 text-[9px] cursor-pointer select-none"
-                    title={analyticsLocked ? "Decision cached — toggle stays active between sessions" : "Decision resets next session"}
-                  >
-                    <Switch
-                      checked={analyticsLocked}
-                      onCheckedChange={(v) => {
-                        setAnalyticsLocked(v);
-                        if (v) setAnalyticsConsent(true);
-                        else setAnalyticsConsent(false);
+                <div className="flex flex-col items-center gap-2">
+                  <Switch
+                    checked={analyticsConsent}
+                    onCheckedChange={setAnalyticsConsent}
+                    disabled={analyticsLocked}
+                    data-emerald="true"
+                  />
+                  <CollapsibleContent>
+                    <ConsentLockBlock
+                      active={analyticsLocked}
+                      label="Lock Non-PII analytics consent across sessions"
+                      onToggle={() => {
+                        if (analyticsLocked) {
+                          setAnalyticsLocked(false);
+                          setAnalyticsConsent(false);
+                        } else {
+                          setAnalyticsLocked(true);
+                          setAnalyticsConsent(true);
+                        }
                       }}
-                      className="h-3 w-6 [&>span]:h-2.5 [&>span]:w-2.5 [&>span]:data-[state=checked]:translate-x-3"
-                      data-emerald="true"
-                      aria-label="Cache & lock analytics consent across sessions"
                     />
-                    {analyticsLocked ? <Lock className="h-2.5 w-2.5 text-money" /> : <Unlock className="h-2.5 w-2.5 text-muted-foreground" />}
-                    <span className={analyticsLocked ? "text-money" : "text-muted-foreground"}>{analyticsLocked ? "saved" : "save"}</span>
-                  </label>
+                  </CollapsibleContent>
                 </div>
               </div>
 
@@ -285,23 +328,12 @@ export default function Dashboard() {
                     </CollapsibleContent>
                   </div>
                 </div>
-                <div className="flex flex-col items-center gap-1.5">
+                <div className="flex flex-col items-center gap-2">
                   <Switch
                     checked={gpsPrecision}
                     onCheckedChange={handleGpsToggle}
                     data-emerald="true"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setGpsLocked(!gpsLocked)}
-                    className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border transition-colors ${gpsLocked ? "border-money/60 bg-money/10 text-money" : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
-                    aria-pressed={gpsLocked}
-                    aria-label="Remember GPS choice across sessions"
-                    title={gpsLocked ? "Choice is remembered across sessions" : "Choice resets next session"}
-                  >
-                    {gpsLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
-                    <span>{gpsLocked ? "saved" : "save"}</span>
-                  </button>
                 </div>
               </div>
             </Collapsible>
