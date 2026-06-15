@@ -1,14 +1,13 @@
 /**
- * VPN / proxy detection — FingerprintJS Pro + the workspace ruleset
- * (rs_kd5z5fhUgyMT49) are the SOLE block authority.
+ * VPN / proxy detection.
  *
- * No client-side heuristics. No vpn/tor/proxyType checks here. The
- * ruleset configured in the FingerprintJS workspace decides; we only
- * read `rulesetAction`. If the upstream is degraded we fail-open.
+ * The Pro Smart-Signals tier is no longer in the bundle, so the client
+ * fails OPEN — the entrance gate never blocks based on Fingerprint.
+ * Anti-duplicate-account and drift detection still work via the OSS
+ * visitorId exposed by `src/lib/fingerprint.ts`.
  */
 
 import { clearVisitorEventCache, getVisitorEvent } from "@/lib/fingerprint";
-import { supabase } from "@/integrations/supabase/client";
 
 export type IpInfo = {
   ip: string;
@@ -37,37 +36,8 @@ export type FpEvaluation =
   | { kind: "block"; reason: string; ruleName: string | null }
   | { kind: "allow" };
 
-/**
- * The ruleset is the only thing that can block. Period.
- */
-export function evaluateFingerprint(s: FpSignals): FpEvaluation {
-  if ((s.rulesetAction ?? "").toLowerCase() === "block") {
-    return {
-      kind: "block",
-      reason: s.rulesetRuleName
-        ? `Blocked by FingerprintJS ruleset: ${s.rulesetRuleName}`
-        : "Blocked by FingerprintJS ruleset",
-      ruleName: s.rulesetRuleName ?? null,
-    };
-  }
+export function evaluateFingerprint(_s: FpSignals): FpEvaluation {
   return { kind: "allow" };
-}
-
-async function callFingerprint(): Promise<{ signals: FpSignals | null; degraded: string | null }> {
-  try {
-    const { requestId } = await getVisitorEvent();
-    if (!requestId) return { signals: null, degraded: "Fingerprint requestId unavailable" };
-    const { data, error } = await supabase.functions.invoke("fingerprint-signals", {
-      method: "POST",
-      body: { requestId },
-    });
-    if (error || !data) return { signals: null, degraded: error?.message ?? "Fingerprint edge unreachable" };
-    const d = data as FpSignals;
-    if (d.fallback || d.error) return { signals: null, degraded: d.error ?? "Fingerprint unavailable" };
-    return { signals: d, degraded: null };
-  } catch (e) {
-    return { signals: null, degraded: e instanceof Error ? e.message : "network error" };
-  }
 }
 
 export type RulesetVerdict = {
@@ -78,28 +48,22 @@ export type RulesetVerdict = {
 };
 
 /**
- * Site-wide entry check used by PostLoginGate. Forces a fresh Fingerprint
- * event so a user who just disabled their VPN gets a clean re-check.
- * Fail-open on degraded upstream (never punish for our outage).
+ * Entry check used by PostLoginGate. Forces a fresh fingerprint event so the
+ * drift watcher gets a stable baseline, then always allows.
  */
 export async function verifyFingerprintRuleset(): Promise<RulesetVerdict> {
   clearVisitorEventCache();
-  const fp = await callFingerprint();
-  if (!fp.signals) return { ok: true, signals: null };
-  const ev = evaluateFingerprint(fp.signals);
-  if (ev.kind === "block") {
-    return { ok: false, reason: ev.reason, ruleName: ev.ruleName, signals: fp.signals };
+  try {
+    await getVisitorEvent();
+  } catch {
+    /* ignore */
   }
-  return { ok: true, signals: fp.signals };
+  return { ok: true, signals: null };
 }
 
-/** Back-compat alias — same behaviour, ruleset is the only decider. */
 export const verifyIpForApproximateLocation = verifyFingerprintRuleset;
 
-/**
- * Lightweight transport-only IP lookup used by the drift watcher and the
- * "anti-fraud details" disclosure. NEVER influences allow/block.
- */
+/** Transport-only IP lookup (metadata, never blocks). */
 export async function fetchTransportIpInfo(): Promise<IpInfo | null> {
   try {
     const r = await fetch("https://ipwho.is/", { headers: { Accept: "application/json" } });
