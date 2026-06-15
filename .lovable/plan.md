@@ -1,41 +1,41 @@
-# Data Consensus card — collapse text + add 3rd toggle
+## Plan
 
-## Goal
-On the Dashboard "Data permissions" card:
-1. Rename header to **Data Consensus**, add a single‑click chevron next to it that collapses/expands ALL descriptive text.
-2. When collapsed, only the toggle rows remain (icon + title + ×multiplier chip + switch + save lock).
-3. Split today's combined row into two independent toggles, so the card now has **three** consents:
-   - **Cookies Acceptance & Profile Sync** — ×1.5
-   - **Non‑PII Data Analytical Consensus** — ×2  *(new)*
-   - **GPS Location Retrieval** — ×5  *(separated)*
+### 1) Consent locking UI
+- Remove the small “save/saved” switches/buttons from the cookie and Non-PII rows.
+- Add one 40×40 lock block directly beneath each of the first two main toggles.
+- Show these lock blocks only when the Data Consensus collapsible text is open.
+- Style inactive lock as black/dark background with opaque gold padlock.
+- Style active lock as lit emerald background with vivid opaque gold padlock.
+- Keep GPS without a persistent lock, because GPS must be requested each time.
 
-## UI changes — `src/pages/Dashboard.tsx`
-- Wrap the card body in a `Collapsible` controlled by new state `descriptionsOpen` (default `true`).
-- Header row: rename "Data permissions" → "Data Consensus"; right‑side `CollapsibleTrigger` is a chevron button (`ChevronDown`/`ChevronUp`, no extra text, aria‑expanded).
-- All `<p>` paragraphs (card subtitle, per‑row description, "Required permission · active/inactive", cookie live counters, denied‑permission hint) move inside `CollapsibleContent` slots local to each row, so the collapse hides them everywhere at once.
-- The toggle rows themselves (icon + title line with ×N chip + Switch + save lock) stay outside the collapsible and remain visible.
-- Cookie ×2 chip → ×1.5. Add the new Analytics row between Cookies and GPS with chip ×2; GPS row keeps ×5.
-- GPS row description text becomes exactly: *"Allow GPS Location Retrieval Regional Offers & Proximity Users Affinity Available Only when this Feature is Activated."*
-- Analytics row description: *"Generate Non‑Personal (Non‑PII) Anonymous Data from your research for commercial analytical purposes — unlocks higher‑retribution targeted offers on your researched interests."*
-- Regional Coupons panel stays gated on `gpsPrecision`.
+### 2) Consent locking behavior
+- When a lock block is activated:
+  - force that main consent toggle ON;
+  - persist the decision between sessions;
+  - disable clicking the main toggle so misclicks cannot turn it off.
+- When the user clicks the active lock block again:
+  - unlock it;
+  - turn the main consent OFF;
+  - clear the remembered cached value;
+  - stop cookie sweep / Non-PII consent collection immediately.
+- Keep cookie and Non-PII locks independent.
 
-## State / wiring — `src/contexts/SettingsContext.tsx`
-- Add `analyticsConsent: boolean` + `setAnalyticsConsent` + `analyticsLocked` + `setAnalyticsLocked`, following the same localStorage lock pattern (`rr.analyticsLocked`, `rr.analyticsConsent.remembered`).
-- Update bonus constants: `COOKIE_BONUS = 1.5`, add `ANALYTICS_BONUS = 2`, `GPS_BONUS = 5` (unchanged).
-- `consentBonus(cookies, analytics, gps)` → sums the three; update its single caller in `TierExperienceBar.tsx`.
-- Mirror the new flag into `profiles.preferences` JSON as `analytics` / `analytics_locked` alongside today's `cookies` / `gps`.
-- `deriveInterestTiers` gate (`userInterestProfiler.ts`) keeps requiring cookies + gps (no change), since GPS data is the geographic signal.
+### 3) Settings cleanup
+- Remove GPS lock state and persistence from the settings context and profile preferences.
+- Keep only cookie lock and analytics/Non-PII lock persistence.
+- Ensure unlocked choices reset on a new session, while locked active choices restore as ON.
 
-## Handler
-- New `handleAnalyticsToggle(v)` — pure setter, no slide (no browser permission needed).
-- GPS toggle keeps opening `GeoConsentSlide` exactly as today.
+### 4) Fingerprint and Vite dependency update
+- Confirm Vite is pinned to `6.0.0` in `package.json` instead of a floating range if needed.
+- Replace Fingerprint Pro package usage with the standard browser FingerprintJS package at version `4.0.0`.
+- Update the fingerprint client wrapper to load the standard agent and return a visitor ID.
+- Adjust VPN/proxy code so the app does not depend on Pro-only `requestId` / Smart Signals when using the free package; it should fail open instead of locking users on a blank page.
 
-## Files touched
-- `src/pages/Dashboard.tsx` — header rename, chevron, collapsible wrap, new row, chip values.
-- `src/contexts/SettingsContext.tsx` — new flag, new bonus constant, updated `consentBonus`.
-- `src/components/TierExperienceBar.tsx` — pass the third arg to `consentBonus`.
+### 5) Safety validation
+- Check for TypeScript/import errors caused by the removed GPS lock and Fingerprint package swap.
+- Verify the dashboard consent UI renders with locked main toggles disabled and unlock blocks visible only while descriptions are open.
+- Check the app avoids blank-page failure if Fingerprint keys or Pro server signals are unavailable.
 
-## Out of scope
-- No DB schema change (preferences is JSON).
-- No server multiplier formula change (Mistral classifier remains the sole writer of `current_multiplier`; the bonus constants only affect the on‑screen `TierExperienceBar` overlay, matching current behavior).
-- No memory file update needed unless you want me to record the 1.5 / 2 / 5 split.
+## Notes
+- I will not ask you for server keys unless we keep or restore Fingerprint Pro server-side Smart Signals.
+- The standard FingerprintJS package can identify browsers with a visitor ID, but VPN detection is a Pro/Smart Signals capability; with the free package we can still support anti-duplicate-browser logic later, but not reliable VPN/proxy blocking from Fingerprint alone.
