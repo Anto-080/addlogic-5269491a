@@ -34,6 +34,44 @@ function AnimatedCounter({ target }: { target: number }) {
   );
 }
 
+/**
+ * 40×40 lock block beneath the cookie and Non-PII toggles.
+ * - Inactive: black background, opaque gold padlock.
+ * - Active: lit emerald background, vivid (opaque) gold padlock; locks
+ *   the main toggle in its ON position. Clicking again unlocks, turns
+ *   the consent OFF, and clears the cached decision.
+ */
+function ConsentLockBlock({
+  active,
+  label,
+  onToggle,
+}: {
+  active: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={active}
+      aria-label={label}
+      title={active ? "Locked — click to unlock and erase cached decision" : "Lock decision across sessions"}
+      className={`h-10 w-10 rounded-md flex items-center justify-center border transition-colors ${
+        active
+          ? "bg-money/30 border-money/70 shadow-[0_0_12px_hsl(var(--money)/0.35)]"
+          : "bg-black border-border/60 hover:border-money/40"
+      }`}
+    >
+      <Lock
+        className="h-5 w-5"
+        style={{ color: active ? "#F2C14E" : "#9A7246" }}
+        strokeWidth={2.4}
+      />
+    </button>
+  );
+}
+
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, analyticsConsent, setCookieAutoAccept, setGpsPrecision, setAnalyticsConsent, cookieLocked, analyticsLocked, setCookieLocked, setAnalyticsLocked } = useSettings();
   const [descriptionsOpen, setDescriptionsOpen] = useState(true);
