@@ -1,13 +1,14 @@
 /**
- * VPN / proxy detection.
+ * VPN / proxy detection client.
  *
- * The Pro Smart-Signals tier is no longer in the bundle, so the client
- * fails OPEN — the entrance gate never blocks based on Fingerprint.
- * Anti-duplicate-account and drift detection still work via the OSS
- * visitorId exposed by `src/lib/fingerprint.ts`.
+ * Truth comes from the `vpn-verdict` edge function, which prefers the
+ * Cloudflare Worker headers (forwarded by the client when available) and
+ * falls back to Abstract IP Intelligence. Fingerprint provides only the
+ * stable visitorId via `src/lib/fingerprint.ts`.
  */
 
 import { clearVisitorEventCache, getVisitorEvent } from "@/lib/fingerprint";
+import { supabase } from "@/integrations/supabase/client";
 
 export type IpInfo = {
   ip: string;
@@ -32,14 +33,6 @@ export type FpSignals = {
   error?: string;
 };
 
-export type FpEvaluation =
-  | { kind: "block"; reason: string; ruleName: string | null }
-  | { kind: "allow" };
-
-export function evaluateFingerprint(_s: FpSignals): FpEvaluation {
-  return { kind: "allow" };
-}
-
 export type RulesetVerdict = {
   ok: boolean;
   reason?: string;
@@ -48,16 +41,71 @@ export type RulesetVerdict = {
 };
 
 /**
- * Entry check used by PostLoginGate. Forces a fresh fingerprint event so the
- * drift watcher gets a stable baseline, then always allows.
+ * Read the Cloudflare Worker verdict from cookies it set on add-logic.com.
+ * Cookies are used (vs headers) because browser fetch can read them directly.
+ * Expected (set by the Worker): `al_vpn=block|allow`, optional `al_ip=<ip>`.
+ */
+function readWorkerCookies(): { verdict: string | null; ip: string | null } {
+  if (typeof document === "undefined") return { verdict: null, ip: null };
+  const jar = Object.fromEntries(
+    document.cookie.split(";").map((c) => {
+      const [k, ...v] = c.trim().split("=");
+      return [k, decodeURIComponent(v.join("=") ?? "")];
+    }),
+  );
+  return { verdict: jar["al_vpn"] ?? null, ip: jar["al_ip"] ?? null };
+}
+
+/**
+ * Entry check used by PostLoginGate (approximate-IP branch only).
+ * 1. Force a fresh fingerprint event (gives us visitorId + a fresh requestId).
+ * 2. Resolve the exit IP via fingerprint-signals.
+ * 3. Ask vpn-verdict for the final allow/block decision.
  */
 export async function verifyFingerprintRuleset(): Promise<RulesetVerdict> {
   clearVisitorEventCache();
+  let requestId: string | null = null;
   try {
-    await getVisitorEvent();
+    const ev = await getVisitorEvent();
+    requestId = ev.requestId;
   } catch {
-    /* ignore */
+    /* ignore — verdict will fall back to Worker / Abstract on ip-from-transport */
   }
+
+  // Resolve IP via Fingerprint server (best-effort).
+  let ip: string | null = null;
+  if (requestId) {
+    try {
+      const { data } = await supabase.functions.invoke("fingerprint-signals", {
+        body: { requestId },
+      });
+      ip = (data as { ip?: string | null } | null)?.ip ?? null;
+    } catch { /* ignore */ }
+  }
+  if (!ip) {
+    const transport = await fetchTransportIpInfo();
+    ip = transport?.ip ?? null;
+  }
+
+  const { verdict: workerVerdict, ip: workerIp } = readWorkerCookies();
+
+  try {
+    const { data } = await supabase.functions.invoke("vpn-verdict", {
+      body: { ip, workerVerdict, workerIp },
+    });
+    const d = (data ?? {}) as { block?: boolean; reason?: string | null };
+    if (d.block) {
+      return {
+        ok: false,
+        reason: d.reason ?? "VPN / proxy detected",
+        ruleName: null,
+        signals: { vpn: true, proxy: false, tor: false, relay: false, incognito: false, ipFromFp: ip },
+      };
+    }
+  } catch (e) {
+    console.warn("[vpnDetection] vpn-verdict failed, failing open", e);
+  }
+
   return { ok: true, signals: null };
 }
 

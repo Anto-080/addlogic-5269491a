@@ -1,41 +1,77 @@
 /**
- * FingerprintJS (open-source, v4) client.
+ * FingerprintJS Identification (free tier) — uses the Pro/Identification SDK
+ * with the project's public API key fetched once from the edge function.
  *
- * The Pro/Smart-Signals tier is no longer used in the bundle. This module
- * exposes a stable per-browser visitorId for the post-entry drift watcher
- * and anti-duplicate-account logic. VPN/proxy detection is intentionally
- * NOT performed here — the free agent cannot reliably detect VPNs.
+ * VPN/proxy decisions are NOT made here. They live in the Cloudflare Worker
+ * on add-logic.com/* (primary) with Abstract IP Intelligence as fallback
+ * via the `vpn-verdict` edge function.
  */
 
-import FingerprintJS, { type Agent } from "@fingerprintjs/fingerprintjs";
+import FingerprintJS, {
+  type Agent,
+  type GetResult,
+} from "@fingerprintjs/fingerprintjs-pro";
+import { supabase } from "@/integrations/supabase/client";
 
+type ClientConfig = { publicKey: string; region: string; configured: boolean };
+
+let configPromise: Promise<ClientConfig | null> | null = null;
 let agentPromise: Promise<Agent | null> | null = null;
+let visitorEventPromise: Promise<{
+  visitorId: string | null;
+  requestId: string | null;
+}> | null = null;
 
-function getAgent(): Promise<Agent | null> {
+async function loadConfig(): Promise<ClientConfig | null> {
+  if (configPromise) return configPromise;
+  configPromise = (async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("fingerprint-signals", {
+        method: "GET",
+      });
+      if (error || !data?.publicKey) return null;
+      return data as ClientConfig;
+    } catch {
+      return null;
+    }
+  })();
+  return configPromise;
+}
+
+async function getAgent(): Promise<Agent | null> {
   if (agentPromise) return agentPromise;
   agentPromise = (async () => {
+    const cfg = await loadConfig();
+    if (!cfg?.publicKey) return null;
     try {
-      return await FingerprintJS.load();
+      return await FingerprintJS.load({
+        apiKey: cfg.publicKey,
+        region: (cfg.region as "us" | "eu" | "ap") ?? "us",
+      });
     } catch (e) {
-      console.error("[fingerprint] load failed", e);
+      console.error("[fingerprint] agent load failed", e);
       return null;
     }
   })();
   return agentPromise;
 }
 
-let visitorEventPromise: Promise<{ visitorId: string | null; requestId: string | null }> | null = null;
-
-export function getVisitorEvent(): Promise<{ visitorId: string | null; requestId: string | null }> {
+export function getVisitorEvent(): Promise<{
+  visitorId: string | null;
+  requestId: string | null;
+}> {
   if (visitorEventPromise) return visitorEventPromise;
   visitorEventPromise = (async () => {
     try {
       const agent = await getAgent();
       if (!agent) return { visitorId: null, requestId: null };
-      const r = await agent.get();
-      // The OSS agent has no Pro requestId; we mirror visitorId for compatibility.
-      return { visitorId: r.visitorId ?? null, requestId: r.visitorId ?? null };
-    } catch {
+      const r: GetResult = await agent.get();
+      return {
+        visitorId: r.visitorId ?? null,
+        requestId: r.requestId ?? null,
+      };
+    } catch (e) {
+      console.error("[fingerprint] get() failed", e);
       return { visitorId: null, requestId: null };
     }
   })();
