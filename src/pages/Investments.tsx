@@ -108,7 +108,7 @@ export default function Investments() {
             { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by Researchers' earnings and private investors liquidity. Access institutional-grade passive yealds, \u2206Delta-Neutral strategies minimize risk." },
             { Icon: Shield, title: "Sector-Based Investing", desc: "Invest in companies matching your research tier. Top-tier researchers can back breakthroughs in their area of expertise." },
           ].map(({ Icon, title, desc }) => (
-            <Card key={title} data-reveal className="bg-card border-border/50 opacity-80 glow-card">
+            <Card key={title} data-reveal onClick={onCardClick} className="bg-card border-border/50 opacity-80 glow-card cursor-pointer">
               <CardContent className="p-4">
                 <Icon className="h-8 w-8 mb-3" style={{ color: "#004627" }} />
                 <h3 className="text-sm font-semibold text-foreground mb-1">{title}</h3>
