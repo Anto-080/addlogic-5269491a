@@ -74,7 +74,14 @@ function ConsentLockBlock({
 
 export default function Dashboard() {
   const { cookieAutoAccept, gpsPrecision, analyticsConsent, setCookieAutoAccept, setGpsPrecision, setAnalyticsConsent, cookieLocked, analyticsLocked, setCookieLocked, setAnalyticsLocked } = useSettings();
-  const [descriptionsOpen, setDescriptionsOpen] = useState(true);
+  const [descriptionsOpen, setDescriptionsOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const stored = window.localStorage.getItem("al.dataConsensusOpen");
+    return stored === null ? true : stored === "1";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("al.dataConsensusOpen", descriptionsOpen ? "1" : "0"); } catch {}
+  }, [descriptionsOpen]);
   const [couponsOpen, setCouponsOpen] = useState(false);
   const [permission, setPermission] = useState<GeolocationPermissionState>("prompt");
   const [adBlockSlideOpen, setAdBlockSlideOpen] = useState(false);
