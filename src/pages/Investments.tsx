@@ -50,6 +50,21 @@ export default function Investments() {
   const investPct = Math.min(100, (userLevel / INVESTMENT_UNLOCK) * 100);
   const revealRoot = useScrollReveal();
 
+  // Always open at the top of the page (above the "Work In Progress" card).
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
+
+  // Click-to-glow: tapping a card toggles a warm-golden halo on that card only.
+  const onCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const root = revealRoot.current;
+    root?.querySelectorAll(".glow-card.is-glowing").forEach((n) => {
+      if (n !== card) n.classList.remove("is-glowing");
+    });
+    card.classList.toggle("is-glowing");
+  };
+
   return (
     <AppLayout>
       <div ref={revealRoot} className="space-y-6 max-w-5xl mx-auto">
