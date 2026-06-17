@@ -103,7 +103,7 @@ export default function Investments() {
           ))}
         </div>
 
-        <Card className="bg-card border-border/50 opacity-90 sm:col-span-2">
+        <Card data-reveal className="bg-card border-border/50 opacity-90 sm:col-span-2 glow-card">
           <CardContent className="p-4 space-y-3">
             <p className="text-sm italic text-foreground/90">
               Follow the Fluxes against the Current, 'till the Mountain.
