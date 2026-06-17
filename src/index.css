@@ -246,18 +246,18 @@
     [data-reveal] { opacity: 1; transform: none; transition: none; }
   }
 
-  /* Soft amber halo behind cards — replaces hard drop shadows. */
+  /* Cards: no ambient glow. Warm-golden halo only when actively clicked/focused. */
   .glow-card {
-    box-shadow:
-      0 0 0 1px hsl(150 15% 14% / 0.6),
-      0 0 24px -4px hsl(38 92% 50% / 0.18),
-      0 0 60px -10px hsl(38 92% 50% / 0.12);
+    box-shadow: 0 0 0 1px hsl(150 15% 14% / 0.6);
+    outline: none;
   }
-  .glow-card:hover {
+  .glow-card:active,
+  .glow-card:focus,
+  .glow-card:focus-within,
+  .glow-card.is-glowing {
     box-shadow:
-      0 0 0 1px hsl(38 92% 50% / 0.35),
-      0 0 32px -2px hsl(38 92% 50% / 0.35),
-      0 0 90px -10px hsl(38 92% 50% / 0.25);
-    transform: translateY(-3px);
+      0 0 0 1px hsl(43 80% 55% / 0.28),
+      0 0 18px -4px hsl(43 90% 58% / 0.22),
+      0 0 48px -12px hsl(40 85% 50% / 0.16);
   }
 }

@@ -50,6 +50,21 @@ export default function Investments() {
   const investPct = Math.min(100, (userLevel / INVESTMENT_UNLOCK) * 100);
   const revealRoot = useScrollReveal();
 
+  // Always open at the top of the page (above the "Work In Progress" card).
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
+
+  // Click-to-glow: tapping a card toggles a warm-golden halo on that card only.
+  const onCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const root = revealRoot.current;
+    root?.querySelectorAll(".glow-card.is-glowing").forEach((n) => {
+      if (n !== card) n.classList.remove("is-glowing");
+    });
+    card.classList.toggle("is-glowing");
+  };
+
   return (
     <AppLayout>
       <div ref={revealRoot} className="space-y-6 max-w-5xl mx-auto">
@@ -59,7 +74,7 @@ export default function Investments() {
         </div>
 
         {/* Level 50 gate — keeps the original Work In Progress sign image here only */}
-        <Card data-reveal className="bg-card border-border/50 glow-card">
+        <Card data-reveal onClick={onCardClick} className="bg-card border-border/50 glow-card cursor-pointer">
 
           <CardContent className="p-8 text-center space-y-4">
             <img
@@ -93,7 +108,7 @@ export default function Investments() {
             { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by Researchers' earnings and private investors liquidity. Access institutional-grade passive yealds, \u2206Delta-Neutral strategies minimize risk." },
             { Icon: Shield, title: "Sector-Based Investing", desc: "Invest in companies matching your research tier. Top-tier researchers can back breakthroughs in their area of expertise." },
           ].map(({ Icon, title, desc }) => (
-            <Card key={title} data-reveal className="bg-card border-border/50 opacity-80 glow-card">
+            <Card key={title} data-reveal onClick={onCardClick} className="bg-card border-border/50 opacity-80 glow-card cursor-pointer">
               <CardContent className="p-4">
                 <Icon className="h-8 w-8 mb-3" style={{ color: "#004627" }} />
                 <h3 className="text-sm font-semibold text-foreground mb-1">{title}</h3>
@@ -103,7 +118,7 @@ export default function Investments() {
           ))}
         </div>
 
-        <Card data-reveal className="bg-card border-border/50 opacity-90 sm:col-span-2 glow-card">
+        <Card data-reveal onClick={onCardClick} className="bg-card border-border/50 opacity-90 sm:col-span-2 glow-card cursor-pointer">
           <CardContent className="p-4 space-y-3">
             <p className="text-sm italic text-foreground/90">
               Follow the Fluxes against the Current, 'till the Mountain.
@@ -122,7 +137,8 @@ export default function Investments() {
         {/* Phase 4 — ∞ Circular Economy (Level 100) — collapsible */}
         <Card
           data-reveal
-          className={`border-border/50 overflow-hidden transition-colors glow-card ${circularUnlocked ? "" : "bg-card"}`}
+          className={`border-border/50 overflow-hidden transition-colors glow-card cursor-pointer ${circularUnlocked ? "" : "bg-card"}`}
+          onClick={onCardClick}
           data-circular-card={circularUnlocked ? "true" : undefined}
         >
           <CardHeader className="pb-3">
