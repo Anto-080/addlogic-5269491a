@@ -137,7 +137,8 @@ export default function Investments() {
         {/* Phase 4 — ∞ Circular Economy (Level 100) — collapsible */}
         <Card
           data-reveal
-          className={`border-border/50 overflow-hidden transition-colors glow-card ${circularUnlocked ? "" : "bg-card"}`}
+          className={`border-border/50 overflow-hidden transition-colors glow-card cursor-pointer ${circularUnlocked ? "" : "bg-card"}`}
+          onClick={onCardClick}
           data-circular-card={circularUnlocked ? "true" : undefined}
         >
           <CardHeader className="pb-3">
