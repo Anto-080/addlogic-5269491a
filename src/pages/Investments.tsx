@@ -48,13 +48,16 @@ export default function Investments() {
   const circularUnlocked = userLevel >= CIRCULAR_UNLOCK;
   const circularPct = Math.min(100, (userLevel / CIRCULAR_UNLOCK) * 100);
   const investPct = Math.min(100, (userLevel / INVESTMENT_UNLOCK) * 100);
-  // No inline color overrides — the single rule in index.css ([data-circular-card])
-  // applies the exact RGB sampled from the uploaded reference image.
+  const revealRoot = useScrollReveal();
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
-        <div>
+      <div ref={revealRoot} className="space-y-6 max-w-5xl mx-auto">
+        <div data-reveal>
+          <h1 className="text-2xl font-bold text-foreground">Investment Phase</h1>
+          <p className="text-sm text-muted-foreground">Unlock by reaching higher experience levels.</p>
+        </div>
+
           <h1 className="text-2xl font-bold text-foreground">Investment Phase</h1>
           <p className="text-sm text-muted-foreground">Unlock by reaching higher experience levels.</p>
         </div>
