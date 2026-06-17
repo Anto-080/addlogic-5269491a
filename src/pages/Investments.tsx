@@ -74,7 +74,7 @@ export default function Investments() {
         </div>
 
         {/* Level 50 gate — keeps the original Work In Progress sign image here only */}
-        <Card data-reveal className="bg-card border-border/50 glow-card">
+        <Card data-reveal onClick={onCardClick} className="bg-card border-border/50 glow-card cursor-pointer">
 
           <CardContent className="p-8 text-center space-y-4">
             <img
