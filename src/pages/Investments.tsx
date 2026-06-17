@@ -58,12 +58,9 @@ export default function Investments() {
           <p className="text-sm text-muted-foreground">Unlock by reaching higher experience levels.</p>
         </div>
 
-          <h1 className="text-2xl font-bold text-foreground">Investment Phase</h1>
-          <p className="text-sm text-muted-foreground">Unlock by reaching higher experience levels.</p>
-        </div>
-
         {/* Level 50 gate — keeps the original Work In Progress sign image here only */}
-        <Card className="bg-card border-border/50 glow-amber">
+        <Card data-reveal className="bg-card border-border/50 glow-card">
+
           <CardContent className="p-8 text-center space-y-4">
             <img
               src={workInProgressImg}
