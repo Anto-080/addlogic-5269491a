@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Shield, Users, ChevronDown } from "lucide-react";
@@ -11,6 +12,35 @@ import { IdeasLibrary } from "@/components/IdeasLibrary";
 const CIRCULAR_UNLOCK = 100;
 const INVESTMENT_UNLOCK = 50;
 
+/** FE International–style scroll reveal: marks descendants [data-reveal]
+ *  as "in" once they enter the viewport, with a small per-card delay. */
+function useScrollReveal() {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>("[data-reveal]"));
+    nodes.forEach((el, i) => {
+      el.style.transitionDelay = `${Math.min(i * 90, 450)}ms`;
+    });
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            (e.target as HTMLElement).setAttribute("data-reveal", "in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" },
+    );
+    nodes.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+  return rootRef;
+}
+
+
 export default function Investments() {
   const { data: stats } = useUserStats();
   const userLevel = stats?.level ?? 1;
@@ -18,19 +48,19 @@ export default function Investments() {
   const circularUnlocked = userLevel >= CIRCULAR_UNLOCK;
   const circularPct = Math.min(100, (userLevel / CIRCULAR_UNLOCK) * 100);
   const investPct = Math.min(100, (userLevel / INVESTMENT_UNLOCK) * 100);
-  // No inline color overrides — the single rule in index.css ([data-circular-card])
-  // applies the exact RGB sampled from the uploaded reference image.
+  const revealRoot = useScrollReveal();
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
-        <div>
+      <div ref={revealRoot} className="space-y-6 max-w-5xl mx-auto">
+        <div data-reveal>
           <h1 className="text-2xl font-bold text-foreground">Investment Phase</h1>
           <p className="text-sm text-muted-foreground">Unlock by reaching higher experience levels.</p>
         </div>
 
         {/* Level 50 gate — keeps the original Work In Progress sign image here only */}
-        <Card className="bg-card border-border/50 glow-amber">
+        <Card data-reveal className="bg-card border-border/50 glow-card">
+
           <CardContent className="p-8 text-center space-y-4">
             <img
               src={workInProgressImg}
@@ -63,7 +93,7 @@ export default function Investments() {
             { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by Researchers' earnings and private investors liquidity. Access institutional-grade passive yealds, \u2206Delta-Neutral strategies minimize risk." },
             { Icon: Shield, title: "Sector-Based Investing", desc: "Invest in companies matching your research tier. Top-tier researchers can back breakthroughs in their area of expertise." },
           ].map(({ Icon, title, desc }) => (
-            <Card key={title} className="bg-card border-border/50 opacity-60">
+            <Card key={title} data-reveal className="bg-card border-border/50 opacity-80 glow-card">
               <CardContent className="p-4">
                 <Icon className="h-8 w-8 mb-3" style={{ color: "#004627" }} />
                 <h3 className="text-sm font-semibold text-foreground mb-1">{title}</h3>
@@ -73,7 +103,7 @@ export default function Investments() {
           ))}
         </div>
 
-        <Card className="bg-card border-border/50 opacity-90 sm:col-span-2">
+        <Card data-reveal className="bg-card border-border/50 opacity-90 sm:col-span-2 glow-card">
           <CardContent className="p-4 space-y-3">
             <p className="text-sm italic text-foreground/90">
               Follow the Fluxes against the Current, 'till the Mountain.
@@ -91,7 +121,8 @@ export default function Investments() {
 
         {/* Phase 4 — ∞ Circular Economy (Level 100) — collapsible */}
         <Card
-          className={`border-border/50 overflow-hidden transition-colors ${circularUnlocked ? "" : "bg-card"}`}
+          data-reveal
+          className={`border-border/50 overflow-hidden transition-colors glow-card ${circularUnlocked ? "" : "bg-card"}`}
           data-circular-card={circularUnlocked ? "true" : undefined}
         >
           <CardHeader className="pb-3">
