@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Shield, Users, ChevronDown } from "lucide-react";
@@ -10,6 +11,35 @@ import { IdeasLibrary } from "@/components/IdeasLibrary";
 
 const CIRCULAR_UNLOCK = 100;
 const INVESTMENT_UNLOCK = 50;
+
+/** FE International–style scroll reveal: marks descendants [data-reveal]
+ *  as "in" once they enter the viewport, with a small per-card delay. */
+function useScrollReveal() {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>("[data-reveal]"));
+    nodes.forEach((el, i) => {
+      el.style.transitionDelay = `${Math.min(i * 90, 450)}ms`;
+    });
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            (e.target as HTMLElement).setAttribute("data-reveal", "in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" },
+    );
+    nodes.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+  return rootRef;
+}
+
 
 export default function Investments() {
   const { data: stats } = useUserStats();
