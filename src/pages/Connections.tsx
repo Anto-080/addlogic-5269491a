@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, UserCheck, ExternalLink, Check, X } from "lucide-react";
+import { Mail, UserCheck, ExternalLink, Check, X, Shield, Link2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -10,7 +10,6 @@ import {
   consumeRedirect,
   disconnect as disconnectProvider,
   hasProviderConfig,
-  isConnected,
   readConnections,
   type SocialConnection,
   type SocialProvider,
@@ -23,7 +22,7 @@ const MOCK_CONNECTIONS = [
   { name: "James Okafor", platform: "facebook", interests: ["Global News", "Economics"], affinity: 78, avatar: "JO" },
 ];
 
-function FacebookGlyph({ size = 24 }: { size?: number }) {
+function FacebookGlyph({ size = 28 }: { size?: number }) {
   return (
     <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden>
       <circle cx="16" cy="16" r="15" fill="#1877F2" />
@@ -31,7 +30,7 @@ function FacebookGlyph({ size = 24 }: { size?: number }) {
     </svg>
   );
 }
-function LinkedInGlyph({ size = 24 }: { size?: number }) {
+function LinkedInGlyph({ size = 28 }: { size?: number }) {
   return (
     <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden>
       <rect x="1" y="1" width="30" height="30" rx="4" fill="#0A66C2" />
@@ -42,9 +41,36 @@ function LinkedInGlyph({ size = 24 }: { size?: number }) {
   );
 }
 
-const BRAND: Record<SocialProvider, { color: string; label: string; cta: string; Glyph: (p: { size?: number }) => JSX.Element }> = {
-  facebook: { color: "#1877F2", label: "Facebook", cta: "Connect with Meta", Glyph: FacebookGlyph },
-  linkedin: { color: "#0A66C2", label: "LinkedIn", cta: "Sign in with LinkedIn", Glyph: LinkedInGlyph },
+const BRAND: Record<SocialProvider, {
+  color: string;
+  label: string;
+  cta: string;
+  subtext: string;
+  connectedSubtext: string;
+  Glyph: (p: { size?: number }) => JSX.Element;
+  bgClass: string;
+  borderClass: string;
+}> = {
+  facebook: {
+    color: "#1877F2",
+    label: "Facebook",
+    cta: "Link Facebook Account",
+    subtext: "Find friends & share research interests with your Facebook network",
+    connectedSubtext: "Your Facebook account is linked. Discover connections from your network.",
+    Glyph: FacebookGlyph,
+    bgClass: "bg-[#1877F2]/5",
+    borderClass: "border-[#1877F2]/20",
+  },
+  linkedin: {
+    color: "#0A66C2",
+    label: "LinkedIn",
+    cta: "Link LinkedIn Account",
+    subtext: "Connect with professionals & researchers in your tier network",
+    connectedSubtext: "Your LinkedIn account is linked. Expand your professional research circle.",
+    Glyph: LinkedInGlyph,
+    bgClass: "bg-[#0A66C2]/5",
+    borderClass: "border-[#0A66C2]/20",
+  },
 };
 
 function ProviderCard({
@@ -66,7 +92,7 @@ function ProviderCard({
     if (!url) {
       toast({
         title: `${cfg.label} not configured`,
-        description: `Set ${provider === "facebook" ? "VITE_FACEBOOK_APP_ID" : "VITE_LINKEDIN_CLIENT_ID"} in your environment to enable real OAuth.`,
+        description: `Add VITE_${provider === "facebook" ? "FACEBOOK_APP_ID" : "LINKEDIN_CLIENT_ID"} to your environment to enable real OAuth.`,
       });
       return;
     }
@@ -81,48 +107,75 @@ function ProviderCard({
 
   return (
     <div
-      className="rounded-xl border bg-card transition-colors"
-      style={{ borderColor: connection ? cfg.color : "hsl(var(--border) / 0.5)" }}
+      className={`rounded-xl border-2 transition-all duration-300 ${cfg.borderClass} ${
+        connection ? "bg-card" : cfg.bgClass
+      } hover:shadow-lg hover:-translate-y-0.5`}
     >
-      <div className="p-4 text-center space-y-2">
-        <div className="flex justify-center"><cfg.Glyph size={36} /></div>
-        <p className="text-sm font-semibold text-foreground">{cfg.label}</p>
+      <div className="p-5 sm:p-6">
+        <div className="flex items-start gap-4">
+          <div
+            className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: connection ? `${cfg.color}15` : `${cfg.color}10` }}
+          >
+            <cfg.Glyph size={32} />
+          </div>
 
-        {connection ? (
-          <>
-            <span
-              className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
-              style={{ color: cfg.color, backgroundColor: `${cfg.color}1A` }}
-            >
-              <Check className="h-3 w-3" /> Connected
-            </span>
-            <p className="text-[10px] text-muted-foreground">
-              since {new Date(connection.connectedAt).toLocaleDateString()}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base font-semibold text-foreground">{cfg.label}</h3>
+              {connection && (
+                <span
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{ color: cfg.color, backgroundColor: `${cfg.color}18` }}
+                >
+                  <Check className="h-3 w-3" /> Linked
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+              {connection ? cfg.connectedSubtext : cfg.subtext}
             </p>
-            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={handleDisconnect}>
-              <X className="h-3 w-3 mr-1" /> Disconnect
-            </Button>
-          </>
-        ) : (
-          <>
-            <p className="text-xs text-muted-foreground">
-              {provider === "facebook"
-                ? "Find friends with similar research interests"
-                : "Connect with professionals in your tier"}
+
+            <div className="mt-4">
+              {connection ? (
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs text-muted-foreground">
+                    Linked on {new Date(connection.connectedAt).toLocaleDateString()}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={handleDisconnect}
+                  >
+                    <X className="h-3.5 w-3.5 mr-1" /> Unlink
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={handleConnect}
+                  className="h-9 text-sm font-medium gap-2"
+                  style={{
+                    backgroundColor: cfg.color,
+                    color: "#fff",
+                  }}
+                >
+                  <Link2 className="h-4 w-4" />
+                  {cfg.cta}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {!configured && !connection && (
+          <div className="mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+            <p className="text-xs text-amber-400/90">
+              <Shield className="h-3 w-3 inline mr-1" />
+              Provider not configured. Add your {cfg.label} client ID in settings to enable linking.
             </p>
-            <button
-              onClick={handleConnect}
-              className="inline-flex items-center gap-1 text-[11px] font-medium hover:underline"
-              style={{ color: cfg.color }}
-            >
-              <ExternalLink className="h-3 w-3" /> {cfg.cta}
-            </button>
-            {!configured && (
-              <p className="text-[10px] text-muted-foreground italic">
-                Provider ID not set — click to see setup hint
-              </p>
-            )}
-          </>
+          </div>
         )}
       </div>
     </div>
@@ -142,7 +195,7 @@ export default function Connections() {
     const provider = consumeRedirect(uid);
     if (provider) {
       refresh();
-      toast({ title: `${BRAND[provider].label} connected`, description: "Authorization complete." });
+      toast({ title: `${BRAND[provider].label} linked`, description: "Your social account has been connected." });
     }
     const onChange = () => refresh();
     window.addEventListener("social-connections-changed", onChange);
@@ -155,57 +208,91 @@ export default function Connections() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-8 max-w-5xl mx-auto">
+        {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Connections</h1>
-          <p className="text-sm text-muted-foreground">Connect with researchers who share your interests.</p>
+          <p className="text-sm text-muted-foreground mt-1">Link your social accounts to discover researchers who share your interests.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <ProviderCard provider="facebook" uid={uid} connection={fb} onChanged={refresh} />
-          <ProviderCard provider="linkedin" uid={uid} connection={li} onChanged={refresh} />
-
-          <div className="rounded-xl border border-border/50 bg-card">
-            <div className="p-4 text-center space-y-2">
-              <Mail className="h-9 w-9 text-money mx-auto" />
-              <p className="text-sm font-semibold text-foreground">Share ID Card</p>
-              <p className="text-xs text-muted-foreground">Exchange contact info with high-affinity matches</p>
-            </div>
+        {/* Link Accounts Section */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-money" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Link Your Accounts</h2>
           </div>
-        </div>
 
-        <Card className="bg-card border-border/50">
-          <CardHeader><CardTitle className="text-base">Suggested Connections</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            {MOCK_CONNECTIONS.map((conn, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ backgroundColor: conn.platform === "facebook" ? "#1877F2" : "#0A66C2" }}
-                  >
-                    {conn.avatar}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{conn.name}</p>
-                    <div className="flex gap-1 flex-wrap">
-                      {conn.interests.map((int) => (
-                        <span key={int} className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{int}</span>
-                      ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ProviderCard provider="facebook" uid={uid} connection={fb} onChanged={refresh} />
+            <ProviderCard provider="linkedin" uid={uid} connection={li} onChanged={refresh} />
+          </div>
+        </section>
+
+        {/* Share ID Card */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4 text-money" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Share</h2>
+          </div>
+
+          <Card className="bg-card border-border/50 hover:border-border transition-colors">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-money/10 flex items-center justify-center">
+                <Mail className="h-6 w-6 text-money" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-foreground">Share ID Card</h3>
+                <p className="text-sm text-muted-foreground">Exchange contact info with high-affinity matches</p>
+              </div>
+              <Button variant="outline" size="sm" className="h-9">
+                <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Share
+              </Button>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Suggested Connections */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4 text-money" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Suggested Connections</h2>
+          </div>
+
+          <Card className="bg-card border-border/50">
+            <CardContent className="p-4 space-y-2">
+              {MOCK_CONNECTIONS.map((conn, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                      style={{ backgroundColor: conn.platform === "facebook" ? "#1877F2" : "#0A66C2" }}
+                    >
+                      {conn.avatar}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{conn.name}</p>
+                      <div className="flex gap-1 flex-wrap">
+                        {conn.interests.map((int) => (
+                          <span key={int} className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{int}</span>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-money">{conn.affinity}%</p>
-                    <p className="text-[10px] text-muted-foreground">affinity</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-money">{conn.affinity}%</p>
+                      <p className="text-[10px] text-muted-foreground">affinity</p>
+                    </div>
+                    <Button size="sm" variant="secondary"><UserCheck className="h-3 w-3" /></Button>
                   </div>
-                  <Button size="sm" variant="secondary"><UserCheck className="h-3 w-3" /></Button>
                 </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              ))}
+            </CardContent>
+          </Card>
+        </section>
       </div>
     </AppLayout>
   );
