@@ -1,57 +1,62 @@
-## Goal
-End the Fingerprint loop. Use your existing FingerprintJS Free keys (public + server) for stable visitor ID, consume the Cloudflare Worker verdict on `add-logic.com/*` for the VPN signal, and show a single full-screen block card when a VPN is detected. Bump Vite to 6.0.0 and refresh lockfiles so the Worker pipeline is happy.
+## What's actually broken
 
-## Important reality check
-FingerprintJS Free does NOT expose Smart Signals (`vpn`, `proxy`, `tor`) on the Events API — that field set is Pro Plus only. We will still call the Events API with your server key for the visitor ID + IP, but VPN truth comes from:
-1. The Cloudflare Worker verdict (primary), and
-2. `ABSTRACT_IP_API_KEY` (already in your secrets) as a server-side fallback when the Worker header is absent (e.g. preview domain).
+The Cloudflare → GitHub pipeline is working fine. The latest commit (`36fa701`) cloned, `bun install` ran, `vite build` produced `dist/assets/index-yKM2Aaw2.js`, Cloudflare uploaded 19 files and reported `Success: Your site was deployed!`.
 
-If the Worker is already deciding VPN, the app just trusts its verdict — no second guess.
+The blank dark-green page on https://add-logic.com is **not** a React, Vite, Cloudflare proxy, or SSL problem. The browser console shows one fatal error:
+
+```
+Uncaught Error: supabaseUrl is required.
+  at Cq (index-yKM2Aaw2.js)   ← createClient()
+  at Nq (...)                  ← src/integrations/supabase/client.ts
+```
+
+Meaning: at Cloudflare Pages **build time**, `import.meta.env.VITE_SUPABASE_URL` was `undefined`, so `createClient(undefined, undefined)` is baked into the bundle, throws on first import, React never mounts, and you see only the body background color.
+
+### Why the env vars are missing on Cloudflare
+
+`.env` is committed in this repo, but Cloudflare Pages does **not** read `.env` files from the repo for Vite by default in their build sandbox — Vite-prefixed variables need to be defined in **Cloudflare Pages → Settings → Variables and Secrets** so they're present in `process.env` when `vite build` runs. The Lovable preview works because the sandbox loads `.env` directly.
+
+### Vite 6.0.0 / lockfile reset is a red herring
+
+The build log shows bun ignored your `package-lock.json` edit and installed `vite@5.4.19` from `bun.lock` anyway, and the build still succeeded. The blank page would happen on Vite 5 or 6 — the missing env vars are the only cause.
 
 ## Plan
 
-### 1) Confirm + refresh the two Fingerprint keys
-- Trigger the secrets update form for `FINGERPRINT_PUBLIC_API_KEY` and `FINGERPRINT_SERVER_API_KEY`. You paste; I never see them.
-- Delete the now-unused `FINGERPRINT_SECRET_API_KEY` alias to avoid drift.
+### 1. Add the 5 build-time env vars in Cloudflare Pages (you do this, ~2 minutes)
 
-### 2) Tell me how the Worker hands us its verdict
-I need one detail before coding step 3. The Worker on `add-logic.com/*` is presumably injecting either:
-- a response header (e.g. `x-vpn: 1`, `x-al-verdict: block`), or
-- a cookie (e.g. `al_vpn=1`), or
-- a small JSON endpoint (e.g. `GET /__al/verdict`).
+Cloudflare Dashboard → **Workers & Pages → your project → Settings → Variables and Secrets → Production** (and **Preview** if you want preview deploys to work), add as plain text variables (NOT secrets — these are publishable keys):
 
-I'll use the channel you tell me. Default assumption if unspecified: header `x-al-vpn` with values `block` | `allow`, plus `x-al-ip` echoing the exit IP.
+```
+VITE_SUPABASE_URL              = https://qkzbevzmplhnwjuregsc.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY  = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFremJldnptcGxobndqdXJlZ3NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjI1OTksImV4cCI6MjA5MTgzODU5OX0.rR1vVO9FFpiwLaCg3cYlFM1Ti60wK-uO2wSeL0eq2q8
+VITE_SUPABASE_PROJECT_ID       = qkzbevzmplhnwjuregsc
+VITE_FP_ENDPOINT               = https://api.fpjs.io
+VITE_FP_PUBLIC_KEY             = kqdX7MeeyGpuaDO3jdCy
+```
 
-### 3) Rebuild the Fingerprint + VPN pipeline
-- `src/lib/fingerprint.ts` → switch back to the **standard browser agent** loaded from `https://fpjscdn.net/v3/<publicKey>` (Free tier, no `endpoint`, no Pro options). Returns `visitorId` only.
-- `supabase/functions/fingerprint-signals/index.ts` → simplified:
-  - `GET` returns `{ publicKey, configured }`.
-  - `POST { requestId }` calls the Events API with `FINGERPRINT_SERVER_API_KEY`, returns `{ visitorId, ip, ipCountry }`. No `vpn/proxy/tor` parsing (Free tier doesn't supply them).
-- New `supabase/functions/vpn-verdict/index.ts`:
-  - Reads request headers forwarded by the client (`x-al-vpn`, `x-al-ip`) — that's the Worker verdict.
-  - If absent, calls Abstract IP Intelligence with the IP from Fingerprint and returns `{ block: is_vpn || is_tor || is_proxy }`.
-  - Returns `{ block: boolean, reason, source: "worker" | "abstract" | "none" }`.
-- `src/lib/vpnDetection.ts` → thin client that:
-  1. Forwards the Worker headers (read via `fetch('/', { method: 'HEAD' })` to capture them, or directly via `document` if the Worker also sets a cookie).
-  2. Calls `vpn-verdict` with the IP from `fingerprint-signals`.
-  3. Returns `{ ok, reason, visitorId, ip }`.
-- `src/components/PostLoginGate.tsx` keeps its existing flow but now consumes the simplified verdict; block card unchanged, "Re-check" re-runs the verdict only (no Fingerprint reload needed unless device id drifts).
+Then click **Deployments → Retry deployment** on the latest build (or push any commit). The site will render.
 
-### 4) Drop the dead Pro code paths
-- Remove `requestId`, `rulesetAction`, Smart Signals fields, and the ruleset query param.
-- Remove `clearVisitorEventCache` callers that only existed for Pro re-checks; keep one simple `recheck()` exported for the block card.
+These are the same keys already exposed in your `addlogic.lovable.app` bundle — they're publishable/anon keys, safe to ship to the browser. The service-role key is NOT in this list and should never go here.
 
-### 5) Vite 6 + lockfile refresh
-- `package.json` → pin `"vite": "6.0.0"` and bump `@vitejs/plugin-react-swc` to a 6-compatible version.
-- Run `bun install` to regenerate `bun.lock` + `bun.lockb`. If a `package-lock.json` is present, delete it (project is bun-managed) so Cloudflare doesn't pick a stale npm lockfile.
-- Sanity-check `vite.config.ts` for any v6 breaking changes (none expected here).
+### 2. Revert the Vite 6 manual bump (I do this in build mode)
 
-### 6) Verify
-- Build runs clean (Lovable auto-build).
-- Preview: open Dashboard, confirm no blank page when keys are present, confirm block card appears when `vpn-verdict` returns `block: true` (I'll force it once with a debug query flag for the smoke test, then remove the flag).
-- Memory update: replace the "FingerprintJS Pro Smart Signals is the SOLE block authority" line with the new architecture (Worker verdict primary, Abstract fallback, Fingerprint = identity only).
+Now that we know Vite is innocent, clean up so the lockfiles and `package.json` agree and future Cloudflare builds don't get fragile:
 
-## What I need from you to start build
-1. Approve this plan.
-2. Tell me the Worker's signal channel (header name / cookie name / endpoint). If you say "use the default", I'll wire `x-al-vpn` + `x-al-ip`.
-3. Be ready to paste the two Fingerprint keys in the secrets form when it pops.
+- Restore `vite` to `^5.4.19` and `@vitejs/plugin-react-swc` to `^3.11.0` in `package.json`.
+- Delete the hand-edited `package-lock.json` so bun is the only lockfile (Cloudflare auto-detects bun from `bun.lock`).
+- Leave `bun.lock` / `bun.lockb` untouched — they already pin Vite 5.
+
+### 3. Verify
+
+After step 1 redeploys:
+- Reload https://add-logic.com — should show the "Verifying session…" loader, then the location-mode modal, identical to the Lovable preview.
+- Re-check the console: no `supabaseUrl is required` error.
+
+If the page is still blank after env vars are set, take a screenshot of the Cloudflare Pages **Variables and Secrets** screen and paste any new console error — I'll dig further.
+
+### What I will NOT touch
+
+- Cloudflare Worker / DNS / proxy / SSL settings (all confirmed working).
+- The GitHub integration (it's pushing commits correctly — the latest build proves it).
+- `src/integrations/supabase/client.ts` (auto-generated, off-limits).
+- Any application code — this is purely an environment + cleanup fix.
