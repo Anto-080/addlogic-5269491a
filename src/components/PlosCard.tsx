@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ExternalLink, Loader2, Search } from "lucide-react";
 import plosLogo from "@/assets/plos-logo.png";
+import mistralMark from "@/assets/mistral-mark.png";
 import { usePlosSearch, type PlosResult } from "@/hooks/usePlosSearch";
 import { useLockInterest } from "@/hooks/useLockInterest";
+import { TIERS } from "@/lib/mockData";
 
 type Props = {
   /** Whether the LinkedIn block should be shown (top-tier gate not yet reached). */
@@ -18,13 +20,17 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<PlosResult[]>([]);
+  const [classified, setClassified] = useState<{ tierId: number; tierName: string; confidence: number } | null>(null);
   const search = usePlosSearch();
   const lockInterest = useLockInterest();
 
   const run = async () => {
     if (q.trim().length < 2) return;
     try {
-      lockInterest(q.trim());
+      lockInterest(q.trim()).then((cls) => {
+        if (cls?.tierId) setClassified({ tierId: cls.tierId, tierName: cls.tierName ?? "", confidence: cls.confidence });
+        else setClassified(null);
+      });
       const r = await search.mutateAsync(q.trim());
       setResults(r);
     } catch {
@@ -89,6 +95,18 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
                 Search
               </Button>
             </div>
+            {classified && (
+              <div className="flex items-center gap-2 text-[11px] p-2 rounded-lg border border-primary/40 bg-primary/5 text-foreground">
+                <img src={mistralMark} alt="Mistral" className="brand-asset h-3.5 w-3.5 shrink-0" />
+                <span className="flex-1 min-w-0 truncate">
+                  Magnetic bar locked onto{" "}
+                  <strong style={{ color: TIERS.find((t) => t.id === classified.tierId)?.color }}>
+                    {classified.tierName}
+                  </strong>
+                  {" "}({Math.round(classified.confidence * 100)}% confidence)
+                </span>
+              </div>
+            )}
             {search.error && (
               <p className="text-xs text-destructive">Could not load PLOS results.</p>
             )}
