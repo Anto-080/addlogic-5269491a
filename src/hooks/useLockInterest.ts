@@ -10,6 +10,7 @@ import { useResearchSession } from "@/contexts/ResearchSessionContext";
 type LockInterestOptions = {
   onTierClassified?: (tierId: number) => void;
   pulseSession?: boolean;
+  minConfidence?: number;
 };
 
 /**
@@ -34,7 +35,8 @@ export function useLockInterest() {
       const { data } = await supabase.functions.invoke("classify-interest", {
         body: { text: trimmed },
       });
-      if (data?.tierId) {
+      const confidence = Number(data?.confidence) || 0;
+      if (data?.tierId && confidence >= (options.minConfidence ?? 0.4)) {
         if (options.pulseSession !== false) session.pulse(data.tierId, "search", 90_000);
         options.onTierClassified?.(data.tierId);
         await persistSubcategories(user.id, data.tierId, Array.isArray(data.subcategories) ? data.subcategories : []);
