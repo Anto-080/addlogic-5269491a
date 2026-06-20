@@ -20,6 +20,7 @@ export function useTierKeywords() {
     queryKey: ["tier_keywords", user?.id],
     enabled: !!user,
     queryFn: async () => {
+      if (!user) return { keywords: {}, subcategories: {} };
       const { data } = await supabase
         .from("tier_keywords")
         .select("tier_id, keyword, count, kind")
