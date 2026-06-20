@@ -10,7 +10,7 @@ import { TIERS } from "@/lib/mockData";
 
 type BrowserPickerProps = {
   onOpenResult?: (item: SearchResultItem) => void;
-  /** Fired when the HuggingFace classifier confidently maps a query to a tier. */
+  /** Fired when the Mistral classifier confidently maps a query to a tier. */
   onTierClassified?: (tierId: number) => void;
 };
 
@@ -21,7 +21,7 @@ const MIN_TIER_CONFIDENCE = 0.4;
  * We don't iframe DDG — every search engine sends X-Frame-Options: SAMEORIGIN,
  * which causes net::ERR_BLOCKED_BY_RESPONSE. Results render here as cards.
  *
- * Also: every submitted query is fed through HuggingFace zero-shot
+ * Also: every submitted query is fed through the Mistral Agent
  * classification (`classify-interest` edge fn). The detected tier becomes
  * the active research session (drives tier XP) and noun keywords are
  * persisted as that tier's discovered subcategories.
