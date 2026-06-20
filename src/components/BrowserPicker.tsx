@@ -1,21 +1,16 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShieldCheck } from "lucide-react";
 import mistralMark from "@/assets/mistral-mark.png";
 import { DuckDuckGoLogo } from "@/components/icons/DuckDuckGoLogo";
-import { recordSearch } from "@/lib/userInterestProfiler";
-import { bumpSearchCount } from "@/lib/zeroPartyCookies";
 import { useWebSearch } from "@/hooks/useWebSearch";
 import { SearchResults, type SearchResultItem } from "@/components/SearchResults";
-import { useClassifyInterest, extractKeywords, persistKeywords, persistSubcategories } from "@/hooks/useClassifyInterest";
-import { useResearchSession } from "@/contexts/ResearchSessionContext";
-import { useAuth } from "@/hooks/useAuth";
+import { useLockInterest } from "@/hooks/useLockInterest";
 import { TIERS } from "@/lib/mockData";
 
 type BrowserPickerProps = {
   onOpenResult?: (item: SearchResultItem) => void;
-  /** Fired when the HuggingFace classifier confidently maps a query to a tier. */
+  /** Fired when the Mistral classifier confidently maps a query to a tier. */
   onTierClassified?: (tierId: number) => void;
 };
 
@@ -26,49 +21,30 @@ const MIN_TIER_CONFIDENCE = 0.4;
  * We don't iframe DDG — every search engine sends X-Frame-Options: SAMEORIGIN,
  * which causes net::ERR_BLOCKED_BY_RESPONSE. Results render here as cards.
  *
- * Also: every submitted query is fed through HuggingFace zero-shot
+ * Also: every submitted query is fed through the Mistral Agent
  * classification (`classify-interest` edge fn). The detected tier becomes
  * the active research session (drives tier XP) and noun keywords are
  * persisted as that tier's discovered subcategories.
  */
 export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerProps) {
-  const { user } = useAuth();
-  const qc = useQueryClient();
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [classified, setClassified] = useState<{ tierId: number; tierName: string; confidence: number } | null>(null);
   const search = useWebSearch();
-  const classify = useClassifyInterest();
-  const session = useResearchSession();
+  const lockInterest = useLockInterest();
 
   const runSearch = async (query: string) => {
     setLastQuery(query);
-    recordSearch(query);
-    bumpSearchCount();
 
-    // Fire classifier + search in parallel; the classifier drives the
-    // active research session and discovered subcategories.
-    classify.mutateAsync(query).then(async (cls) => {
+    // Fire Mistral + search in parallel; the shared lock hook drives the
+    // active research session, multiplier, and discovered subcategories.
+    lockInterest(query, { onTierClassified, minConfidence: MIN_TIER_CONFIDENCE }).then((cls) => {
       if (!cls || !cls.tierId) {
         setClassified(null);
         return;
       }
       setClassified({ tierId: cls.tierId, tierName: cls.tierName ?? "", confidence: cls.confidence });
-      if (cls.confidence >= MIN_TIER_CONFIDENCE) {
-        // Pulse the session so XP for this tier starts ticking,
-        // notify the parent so the chip row reflects the auto-detected tier,
-        // and persist keywords as zero-party personalised subcategories.
-        session.pulse(cls.tierId, "search", 90_000);
-        onTierClassified?.(cls.tierId);
-        if (user) {
-          const kws = extractKeywords(query);
-          persistKeywords(user.id, cls.tierId, kws).catch(() => undefined);
-          persistSubcategories(user.id, cls.tierId, cls.subcategories ?? []).catch(() => undefined);
-        }
-      }
-    }).catch(() => setClassified(null)).finally(() => {
-      if (user) qc.invalidateQueries({ queryKey: ["user_stats", user.id] });
-    });
+    }).catch(() => setClassified(null));
 
     try {
       const r = await search.mutateAsync(query);

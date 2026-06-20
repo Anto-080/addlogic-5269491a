@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -16,36 +16,33 @@ export type TierKeyword = {
  */
 export function useTierKeywords() {
   const { user } = useAuth();
-  const [keywordsByTier, setKeywordsByTier] = useState<Record<number, TierKeyword[]>>({});
-  const [subcategoriesByTier, setSubcategoriesByTier] = useState<Record<number, TierKeyword[]>>({});
-
-  useEffect(() => {
-    if (!user) { setKeywordsByTier({}); setSubcategoriesByTier({}); return; }
-    let cancelled = false;
-    (async () => {
+  const { data = { keywords: {}, subcategories: {} } } = useQuery({
+    queryKey: ["tier_keywords", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      if (!user) return { keywords: {}, subcategories: {} };
       const { data } = await supabase
         .from("tier_keywords")
         .select("tier_id, keyword, count, kind")
         .eq("user_id", user.id)
         .order("count", { ascending: false })
         .limit(400);
-      if (cancelled) return;
+
       const kws: Record<number, TierKeyword[]> = {};
       const subs: Record<number, TierKeyword[]> = {};
       for (const row of (data ?? []) as TierKeyword[]) {
         const bucket = row.kind === "subcategory" ? subs : kws;
         (bucket[row.tier_id] ??= []).push(row);
       }
-      setKeywordsByTier(kws);
-      setSubcategoriesByTier(subs);
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
+      return { keywords: kws, subcategories: subs };
+    },
+    staleTime: 10_000,
+  });
 
   // Backward compat: legacy callers use the default export shape (keywords only).
-  return Object.assign(keywordsByTier, {
-    keywords: keywordsByTier,
-    subcategories: subcategoriesByTier,
+  return Object.assign(data.keywords, {
+    keywords: data.keywords,
+    subcategories: data.subcategories,
   }) as Record<number, TierKeyword[]> & {
     keywords: Record<number, TierKeyword[]>;
     subcategories: Record<number, TierKeyword[]>;
