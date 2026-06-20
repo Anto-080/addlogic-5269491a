@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, BookOpen, Newspaper, Search as SearchIcon } from "lucide-react";
 import openAlexLogo from "@/assets/openalex-logo.png";
+import mistralMark from "@/assets/mistral-mark.png";
 import { useLockInterest } from "@/hooks/useLockInterest";
+import { TIERS } from "@/lib/mockData";
 
 type Props = {
   tierName: string;
@@ -25,6 +27,7 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
   const [active, setActive] = useState<string | null>(subcategories[0] ?? null);
   const [freeQuery, setFreeQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
+  const [classified, setClassified] = useState<{ tierId: number; tierName: string; confidence: number } | null>(null);
   const queryStr = submittedQuery ?? (active ? `${active} ${tierName}` : null);
   const { data: works = [], isLoading, isError } = useOpenAlex(queryStr);
   const lockInterest = useLockInterest();
@@ -32,7 +35,10 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
   const submitFreeSearch = () => {
     const v = freeQuery.trim();
     if (!v) return;
-    lockInterest(v);
+    lockInterest(v).then((cls) => {
+      if (cls?.tierId) setClassified({ tierId: cls.tierId, tierName: cls.tierName ?? "", confidence: cls.confidence });
+      else setClassified(null);
+    });
     setSubmittedQuery(v);
     setActive(null);
   };
@@ -65,6 +71,18 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
           Search
         </Button>
       </div>
+      {classified && (
+        <div className="flex items-center gap-2 text-[11px] p-2 rounded-lg border border-primary/40 bg-primary/5 text-foreground">
+          <img src={mistralMark} alt="Mistral" className="brand-asset h-3.5 w-3.5 shrink-0" />
+          <span className="flex-1 min-w-0 truncate">
+            Magnetic bar locked onto{" "}
+            <strong style={{ color: TIERS.find((t) => t.id === classified.tierId)?.color }}>
+              {classified.tierName}
+            </strong>
+            {" "}({Math.round(classified.confidence * 100)}% confidence)
+          </span>
+        </div>
+      )}
       <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
         Scholarly feed (OpenAlex) · choose a sub-interest
       </p>
@@ -77,7 +95,15 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
           return (
             <button
               key={s}
-              onClick={() => { setActive(s); setSubmittedQuery(null); setFreeQuery(""); lockInterest(`${s} ${tierName}`); }}
+              onClick={() => {
+                setActive(s);
+                setSubmittedQuery(null);
+                setFreeQuery("");
+                lockInterest(`${s} ${tierName}`).then((cls) => {
+                  if (cls?.tierId) setClassified({ tierId: cls.tierId, tierName: cls.tierName ?? "", confidence: cls.confidence });
+                  else setClassified(null);
+                });
+              }}
               className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
                 sel
                   ? "bg-primary/20 border-primary/50 text-foreground"
