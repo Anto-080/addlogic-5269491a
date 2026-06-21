@@ -1,7 +1,8 @@
 import { ExternalLink, Loader2, ShieldCheck, Search as SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import { ScrollAdSlot } from "@/components/ScrollAdSlot";
 
 export type SearchResultItem = {
   title: string;
@@ -17,6 +18,9 @@ type Props = {
   error: string | null;
   onSearch: (query: string) => void;
   onOpen: (item: SearchResultItem) => void;
+  adTierId?: number;
+  adFallbackTierIds?: number[];
+  onSponsorOpen?: (url: string, tierId: number) => void;
 };
 
 /**
