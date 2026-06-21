@@ -12,6 +12,11 @@ type BrowserPickerProps = {
   onOpenResult?: (item: SearchResultItem) => void;
   /** Fired when the Mistral classifier confidently maps a query to a tier. */
   onTierClassified?: (tierId: number) => void;
+  /** Active tier id for the between-result sponsor strips. */
+  adTierId?: number;
+  adFallbackTierIds?: number[];
+  /** Called when a sponsor ad in a strip is double-clicked. */
+  onSponsorOpen?: (url: string, tierId: number) => void;
 };
 
 const MIN_TIER_CONFIDENCE = 0.4;
