@@ -107,25 +107,36 @@ export default function Research() {
               Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time while you are active in the Research Room. The <span className="text-crimson font-medium">Crimson Multiplier</span> increases the XP earned per second based on your selected tier and active data permissions.
             </p>
 
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {TIERS.map((t) => (
-                <Button
-                  key={t.id}
-                  variant={selectedTier === t.id ? "default" : "secondary"}
-                  size="sm"
-                  onClick={() => setSelectedTier(t.id)}
-                  className="shrink-0 gap-1"
-                  style={selectedTier === t.id ? undefined : { color: t.color }}
-                  aria-label={t.name}
-                >
-                  <TierIcon tierId={t.id} size={14} />
-                </Button>
-              ))}
+            <div className="space-y-1">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                Tier indicator · set by your searches
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {TIERS.map((t) => {
+                  const sel = selectedTier === t.id;
+                  return (
+                    <div
+                      key={t.id}
+                      aria-label={t.name}
+                      title={t.name}
+                      className={`shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-md border transition-colors cursor-default select-none ${
+                        sel ? "bg-primary/20 border-primary/50" : "bg-secondary/40 border-border/40"
+                      }`}
+                      style={{ color: t.color }}
+                    >
+                      <TierIcon tierId={t.id} size={14} />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <BrowserPicker
               onOpenResult={(item) => exit.requestExit(item.url, primaryTierId)}
               onTierClassified={(tierId) => setSelectedTier(tierId)}
+              adTierId={primaryTierId}
+              adFallbackTierIds={topInterestTiers}
+              onSponsorOpen={(url, tierId) => exit.requestExit(url, tierId)}
             />
           </CardContent>
         </Card>
@@ -134,9 +145,12 @@ export default function Research() {
         <Card className="bg-card border-border/50">
           <CardContent className="p-4">
             <OpenAlexFeed
+              tierId={primaryTierId}
               tierName={selectedTierData.name}
               subcategories={selectedTierData.subcategories}
-              onOpenUrl={(url) => exit.requestExit(url, primaryTierId)}
+              onOpenUrl={(url, t) => exit.requestExit(url, t ?? primaryTierId)}
+              onTierClassified={(tierId) => setSelectedTier(tierId)}
+              adFallbackTierIds={topInterestTiers}
             />
           </CardContent>
         </Card>

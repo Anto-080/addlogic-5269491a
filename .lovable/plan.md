@@ -1,62 +1,69 @@
-## What's actually broken
+# Research page rework + softer tier palette
 
-The Cloudflare → GitHub pipeline is working fine. The latest commit (`36fa701`) cloned, `bun install` ran, `vite build` produced `dist/assets/index-yKM2Aaw2.js`, Cloudflare uploaded 19 files and reported `Success: Your site was deployed!`.
+## 1. OpenAlex: show user-discovered subcategories
+**File:** `src/components/OpenAlexFeed.tsx`
 
-The blank dark-green page on https://add-logic.com is **not** a React, Vite, Cloudflare proxy, or SSL problem. The browser console shows one fatal error:
+- Add new prop `tierId: number` (passed from `Research.tsx`).
+- Read `useTierKeywords().subcategories[tierId]` — the Mistral-derived, count-ranked subcategories from the user's own past queries.
+- Render a **second chip row** under the existing static subcategory row, labelled `Most-researched by you · sub-interests`, with a small Mistral "M" mark.
+  - Empty state: muted hint "Run a search to grow this list."
+  - Each chip behaves exactly like an existing subcategory chip (sets `active`, triggers OpenAlex query for `${chip} ${tierName}`, calls `lockInterest`).
+  - Top 8, ordered by count desc; show count as a faint badge.
+- Keep the existing static `subcategories` row above (labelled `Default sub-interests`) so the user can fall back.
 
+## 2. Tier icons on Research page become indicative-only
+**File:** `src/pages/Research.tsx`
+
+- The horizontal tier row (`TIERS.map` → `<Button>`) is replaced with a non-interactive strip: render as `<div>`/`<span>` chips, `cursor-default`, no `onClick`, no selected-state toggling.
+- Current selected tier is driven **only** by Mistral classification (`onTierClassified` from `BrowserPicker` and from `OpenAlexFeed` searches). Add an `onTierClassified` callback to `OpenAlexFeed` too and wire it.
+- Highlight the chip whose id matches `selectedTier` so users still see what's active.
+- Pass `tierId={selectedTier}` into `<OpenAlexFeed>`.
+
+## 3. Search results stay open until next search
+**File:** `src/components/SearchResults.tsx` (and `BrowserPicker.tsx` if it manages collapse)
+
+- Audit current behavior: ensure result list never auto-collapses on outside click, scroll, or focus loss.
+- Only clear/replace results when `runSearch` fires for a new query. (Likely already true — confirm and remove any auto-close effect; add a comment locking the behavior.)
+
+## 4. Double-click scroll-ad slots between result links
+**File:** `src/components/SearchResults.tsx` (results list render) + new `src/components/ScrollAdSlot.tsx`
+
+- New component `ScrollAdSlot`:
+  - Horizontally scrollable strip (`overflow-x-auto`, snap), 3–5 sponsor cards from `pickNativeAd` using current tier + `topInterestTiers` fallback.
+  - **Single click = no-op** (with a tiny tooltip "Double-click to open"). **Double click (`onDoubleClick`)** opens the sponsor via `onOpenUrl` / `exit.requestExit` — this is the anti-misclick guard the user wants.
+  - Visually clearly labelled `Sponsored · double-click to open`.
+- Inject one `ScrollAdSlot` after every 3rd result in `SearchResults`. Also inject one between every 3rd OpenAlex work in `OpenAlexFeed`.
+- Add a `onOpenUrl` prop chain so slots can call back into `exit.requestExit`.
+
+## 5. Softer "vintage cookie box" tier palette
+**Files:** `src/lib/mockData.ts` (TIERS colors), `src/index.css` (optional desaturation token)
+
+- Replace the current saturated tier colors with a warmer, lower-saturation palette: think aged cardboard, faded biscuit tin — saturation ~35–50%, lightness ~55–65%, no neon.
+- Preserve hue family per tier (purple stays purple, green stays green, etc.) so meaning is intact; only saturation & lightness change.
+- Tier bars (`TierExperienceBar`, tier dots in Dashboard/Tiers): no code change needed — they already consume `tier.color`. Just verify contrast on dark emerald bg with the new values.
+
+### Proposed new color values (HSL)
 ```
-Uncaught Error: supabaseUrl is required.
-  at Cq (index-yKM2Aaw2.js)   ← createClient()
-  at Nq (...)                  ← src/integrations/supabase/client.ts
+1  hsl(270, 35%, 60%)   2  hsl(265, 35%, 62%)   3  hsl(258, 35%, 64%)
+19 hsl(295, 30%, 58%)   20 hsl(48, 55%, 65%)
+4  hsl(150, 30%, 52%)   5  hsl(135, 28%, 55%)
+6  hsl(212, 35%, 50%)   7  hsl(210, 35%, 55%)   18 hsl(205, 40%, 65%)
+8  hsl(208, 38%, 58%)   21 hsl(330, 35%, 72%)
+9  hsl(206, 40%, 62%)   10 hsl(204, 40%, 66%)   11 hsl(202, 45%, 72%)
+12 hsl(20, 45%, 72%)    13 hsl(25, 50%, 74%)
+14 hsl(30, 55%, 64%)    15 hsl(22, 60%, 58%)
+16 hsl(0, 45%, 50%)     17 hsl(0, 50%, 42%)
 ```
 
-Meaning: at Cloudflare Pages **build time**, `import.meta.env.VITE_SUPABASE_URL` was `undefined`, so `createClient(undefined, undefined)` is baked into the bundle, throws on first import, React never mounts, and you see only the body background color.
+## Out of scope (not touched)
+- Backend, Mistral classifier, edge functions, RLS, auth.
+- Sidebar, Dashboard layout, Tiers page logic.
+- `src/integrations/supabase/*` (auto-gen).
 
-### Why the env vars are missing on Cloudflare
-
-`.env` is committed in this repo, but Cloudflare Pages does **not** read `.env` files from the repo for Vite by default in their build sandbox — Vite-prefixed variables need to be defined in **Cloudflare Pages → Settings → Variables and Secrets** so they're present in `process.env` when `vite build` runs. The Lovable preview works because the sandbox loads `.env` directly.
-
-### Vite 6.0.0 / lockfile reset is a red herring
-
-The build log shows bun ignored your `package-lock.json` edit and installed `vite@5.4.19` from `bun.lock` anyway, and the build still succeeded. The blank page would happen on Vite 5 or 6 — the missing env vars are the only cause.
-
-## Plan
-
-### 1. Add the 5 build-time env vars in Cloudflare Pages (you do this, ~2 minutes)
-
-Cloudflare Dashboard → **Workers & Pages → your project → Settings → Variables and Secrets → Production** (and **Preview** if you want preview deploys to work), add as plain text variables (NOT secrets — these are publishable keys):
-
-```
-VITE_SUPABASE_URL              = https://qkzbevzmplhnwjuregsc.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY  = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFremJldnptcGxobndqdXJlZ3NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNjI1OTksImV4cCI6MjA5MTgzODU5OX0.rR1vVO9FFpiwLaCg3cYlFM1Ti60wK-uO2wSeL0eq2q8
-VITE_SUPABASE_PROJECT_ID       = qkzbevzmplhnwjuregsc
-VITE_FP_ENDPOINT               = https://api.fpjs.io
-VITE_FP_PUBLIC_KEY             = kqdX7MeeyGpuaDO3jdCy
-```
-
-Then click **Deployments → Retry deployment** on the latest build (or push any commit). The site will render.
-
-These are the same keys already exposed in your `addlogic.lovable.app` bundle — they're publishable/anon keys, safe to ship to the browser. The service-role key is NOT in this list and should never go here.
-
-### 2. Revert the Vite 6 manual bump (I do this in build mode)
-
-Now that we know Vite is innocent, clean up so the lockfiles and `package.json` agree and future Cloudflare builds don't get fragile:
-
-- Restore `vite` to `^5.4.19` and `@vitejs/plugin-react-swc` to `^3.11.0` in `package.json`.
-- Delete the hand-edited `package-lock.json` so bun is the only lockfile (Cloudflare auto-detects bun from `bun.lock`).
-- Leave `bun.lock` / `bun.lockb` untouched — they already pin Vite 5.
-
-### 3. Verify
-
-After step 1 redeploys:
-- Reload https://add-logic.com — should show the "Verifying session…" loader, then the location-mode modal, identical to the Lovable preview.
-- Re-check the console: no `supabaseUrl is required` error.
-
-If the page is still blank after env vars are set, take a screenshot of the Cloudflare Pages **Variables and Secrets** screen and paste any new console error — I'll dig further.
-
-### What I will NOT touch
-
-- Cloudflare Worker / DNS / proxy / SSL settings (all confirmed working).
-- The GitHub integration (it's pushing commits correctly — the latest build proves it).
-- `src/integrations/supabase/client.ts` (auto-generated, off-limits).
-- Any application code — this is purely an environment + cleanup fix.
+## Files edited
+- `src/pages/Research.tsx`
+- `src/components/OpenAlexFeed.tsx`
+- `src/components/SearchResults.tsx`
+- `src/components/BrowserPicker.tsx` (pass `onOpenUrl` through if needed)
+- `src/components/ScrollAdSlot.tsx` (new)
+- `src/lib/mockData.ts` (palette only)

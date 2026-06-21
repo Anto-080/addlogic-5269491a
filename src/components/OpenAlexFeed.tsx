@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useOpenAlex, type OpenAlexWork } from "@/hooks/useOpenAlex";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,12 +6,17 @@ import { Loader2, BookOpen, Newspaper, Search as SearchIcon } from "lucide-react
 import openAlexLogo from "@/assets/openalex-logo.png";
 import mistralMark from "@/assets/mistral-mark.png";
 import { useLockInterest } from "@/hooks/useLockInterest";
+import { useTierKeywords } from "@/hooks/useTierKeywords";
 import { TIERS } from "@/lib/mockData";
+import { ScrollAdSlot } from "@/components/ScrollAdSlot";
 
 type Props = {
+  tierId: number;
   tierName: string;
   subcategories: string[];
-  onOpenUrl: (url: string) => void;
+  onOpenUrl: (url: string, tierId?: number) => void;
+  onTierClassified?: (tierId: number) => void;
+  adFallbackTierIds?: number[];
 };
 
 function ddgNewsUrl(query: string): string {
@@ -22,8 +27,13 @@ function ddgNewsUrl(query: string): string {
  * OpenAlex-backed scholarly feed for a tier's subcategories. Each chip fires
  * a fresh query; clicking "Open paper" sends the actual paper URL straight to
  * the in-app outbound browser (no detour through a search engine).
+ *
+ * Two chip rows are rendered:
+ *  - default sub-interests (static, from TIERS.subcategories)
+ *  - most-researched-by-you (dynamic, from tier_keywords.kind='subcategory'
+ *    written by the Mistral classifier on past user queries)
  */
-export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
+export function OpenAlexFeed({ tierId, tierName, subcategories, onOpenUrl, onTierClassified, adFallbackTierIds = [] }: Props) {
   const [active, setActive] = useState<string | null>(subcategories[0] ?? null);
   const [freeQuery, setFreeQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
@@ -31,16 +41,29 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
   const queryStr = submittedQuery ?? (active ? `${active} ${tierName}` : null);
   const { data: works = [], isLoading, isError } = useOpenAlex(queryStr);
   const lockInterest = useLockInterest();
+  const tk = useTierKeywords();
+  const userSubs = (tk.subcategories[tierId] ?? []).slice(0, 8);
+
+  const runLock = (q: string) => {
+    lockInterest(q, { onTierClassified }).then((cls) => {
+      if (cls?.tierId) setClassified({ tierId: cls.tierId, tierName: cls.tierName ?? "", confidence: cls.confidence });
+      else setClassified(null);
+    });
+  };
 
   const submitFreeSearch = () => {
     const v = freeQuery.trim();
     if (!v) return;
-    lockInterest(v).then((cls) => {
-      if (cls?.tierId) setClassified({ tierId: cls.tierId, tierName: cls.tierName ?? "", confidence: cls.confidence });
-      else setClassified(null);
-    });
+    runLock(v);
     setSubmittedQuery(v);
     setActive(null);
+  };
+
+  const pickSub = (s: string) => {
+    setActive(s);
+    setSubmittedQuery(null);
+    setFreeQuery("");
+    runLock(`${s} ${tierName}`);
   };
 
   return (
@@ -83,38 +106,66 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
           </span>
         </div>
       )}
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-        Scholarly feed (OpenAlex) · choose a sub-interest
-      </p>
+
+      <div className="space-y-2">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+          Default sub-interests
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {subcategories.map((s) => {
+            const sel = s === active;
+            return (
+              <button
+                key={s}
+                onClick={() => pickSub(s)}
+                className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+                  sel
+                    ? "bg-primary/20 border-primary/50 text-foreground"
+                    : "bg-secondary/40 border-border/40 text-foreground/80 hover:bg-secondary/60"
+                }`}
+              >
+                {s}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold inline-flex items-center gap-1.5">
+          <img src={mistralMark} alt="Mistral" className="brand-asset h-3 w-3" />
+          Most-researched by you
+        </p>
+        {userSubs.length === 0 ? (
+          <p className="text-[10px] text-muted-foreground italic">
+            Run a search to grow this list.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {userSubs.map((k) => {
+              const sel = k.keyword === active;
+              return (
+                <button
+                  key={k.keyword}
+                  onClick={() => pickSub(k.keyword)}
+                  className={`text-[11px] px-2 py-1 rounded-full border transition-colors inline-flex items-center gap-1 ${
+                    sel
+                      ? "bg-primary/20 border-primary/50 text-foreground"
+                      : "bg-secondary/40 border-border/40 text-foreground/80 hover:bg-secondary/60"
+                  }`}
+                >
+                  <span>{k.keyword}</span>
+                  <span className="text-[9px] text-muted-foreground">·{k.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <p className="text-[10px] text-muted-foreground italic">
         Opens in the in-app browser — PDFs are filtered out so your session keeps tracking.
       </p>
-      <div className="flex flex-wrap gap-1.5">
-        {subcategories.map((s) => {
-          const sel = s === active;
-          return (
-            <button
-              key={s}
-              onClick={() => {
-                setActive(s);
-                setSubmittedQuery(null);
-                setFreeQuery("");
-                lockInterest(`${s} ${tierName}`).then((cls) => {
-                  if (cls?.tierId) setClassified({ tierId: cls.tierId, tierName: cls.tierName ?? "", confidence: cls.confidence });
-                  else setClassified(null);
-                });
-              }}
-              className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
-                sel
-                  ? "bg-primary/20 border-primary/50 text-foreground"
-                  : "bg-secondary/40 border-border/40 text-foreground/80 hover:bg-secondary/60"
-              }`}
-            >
-              {s}
-            </button>
-          );
-        })}
-      </div>
 
       {active && (
         <div className="flex items-center justify-between gap-2 p-2 rounded-lg border border-money/30 bg-money/5">
@@ -125,7 +176,7 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
             size="sm"
             variant="ghost"
             className="h-7 gap-1 text-xs shrink-0"
-            onClick={() => onOpenUrl(ddgNewsUrl(`${active} ${tierName}`))}
+            onClick={() => onOpenUrl(ddgNewsUrl(`${active} ${tierName}`), tierId)}
           >
             <Newspaper className="h-3 w-3" /> Browse all
           </Button>
@@ -144,27 +195,37 @@ export function OpenAlexFeed({ tierName, subcategories, onOpenUrl }: Props) {
         <p className="text-xs text-muted-foreground italic">No results.</p>
       )}
 
+      {/* Scholarly results stay open until the next chip / search replaces them. */}
       <div className="space-y-2">
-        {works.map((w: OpenAlexWork) => {
+        {works.map((w: OpenAlexWork, idx: number) => {
           const paperUrl = w.safe_url;
           return (
-            <div key={w.id} className="rounded-lg border border-border/50 bg-secondary/20 p-3 space-y-2">
-              <p className="text-sm font-medium text-foreground leading-snug">{w.title}</p>
-              <p className="text-[11px] text-muted-foreground">
-                {[w.host_venue, w.publication_year, w.authors.join(", ")].filter(Boolean).join(" · ")}
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="h-7 gap-1 text-xs"
-                  disabled={!paperUrl}
-                  onClick={() => paperUrl && onOpenUrl(paperUrl)}
-                >
-                  <BookOpen className="h-3 w-3" /> Open paper
-                </Button>
+            <Fragment key={w.id}>
+              <div className="rounded-lg border border-border/50 bg-secondary/20 p-3 space-y-2">
+                <p className="text-sm font-medium text-foreground leading-snug">{w.title}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {[w.host_venue, w.publication_year, w.authors.join(", ")].filter(Boolean).join(" · ")}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 gap-1 text-xs"
+                    disabled={!paperUrl}
+                    onClick={() => paperUrl && onOpenUrl(paperUrl, tierId)}
+                  >
+                    <BookOpen className="h-3 w-3" /> Open paper
+                  </Button>
+                </div>
               </div>
-            </div>
+              {(idx + 1) % 3 === 0 && idx < works.length - 1 && (
+                <ScrollAdSlot
+                  tierId={tierId}
+                  fallbackTierIds={adFallbackTierIds}
+                  onOpenUrl={(url, t) => onOpenUrl(url, t)}
+                />
+              )}
+            </Fragment>
           );
         })}
       </div>

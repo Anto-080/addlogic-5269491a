@@ -12,6 +12,11 @@ type BrowserPickerProps = {
   onOpenResult?: (item: SearchResultItem) => void;
   /** Fired when the Mistral classifier confidently maps a query to a tier. */
   onTierClassified?: (tierId: number) => void;
+  /** Active tier id for the between-result sponsor strips. */
+  adTierId?: number;
+  adFallbackTierIds?: number[];
+  /** Called when a sponsor ad in a strip is double-clicked. */
+  onSponsorOpen?: (url: string, tierId: number) => void;
 };
 
 const MIN_TIER_CONFIDENCE = 0.4;
@@ -26,7 +31,7 @@ const MIN_TIER_CONFIDENCE = 0.4;
  * the active research session (drives tier XP) and noun keywords are
  * persisted as that tier's discovered subcategories.
  */
-export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerProps) {
+export function BrowserPicker({ onOpenResult, onTierClassified, adTierId, adFallbackTierIds, onSponsorOpen }: BrowserPickerProps) {
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [classified, setClassified] = useState<{ tierId: number; tierName: string; confidence: number } | null>(null);
@@ -102,6 +107,9 @@ export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerP
           error={search.error ? (search.error as Error).message : null}
           onSearch={runSearch}
           onOpen={(item) => onOpenResult?.(item)}
+          adTierId={adTierId}
+          adFallbackTierIds={adFallbackTierIds}
+          onSponsorOpen={onSponsorOpen}
         />
       </CardContent>
     </Card>
