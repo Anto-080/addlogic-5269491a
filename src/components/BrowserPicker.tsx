@@ -31,7 +31,7 @@ const MIN_TIER_CONFIDENCE = 0.4;
  * the active research session (drives tier XP) and noun keywords are
  * persisted as that tier's discovered subcategories.
  */
-export function BrowserPicker({ onOpenResult, onTierClassified }: BrowserPickerProps) {
+export function BrowserPicker({ onOpenResult, onTierClassified, adTierId, adFallbackTierIds, onSponsorOpen }: BrowserPickerProps) {
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [classified, setClassified] = useState<{ tierId: number; tierName: string; confidence: number } | null>(null);
