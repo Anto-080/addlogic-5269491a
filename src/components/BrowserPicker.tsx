@@ -107,6 +107,9 @@ export function BrowserPicker({ onOpenResult, onTierClassified, adTierId, adFall
           error={search.error ? (search.error as Error).message : null}
           onSearch={runSearch}
           onOpen={(item) => onOpenResult?.(item)}
+          adTierId={adTierId}
+          adFallbackTierIds={adFallbackTierIds}
+          onSponsorOpen={onSponsorOpen}
         />
       </CardContent>
     </Card>
