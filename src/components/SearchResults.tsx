@@ -35,6 +35,9 @@ export function SearchResults({
   error,
   onSearch,
   onOpen,
+  adTierId,
+  adFallbackTierIds = [],
+  onSponsorOpen,
 }: Props) {
   const [q, setQ] = useState(initialQuery);
 
