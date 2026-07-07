@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TIERS } from "@/lib/mockData";
 import { useUserStats, useWeeklyEarnings } from "@/hooks/useAppData";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { ArrowUpRight, Wallet, ShieldCheck, TrendingUp } from "lucide-react";
+import { ArrowUpRight, Wallet, ShieldCheck, TrendingUp, ChevronDown } from "lucide-react";
 import { RoundVault } from "@/components/icons/RoundVault";
 import { StablecoinWithdraw } from "@/components/StablecoinWithdraw";
 
