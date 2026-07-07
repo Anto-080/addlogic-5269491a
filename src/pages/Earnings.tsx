@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TIERS } from "@/lib/mockData";
 import { useUserStats, useWeeklyEarnings } from "@/hooks/useAppData";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { ArrowUpRight, Wallet, ShieldCheck, TrendingUp } from "lucide-react";
+import { ArrowUpRight, Wallet, ShieldCheck, TrendingUp, ChevronDown } from "lucide-react";
 import { RoundVault } from "@/components/icons/RoundVault";
 import { StablecoinWithdraw } from "@/components/StablecoinWithdraw";
 
@@ -20,6 +22,7 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export default function Earnings() {
   const { data: stats } = useUserStats();
   const { data: weekly = [] } = useWeeklyEarnings();
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   const earningsToday = stats?.earnings_today ?? 0;
   const earningsWeek = stats?.earnings_week ?? 0;
@@ -217,21 +220,56 @@ export default function Earnings() {
 
         {/* Withdraw */}
         <Card className="bg-card border-border/50 glow-amber">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <RoundVault size={32} style={{ color: VAULT_GOLD }} />
-              <div>
-                <p className="text-lg font-bold text-money inline-flex items-center gap-1">
-                  <span>T${earningsAllTime.toFixed(2)}</span>
-                </p>
-                <p className="text-xs text-muted-foreground">Time-Coin balance — redeem to withdraw</p>
+          <Collapsible open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <RoundVault size={32} style={{ color: VAULT_GOLD }} />
+                <div>
+                  <p className="text-lg font-bold text-money inline-flex items-center gap-1">
+                    <span>T${earningsAllTime.toFixed(2)}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">Time-Coin balance — redeem to withdraw</p>
+                </div>
               </div>
-            </div>
-            <Button className="bg-money hover:bg-money/90 text-white gap-2">
-              <Wallet className="h-4 w-4" />
-              Withdraw
-            </Button>
-          </CardContent>
+              <CollapsibleTrigger asChild>
+                <Button className="bg-money hover:bg-money/90 text-white gap-2">
+                  <Wallet className="h-4 w-4" />
+                  Withdraw
+                  <ChevronDown className={`h-4 w-4 transition-transform ${withdrawOpen ? "rotate-180" : ""}`} />
+                </Button>
+              </CollapsibleTrigger>
+            </CardContent>
+            <CollapsibleContent>
+              <div className="px-6 pb-6 -mt-2 border-t border-border/40 pt-4 space-y-3 text-xs text-foreground/85 leading-relaxed">
+                <p className="text-foreground/90 font-semibold">
+                  Withdraws have Limits Based upon both your Experience Level and Regional Financial Limits on the Base of:
+                </p>
+                <div className="space-y-3">
+                  <p>
+                    <span className="text-money font-semibold">• Non-Declarable Small Compensation:</span> Up to and not above{" "}
+                    <strong className="text-foreground">$50/Month till Level 25</strong>. Credit accumulated above that threshold will always remain available on site in the User Account Vault. Stored earnings will start generating a small yearly passive yield from <strong className="text-foreground">Level 15</strong>.
+                  </p>
+                  <p>
+                    <span className="text-money font-semibold">• More Substantial Grants:</span> From <strong className="text-foreground">Level 25 beyond</strong>, grants specific for users' main AI-overviewed personal interests will be released gradually from the accumulated credit stored in Vault, while new users will be able to experience the same broad network gain experienced users already were allowed as beginners. Grant amounts will mature from{" "}
+                    <strong className="text-foreground">$100 to $500/Month</strong>.
+                  </p>
+                  <p>
+                    <span className="text-money font-semibold">• Currency &amp; Cryptocurrency Maximal for Non-Ulterior Reporting Limits</span> in face of Anti-Money Laundering laws: Top-Level withdrawal for most experienced users will reach but not surpass{" "}
+                    <strong className="text-foreground">≤ $10,000/Year</strong>.
+                  </p>
+                  <p>
+                    <span className="text-money font-semibold">• Vaulted Earnings Above Threshold:</span> All ulterior vaulted earnings above this threshold will be stored indefinitely as user's personal on-site credit balance, used first as convertible value for product purchasing regarding sector-specific interests, and secondly in the Investment Phase — loading as passive-yield-generating DeFi secured investments with safety-margin insurance from our side. Monthly, the Seasonal Tourism Sector will open, revealing available offers enabling users to purchase both with their own money added to the Time-Coins balance.
+                  </p>
+                  <p>
+                    <span className="text-money font-semibold">• Financial Phase:</span> Beyond the site's main Earn-to-Learn potential, users will be able to invest their own money safely alongside their vaulted credit thanks to <strong className="text-foreground">Kiln Financial Services</strong>. All real-world user investments from their own pocket will be withdrawable at any time without any limitations.
+                  </p>
+                  <p>
+                    <span className="text-money font-semibold">• Circular Economy:</span> In the last phase of the user's experience climb, contact facilitation between users' favourite companies from their main experience tier will enable exclusive early access, ideas development, and subsequent job opportunities — other than personal investments in what they genuinely love more.
+                  </p>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         
