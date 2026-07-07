@@ -22,6 +22,7 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export default function Earnings() {
   const { data: stats } = useUserStats();
   const { data: weekly = [] } = useWeeklyEarnings();
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   const earningsToday = stats?.earnings_today ?? 0;
   const earningsWeek = stats?.earnings_week ?? 0;
