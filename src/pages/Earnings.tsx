@@ -254,14 +254,14 @@ export default function Earnings() {
                     <strong className="text-foreground">$100 to $500/Month</strong>.
                   </p>
                   <p>
-                    <span className="text-money font-semibold">• Currency &amp; Cryptocurrency Maximal for Non-Ulterior Reporting Limits</span> in face of Anti-Money Laundering laws: Top-Level withdrawal for most experienced users will reach but not surpass{" "}
+                    <span className="text-money font-semibold">• Currency &amp; Cryptocurrency Maximal for Non-Ulterior Reporting Limits in face of AML Laws &amp; Inflationary Risks:</span> Top-Level withdrawal for most experienced users will reach but not surpass{" "}
                     <strong className="text-foreground">≤ $10,000/Year</strong>.
                   </p>
                   <p>
                     <span className="text-money font-semibold">• Vaulted Earnings Above Threshold:</span> All ulterior vaulted earnings above this threshold will be stored indefinitely as user's personal on-site credit balance, used first as convertible value for product purchasing regarding sector-specific interests, and secondly in the Investment Phase — loading as passive-yield-generating DeFi secured investments with safety-margin insurance from our side. Monthly, the Seasonal Tourism Sector will open, revealing available offers enabling users to purchase both with their own money added to the Time-Coins balance.
                   </p>
                   <p>
-                    <span className="text-money font-semibold">• Financial Phase:</span> Beyond the site's main Earn-to-Learn potential, users will be able to invest their own money safely alongside their vaulted credit thanks to <strong className="text-foreground">Kiln Financial Services</strong>. All real-world user investments from their own pocket will be withdrawable at any time without any limitations.
+                    <span className="text-money font-semibold">• Financial Phase:</span> Beyond the site's main Earn-to-Learn potential, users will be able to invest their own money safely alongside their vaulted credit thanks to <strong className="text-foreground">Kiln Financial Services</strong>. All real-world users investments from their own pocket will be withdrawable at any time without any limitations.
                   </p>
                   <p>
                     <span className="text-money font-semibold">• Circular Economy:</span> In the last phase of the user's experience climb, contact facilitation between users' favourite companies from their main experience tier will enable exclusive early access, ideas development, and subsequent job opportunities — other than personal investments in what they genuinely love more.
