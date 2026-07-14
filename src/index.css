@@ -67,6 +67,15 @@
   }
 }
 
+@font-face {
+  font-family: 'NumericOpenSans';
+  font-style: normal;
+  font-weight: 400 700;
+  src: local('Open Sans'), local('OpenSans-Regular');
+  /* Digits 0-9 and $ symbol — applied globally via body font stack. */
+  unicode-range: U+0030-0039, U+0024;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -74,8 +83,16 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Courier Prime', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
+    font-family: 'NumericOpenSans', 'Courier Prime', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
   }
+
+  /* Headings default to Nunito Sans globally. Vault & Earnings opt out via
+     `.font-typewriter` wrapper (its !important rule overrides this). */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Nunito Sans', 'Courier Prime', system-ui, sans-serif;
+    letter-spacing: -0.01em;
+  }
+
   .font-typewriter,
   .font-typewriter * {
     font-family: 'Secret Service Typewriter', 'Courier New', Courier, monospace !important;
