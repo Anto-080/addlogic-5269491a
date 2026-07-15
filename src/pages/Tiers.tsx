@@ -217,13 +217,10 @@ export default function Tiers() {
                                   {tier.locked && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
                                 </h3>
                               </div>
-                              <div className="text-right shrink-0 ml-2 flex items-center gap-2">
-                                <div>
-                                  <p className="text-lg font-bold" style={{ color: tier.color }}>x{tier.multiplier}</p>
-                                  <p className="text-[10px] text-muted-foreground">multiplier</p>
+                                <div className="text-right shrink-0 ml-2">
+                                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                                 </div>
-                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                              </div>
+
                             </div>
                             <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
                               <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: tier.color }} />
