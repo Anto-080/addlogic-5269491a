@@ -40,6 +40,10 @@
     --amber: 38 92% 50%;
     --amber-foreground: 150 100% 3%;
 
+    --highlighter: 54 100% 58%;
+    --highlighter-foreground: 150 100% 3%;
+
+
     --border: 150 15% 14%;
     --input: 150 15% 14%;
     --ring: 38 92% 50%;
@@ -115,9 +119,13 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+  .font-open-sans {
+    font-family: 'Open Sans', 'Nunito Sans', system-ui, sans-serif;
+  }
   /* Switch tint override — money color */
   [data-state="checked"].peer\\:bg-primary,
   button[role="switch"][data-state="checked"] {
+
     background-color: hsl(var(--money)) !important;
   }
 

@@ -72,15 +72,27 @@ export default function Tiers() {
 
           {/* ============ TIERS ============ */}
           <TabsContent value="tiers" className="space-y-4 mt-4">
+            <div className="rounded-full px-4 py-2.5 flex items-start gap-2.5 bg-[hsl(var(--highlighter))] text-[hsl(var(--highlighter-foreground))] font-open-sans text-xs shadow-sm">
+              <span className="shrink-0 inline-flex items-center justify-center h-5 w-5 rounded-full bg-[hsl(var(--highlighter-foreground))]/10">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
+                  <path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.728c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a1.125 1.125 0 100-2.25 1.125 1.125 0 000 2.25z" clipRule="evenodd" />
+                </svg>
+              </span>
+              <span>
+                <strong className="font-semibold">Warning</strong> — Retributions & Redistributions for Time Passed Researching are Subjected to Fluctuations stemming from Available Traffic. Tiers Specific Interest/Market Saturation also influence Seasonal or Daily Variations in How Tiers behave in term of Positioning for Experience Gains and Correlated Multipliers.
+              </span>
+            </div>
+
             <Card className="bg-card border-border/50 p-4">
               <div className="flex items-start gap-3">
                 <ArrowUpRight className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <div className="text-sm text-muted-foreground">
                   <strong className="text-foreground">Redistribution Model:</strong> a portion of ad revenue from lower tiers flows upward.
-                  Casual browsing indirectly funds top-priority breakthroughs.
+                  Casual browsing from All Tiers indirectly funds Top-Priority Research in New Scientific Breakthroughs.
                 </div>
               </div>
             </Card>
+
 
             <Card className="bg-card border-border/50 p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -150,13 +162,10 @@ export default function Tiers() {
                                     {tier.locked && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
                                   </h3>
                                 </div>
-                                <div className="text-right shrink-0 ml-2 flex items-center gap-2">
-                                  <div>
-                                    <p className="text-lg font-bold" style={{ color: tier.color }}>x{tier.multiplier}</p>
-                                    <p className="text-[10px] text-muted-foreground">multiplier</p>
-                                  </div>
+                                <div className="text-right shrink-0 ml-2">
                                   <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                                 </div>
+
                               </div>
                               <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
                                 <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: tier.color }} />
@@ -170,6 +179,9 @@ export default function Tiers() {
                         </button>
                         {isOpen && (
                           <div className="mt-3 pt-3 border-t border-border/40">
+                            <p className="text-xs font-semibold mb-2" style={{ color: tier.color }}>
+                              x{tier.multiplier} Experience Multiplier
+                            </p>
                             <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
                           </div>
                         )}
@@ -179,6 +191,7 @@ export default function Tiers() {
                 })}
               </div>
             </div>
+
 
             <div className="space-y-3">
               {orderedTiers.filter((t) => t.id > 3).map((tier) => {
@@ -204,13 +217,10 @@ export default function Tiers() {
                                   {tier.locked && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
                                 </h3>
                               </div>
-                              <div className="text-right shrink-0 ml-2 flex items-center gap-2">
-                                <div>
-                                  <p className="text-lg font-bold" style={{ color: tier.color }}>x{tier.multiplier}</p>
-                                  <p className="text-[10px] text-muted-foreground">multiplier</p>
+                                <div className="text-right shrink-0 ml-2">
+                                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                                 </div>
-                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                              </div>
+
                             </div>
                             <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
                               <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: tier.color }} />
@@ -222,10 +232,14 @@ export default function Tiers() {
                           </div>
                         </div>
                       </button>
-                      {isOpen && (
-                        <div className="mt-3 pt-3 border-t border-border/40">
-                          <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
-                          <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
+                        {isOpen && (
+                          <div className="mt-3 pt-3 border-t border-border/40">
+                            <p className="text-xs font-semibold mb-2" style={{ color: tier.color }}>
+                              x{tier.multiplier} Experience Multiplier
+                            </p>
+                            <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
+                            <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
+
                           <div className="flex flex-wrap gap-2">
                             {tier.subcategories.map((s) => (
                               <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/60 text-foreground/80 border border-border/40">{s}</span>
