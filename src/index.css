@@ -119,9 +119,13 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+  .font-open-sans {
+    font-family: 'Open Sans', 'Nunito Sans', system-ui, sans-serif;
+  }
   /* Switch tint override — money color */
   [data-state="checked"].peer\\:bg-primary,
   button[role="switch"][data-state="checked"] {
+
     background-color: hsl(var(--money)) !important;
   }
 
