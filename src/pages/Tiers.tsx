@@ -179,6 +179,9 @@ export default function Tiers() {
                         </button>
                         {isOpen && (
                           <div className="mt-3 pt-3 border-t border-border/40">
+                            <p className="text-xs font-semibold mb-2" style={{ color: tier.color }}>
+                              x{tier.multiplier} Experience Multiplier
+                            </p>
                             <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
                           </div>
                         )}
@@ -188,6 +191,7 @@ export default function Tiers() {
                 })}
               </div>
             </div>
+
 
             <div className="space-y-3">
               {orderedTiers.filter((t) => t.id > 3).map((tier) => {
