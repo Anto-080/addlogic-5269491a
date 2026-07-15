@@ -232,10 +232,14 @@ export default function Tiers() {
                           </div>
                         </div>
                       </button>
-                      {isOpen && (
-                        <div className="mt-3 pt-3 border-t border-border/40">
-                          <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
-                          <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
+                        {isOpen && (
+                          <div className="mt-3 pt-3 border-t border-border/40">
+                            <p className="text-xs font-semibold mb-2" style={{ color: tier.color }}>
+                              x{tier.multiplier} Experience Multiplier
+                            </p>
+                            <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
+                            <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
+
                           <div className="flex flex-wrap gap-2">
                             {tier.subcategories.map((s) => (
                               <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/60 text-foreground/80 border border-border/40">{s}</span>
