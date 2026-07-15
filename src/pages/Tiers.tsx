@@ -21,26 +21,36 @@ const TOP_TIER_GATE = 35;
 
 function WarningPill() {
   const [open, setOpen] = useState(false);
+  const yellow = "hsl(var(--highlighter))";
+  const WarningIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3 shrink-0">
+      <path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.728c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a1.125 1.125 0 100-2.25 1.125 1.125 0 000 2.25z" clipRule="evenodd" />
+    </svg>
+  );
+
   return (
-    <div className="rounded-full border border-primary bg-card/90 px-4 py-2.5 font-open-sans text-xs text-primary shadow-sm">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex w-full flex-col items-center gap-1.5"
-        aria-expanded={open}
-      >
-        <div className="flex items-center gap-2">
-          <span className="shrink-0 inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary/10">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
-              <path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.728c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a1.125 1.125 0 100-2.25 1.125 1.125 0 000 2.25z" clipRule="evenodd" />
-            </svg>
+    <div className="space-y-2">
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="rounded-full border px-3 py-1.5 font-open-sans text-[11px] font-semibold leading-none"
+          style={{ borderColor: yellow, color: yellow, backgroundColor: "transparent" }}
+          aria-expanded={open}
+        >
+          <span className="flex items-center gap-1.5">
+            <WarningIcon />
+            <span>Warning</span>
+            <WarningIcon />
           </span>
-          <strong className="font-semibold">Warning</strong>
-        </div>
-        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-      </button>
+        </button>
+        <ChevronDown
+          className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          style={{ color: yellow }}
+        />
+      </div>
       {open && (
-        <p className="mt-2 text-center text-[11px] leading-relaxed text-primary/90">
+        <p className="text-[11px] leading-relaxed font-open-sans" style={{ color: yellow }}>
           Retributions & Redistributions for Time Passed Researching are Subjected to Fluctuations stemming from Available Traffic. Tiers Specific Interest/Market Saturation also influence Seasonal or Daily Variations in How Tiers behave in term of Positioning for Experience Gains and Correlated Multipliers.
         </p>
       )}
