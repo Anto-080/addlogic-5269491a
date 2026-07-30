@@ -157,8 +157,12 @@ function ExampleContactCard() {
   const topKeywords = useMemo(() => {
     if (!user) return ["Peptide Research", "Vaccines", "Sustainable finance", "AI", "Geopolitics"];
     const all: { keyword: string; count: number }[] = [];
-    Object.values(keywords.keywords).forEach((arr) => all.push(...arr));
-    Object.values(keywords.subcategories).forEach((arr) => all.push(...arr));
+    Object.values(keywords.keywords ?? {}).forEach((arr) => {
+      if (Array.isArray(arr)) all.push(...arr);
+    });
+    Object.values(keywords.subcategories ?? {}).forEach((arr) => {
+      if (Array.isArray(arr)) all.push(...arr);
+    });
     return all
       .sort((a, b) => b.count - a.count)
       .slice(0, 5)
