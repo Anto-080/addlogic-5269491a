@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, UserCheck, ExternalLink, Check, X, Shield, Link2 } from "lucide-react";
+import { Mail, UserCheck, ExternalLink, Check, X, Shield, Link2, ContactRound } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useTierAffinity } from "@/hooks/useTierAffinity";
+import { useTierKeywords } from "@/hooks/useTierKeywords";
+import { TIERS } from "@/lib/mockData";
 import {
   buildAuthUrl,
   consumeRedirect,
