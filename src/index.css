@@ -87,13 +87,13 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'NumericOpenSans', 'Courier Prime', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
+    font-family: 'NumericOpenSans', 'Mozilla Text', ui-sans-serif, system-ui, sans-serif;
   }
 
   /* Headings default to Nunito Sans globally. Vault & Earnings opt out via
      `.font-typewriter` wrapper (its !important rule overrides this). */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Nunito Sans', 'Courier Prime', system-ui, sans-serif;
+    font-family: 'Nunito Sans', 'Mozilla Text', system-ui, sans-serif;
     letter-spacing: -0.01em;
   }
 
