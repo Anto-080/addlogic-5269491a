@@ -443,6 +443,16 @@ export default function Connections() {
             </CardContent>
           </Card>
         </section>
+
+        {/* Example Contact Card */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <ContactRound className="h-4 w-4 text-money" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Example Contact Card</h2>
+          </div>
+
+          <ExampleContactCard />
+        </section>
       </div>
     </AppLayout>
   );
