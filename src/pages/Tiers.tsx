@@ -16,6 +16,7 @@ import { useOutboundExit } from "@/hooks/useOutboundExit";
 import { useTierKeywords } from "@/hooks/useTierKeywords";
 import { useTierTraffic } from "@/hooks/useTierTraffic";
 import mistralMark from "@/assets/mistral-mark.png";
+import { AcademicConnection } from "@/components/AcademicConnection";
 
 const TOP_TIER_GATE = 35;
 
@@ -212,6 +213,8 @@ export default function Tiers() {
               </div>
             </div>
 
+
+            <AcademicConnection />
 
             <div className="space-y-3">
               {orderedTiers.filter((t) => t.id > 3).map((tier) => {
