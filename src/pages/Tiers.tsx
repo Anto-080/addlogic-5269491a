@@ -214,6 +214,8 @@ export default function Tiers() {
             </div>
 
 
+            <AcademicConnection />
+
             <div className="space-y-3">
               {orderedTiers.filter((t) => t.id > 3).map((tier) => {
                 const barWidth = (tier.multiplier / maxMultiplier) * 100;
