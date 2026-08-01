@@ -63,17 +63,6 @@ export function AcademicConnection() {
     setSearching(true);
     const t = window.setTimeout(async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("academic-directory", {
-          body: null,
-          method: "GET",
-        } as never);
-        // Query string is not supported by invoke's typing; fall back to fetch.
-        void data;
-        void error;
-      } catch {
-        /* ignored — real request below */
-      }
-      try {
         const base = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/academic-directory`;
         const res = await fetch(`${base}?q=${encodeURIComponent(q)}`, {
           headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
