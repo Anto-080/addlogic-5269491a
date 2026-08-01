@@ -101,12 +101,16 @@ export function AcademicConnection() {
 
   const matches = useMemo(() => {
     const seen = new Set<string>();
-    return [...results, ...seedMatches].filter((e) => {
-      if (seen.has(e.entityId)) return false;
-      seen.add(e.entityId);
-      return true;
-    }).slice(0, 8);
+    return [...results, ...seedMatches]
+      .filter((e) => {
+        const key = `${e.name.toLowerCase()}|${(e.domains ?? [])[0] ?? e.entityId}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 8);
   }, [results, seedMatches]);
+
 
   const connect = async (uni: Entity) => {
     setNotice(null);
