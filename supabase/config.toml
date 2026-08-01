@@ -11,6 +11,3 @@ verify_jwt = false
 
 [functions.academic-directory]
 verify_jwt = false
-
-[functions.dbg-feeds]
-verify_jwt = false
