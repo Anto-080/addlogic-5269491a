@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.promo-codes]
 verify_jwt = false
+
+[functions.academic-directory]
+verify_jwt = false
