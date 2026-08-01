@@ -9,10 +9,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import ivyLeaf from "@/assets/ivy-leaf.png.asset.json";
 
 const IVY_GREEN = "#01563F";
 const ASH_BROWN = "#C2A487";
+
+/** Five-lobed ivy leaf-fan traced from the Ivy League mark. */
+function IvyLeaf({ flip = false }: { flip?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      className="h-4 w-4 shrink-0"
+      style={{ transform: flip ? "scaleX(-1)" : undefined }}
+      aria-hidden="true"
+      fill={IVY_GREEN}
+    >
+      <path d="M33 4c4 6 6 13 6 20 0 8-2 15-6 24-4-9-6-16-6-24 0-7 2-14 6-20z" />
+      <path d="M41 12c5 4 8 10 9 17 1 7-1 14-5 22-2-9-4-16-6-23-1-6-1-11 2-16z" />
+      <path d="M53 26c4 3 7 7 9 12-6 5-13 8-21 10 4-8 8-15 12-22z" />
+      <path d="M25 12c-5 4-8 10-9 17-1 7 1 14 5 22 2-9 4-16 6-23 1-6 1-11-2-16z" />
+      <path d="M13 26c-4 3-7 7-9 12 6 5 13 8 21 10-4-8-8-15-12-22z" />
+    </svg>
+  );
+}
+
 
 type Entity = {
   name: string;
