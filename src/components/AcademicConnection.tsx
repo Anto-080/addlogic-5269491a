@@ -147,13 +147,7 @@ export function AcademicConnection() {
         className="w-full flex items-center gap-3 py-2.5 group"
       >
         <span className="h-px flex-1" style={{ backgroundColor: `${ASH_BROWN}66` }} />
-        <img
-          src={ivyLeaf.url}
-          alt=""
-          aria-hidden="true"
-          className="h-5 w-5 object-contain brand-asset"
-          style={{ mixBlendMode: "screen" }}
-        />
+        <IvyLeaf />
         <span
           className="text-sm sm:text-base tracking-wide whitespace-nowrap"
           style={{
@@ -164,13 +158,8 @@ export function AcademicConnection() {
         >
           Academic Connection
         </span>
-        <img
-          src={ivyLeaf.url}
-          alt=""
-          aria-hidden="true"
-          className="h-5 w-5 object-contain brand-asset"
-          style={{ transform: "scaleX(-1)", mixBlendMode: "screen" }}
-        />
+        <IvyLeaf flip />
+
         <span className="h-px flex-1" style={{ backgroundColor: `${ASH_BROWN}66` }} />
       </button>
 
