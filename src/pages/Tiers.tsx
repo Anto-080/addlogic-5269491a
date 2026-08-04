@@ -18,7 +18,7 @@ import { useTierTraffic } from "@/hooks/useTierTraffic";
 import mistralMark from "@/assets/mistral-mark.png";
 import { AcademicConnection } from "@/components/AcademicConnection";
 
-const TOP_TIER_GATE = 35;
+const TOP_TIER_GATE = 50;
 
 function WarningPill() {
   const [open, setOpen] = useState(false);
@@ -152,7 +152,7 @@ export default function Tiers() {
                       <WipTapeBanner />
                       <p className="text-sm font-semibold text-foreground">Top-tier research locked</p>
                       <p className="text-xs text-muted-foreground">
-                        For Accredited Scientists: <strong>Connect through LinkedIn for Early Access</strong>. Unlocks at Level {TOP_TIER_GATE}.
+                        For Selected Scientists Only, <strong>Connect Through LinkedIn for Early Access</strong>. For Normal Users: Unlock at Level 50 of Sciences' Tier-Specific Experience.
                       </p>
                       <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white text-xs font-medium">
                         <ExternalLink className="h-3 w-3" /> Connect via LinkedIn

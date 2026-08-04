@@ -250,7 +250,7 @@ export default function Earnings() {
                     <strong className="text-foreground">$50/Month till Level 25</strong>. Credit accumulated above that threshold will always remain available on site in the User Account Vault. Stored earnings will start generating a small yearly passive yield from <strong className="text-foreground">Level 15</strong>.
                   </p>
                   <p>
-                    <span className="text-money font-semibold">• Interest Based Grants:</span> From <strong className="text-foreground">Level 25 beyond</strong>, grants specific for users' main AI-overviewed personal interests will be released gradually from the accumulated credit stored in Vault, while new users will be able to experience the same broad network gain experienced users already were allowed as beginners. Grant amounts will mature Gradually alongside with Experience.
+                    <span className="text-money font-semibold">• Interest Based Grants:</span> From <strong className="text-foreground">Level 25 beyond</strong>, AI-overviewed Grants specific for users' main personal interests will be released gradually from the accumulated credit stored in Vault, while new users will be able to experience the same broad network gain experienced users already were allowed as beginners. Grant amounts will mature Gradually alongside with Experience.
                   </p>
                   <p>
                     <span className="text-money font-semibold">• Currency &amp; Cryptocurrency Maximal for Non-Ulterior Reporting Limits in face of AML Laws &amp; Inflationary Risks:</span> Top-Level withdrawal for most experienced users will reach but not surpass{" "}
