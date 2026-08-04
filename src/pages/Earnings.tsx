@@ -253,12 +253,19 @@ export default function Earnings() {
                     <span className="text-money font-semibold">• Interest Based Grants:</span> From <strong className="text-foreground">Level 25 beyond</strong>, AI-overviewed Grants specific for users' main personal interests will be released gradually from the accumulated credit stored in Vault, while new users will be able to experience the same broad network gain experienced users already were allowed as beginners. Grant amounts will mature Gradually alongside with Experience.
                   </p>
                   <p>
-                    <span className="text-money font-semibold">• Currency &amp; Cryptocurrency Maximal for Non-Ulterior Reporting Limits in face of AML Laws &amp; Inflationary Risks:</span> Top-Level withdrawal for most experienced users will reach but not surpass{" "}
-                    <strong className="text-foreground">≤ $10,000/Year</strong>.
+                    <span className="text-money font-semibold">• Currency &amp; Cryptocurrency Maximal for Non-Ulterior Reporting Limits in face of AML Laws &amp; Inflationary Risks:</span> Top-Level withdrawal for most skilled Researchers which focused on Increasing their Main Interests Tier-Specific's Experience will reach but not surpass the Equivalent Value of{" "}
+                    <strong className="text-foreground">≤$10,000/Year</strong>.
+                  </p>
+                  <p className="italic" style={{ color: "hsl(0 72% 45%)" }}>
+                    &#123; All AI-Signalled: Undue Traffic, Ads Click-Hoarding, or Lack of Genuine Interest for a Researched Topic, would bring to the Partial or Total Seizing of Vaulted Earnings.
+                    <br />
+                    <br />
+                    Research what Makes yourself what you Truly Are in Respect of Other, or Face Consequences for having attempted to Fraud the Community. &#125;
                   </p>
                   <p>
-                    <span className="text-money font-semibold">• Vaulted Earnings Above Threshold:</span> All ulterior vaulted earnings above this threshold will be stored indefinitely as user's personal on-site credit balance, used first as convertible value for product purchasing regarding sector-specific interests, and secondly in the Investment Phase — loading as passive-yield-generating DeFi secured investments with safety-margin insurance from our side. Monthly, the Seasonal Tourism Sector will open, revealing available offers enabling users to purchase both with their own money added to the Time-Coins balance.
+                    <span className="text-money font-semibold">• Vaulted Earnings Above Withdrawal Threshold:</span> All ulterior Vaulted earnings will be stored indefinitely as user's personal on-site credit balance, used first as Partial-Convertible-Value for product purchasing (on Amazon, eBay) regarding sector-specific interests, and secondly in the Investment Phase — loading as passive-yield-generating DeFi secured investments with safety-margin insurance from our side. Yearly, the 4 Seasons Tourism Sector will open, revealing available offers enabling users to purchase with their own money: Offers, Tickets, Bidding for the Rent of Exclusive Locations with Small percentage of Chartered Expenses adjuvanted with the Time-Coins Balance.
                   </p>
+
                   <p>
                     <span className="text-money font-semibold">• Financial Phase:</span> Beyond the site's main Earn-to-Learn potential, users will be able to invest their own money safely alongside their vaulted credit thanks to <strong className="text-foreground">Kiln Financial Services</strong>. All real-world users investments from their own pocket will be withdrawable at any time without any limitations, except for the Limits/Controls associated with Anti Money Laundering the Financial Service Require to Operate Legally.
                   </p>
