@@ -113,16 +113,30 @@ export function bumpInterestSignal(tierId: number, seconds: number): {
 export const TIER_XP_PER_LEVEL = 1_000;
 
 /**
- * 1 second of research → 1 XP (multiplied by tier multiplier elsewhere).
+ * Inverted progression: regular (global) research rewards scale UP with tier
+ * importance, but *tier-specific* experience scales the opposite way — lower
+ * tiers (higher tierId) accumulate XP faster than the top-priority tiers.
+ * Tier 1 = x1.00 … Tier 17 = x5.00.
+ */
+export function tierXpRate(tierId: number): number {
+  const t = Math.max(1, Math.min(17, Math.floor(tierId || 1)));
+  return 1 + (t - 1) * 0.25;
+}
+
+/**
+ * 1 validated second of research → 1 XP, scaled by the inverted tier rate.
  * Returns `{ level, xpInLevel, percent }` from a raw seconds total.
  */
-export function tierLevelFromSeconds(seconds: number): {
+export function tierLevelFromSeconds(seconds: number, tierId = 1): {
   level: number;
   xpInLevel: number;
   percent: number;
+  rate: number;
 } {
-  const xp = Math.max(0, Math.floor(seconds));
+  const rate = tierXpRate(tierId);
+  const xp = Math.max(0, Math.floor(Math.max(0, seconds) * rate));
   const level = Math.floor(xp / TIER_XP_PER_LEVEL) + 1;
   const xpInLevel = xp % TIER_XP_PER_LEVEL;
-  return { level, xpInLevel, percent: (xpInLevel / TIER_XP_PER_LEVEL) * 100 };
+  return { level, xpInLevel, percent: (xpInLevel / TIER_XP_PER_LEVEL) * 100, rate };
 }
+

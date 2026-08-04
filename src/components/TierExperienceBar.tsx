@@ -96,7 +96,8 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
   }, [isActiveForThisTier, tierId, baseSeconds, baseBonus, user]);
 
   const liveSeconds = baseSeconds + (isActiveForThisTier ? accRef.current : 0);
-  const { level, xpInLevel, percent } = tierLevelFromSeconds(liveSeconds);
+  const { level, xpInLevel, percent, rate } = tierLevelFromSeconds(liveSeconds, tierId);
+
   // 1h of validated research = +1 permanent multiplier (lifetime).
   const liveBonus = Math.max(baseBonus, Math.floor(liveSeconds / 3600));
   const activeMultiplier = tierMultiplier + liveBonus + consentBonus(cookieAutoAccept, analyticsConsent, gpsPrecision);
@@ -123,7 +124,9 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
           </span>
           <span className="text-foreground/80 font-medium">
             {xpInLevel.toLocaleString()} / {TIER_XP_PER_LEVEL.toLocaleString()} XP
+            <span className="ml-1.5 text-[10px] text-muted-foreground">· XP rate x{rate.toFixed(2)}</span>
           </span>
+
         </div>
         <div className="relative w-full h-3 overflow-hidden rounded-full bg-secondary/60">
           <div
