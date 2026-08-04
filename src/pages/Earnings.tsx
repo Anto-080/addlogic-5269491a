@@ -246,7 +246,7 @@ export default function Earnings() {
                 </p>
                 <div className="space-y-3">
                   <p>
-                    <span className="text-money font-semibold">• Non-Declarable Small Compensation:</span> Up to and not above{" "}
+                    <span className="text-money font-semibold">• Non-Declarable Small Compensation:</span> Up-to and not above{" "}
                     <strong className="text-foreground">$50/Month till Level 25</strong>. Credit accumulated above that threshold will always remain available on site in the User Account Vault. Stored earnings will start generating a small yearly passive yield from <strong className="text-foreground">Level 15</strong>.
                   </p>
                   <p>
