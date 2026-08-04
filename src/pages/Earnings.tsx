@@ -260,7 +260,7 @@ export default function Earnings() {
                     &#123; All AI-Signalled: Undue Traffic, Ads Click-Hoarding, or Lack of Genuine Interest for a Researched Topic, would bring to the Partial or Total Seizing of Vaulted Earnings.
                     <br />
                     <br />
-                    Research what Makes yourself what you Truly Are in Respect of Others, or Face Consequences for having attempted to Fraud the Community. &#125;
+                    Research what Makes yourself what you Truly Are. Respect Others Time, or Face Consequences for having attempted to Fraud the Community. &#125;
                   </p>
                   <p>
                     <span className="text-money font-semibold">• Vaulted Earnings Above Withdrawal Threshold:</span> All ulterior Vaulted earnings will be stored indefinitely as user's personal on-site credit balance, used first as Partial-Convertible-Value for product purchasing (on Amazon, eBay) regarding sector-specific interests, and secondly during the Investment Phase — loading as passive-yield-generating Secured Institutional Grade DeFi investments with safety-margin insurance from our side. 
@@ -271,7 +271,7 @@ export default function Earnings() {
                   </p>
 
                   <p>
-                    <span className="text-money font-semibold">• Financial Phase:</span> Beyond the site's main Earn-to-Learn potential, users will be able to invest their own money Safely Alongside their Vaulted Time-Credit thanks to <strong className="text-foreground">Kiln Financial Services</strong>. All real-world users investments from their own pocket will be withdrawable at any time without any limitations, except for the Limits/Controls associated with Anti Money Laundering the Financial Service Require to Operate Legally.
+                    <span className="text-money font-semibold">• Financial Phase:</span> Beyond the site's main Earn-to-Learn potential, users will be able to invest their own money Safely Alongside their Vaulted Time-Credit thanks to <strong className="text-foreground">Kiln Financial Services</strong>. All real-world investments from users own Personal Finances will be withdrawable at any time without any limitations, except for the Limits/Controls& Regulations associated with Anti Money Laundering the Financial Service Require to Operate Legally.
                   </p>
                   <p>
                     <span className="text-money font-semibold">• Circular Economy:</span> In the last phase of the user's experience climb, contact facilitation between users' favourite companies from their main experience Tier will enable: Cashback on new Products, exclusive early-access, ideas co-development, subsequent job/consultancy opportunities — other than personal Direct investments in what they genuinely Love.
