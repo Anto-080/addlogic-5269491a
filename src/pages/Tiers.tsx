@@ -20,6 +20,46 @@ import { AcademicConnection } from "@/components/AcademicConnection";
 
 const TOP_TIER_GATE = 50;
 
+/** Ash Gold — the unified experience-bar fill used across the tier list. */
+const ASH_GOLD = "#8C6F54";
+
+/** Shaded, tier-tinted card surface (mirrors the Investment Phase cards). */
+function tierSurface(color: string) {
+  return {
+    background: `linear-gradient(160deg, color-mix(in srgb, ${color} 20%, hsl(var(--card))) 0%, color-mix(in srgb, ${color} 7%, hsl(var(--card))) 100%)`,
+    borderColor: `color-mix(in srgb, ${color} 45%, transparent)`,
+    borderLeft: `3px solid ${color}`,
+  } as React.CSSProperties;
+}
+
+/** FE International–style scroll reveal, identical to the Investment Phase. */
+function useScrollReveal() {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>("[data-reveal]"));
+    nodes.forEach((el, i) => {
+      el.style.transitionDelay = `${Math.min(i * 60, 420)}ms`;
+    });
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            (e.target as HTMLElement).setAttribute("data-reveal", "in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" },
+    );
+    nodes.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  });
+  return rootRef;
+}
+
+
 function WarningPill() {
   const [open, setOpen] = useState(false);
   return (
