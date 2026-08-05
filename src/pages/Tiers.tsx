@@ -124,10 +124,22 @@ export default function Tiers() {
     return [...top, ...rest];
   }, []);
 
+  const revealRoot = useScrollReveal();
+
+  // Click-to-glow: tapping a tier card toggles a warm-golden halo on it only.
+  const onCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const root = revealRoot.current;
+    root?.querySelectorAll(".glow-card.is-glowing").forEach((n) => {
+      if (n !== card) n.classList.remove("is-glowing");
+    });
+    card.classList.toggle("is-glowing");
+  };
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div ref={revealRoot} className="space-y-6 max-w-5xl mx-auto">
+
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tiers & Sponsors</h1>
           <p className="text-sm text-muted-foreground">Tiers Ranked by Systemic Importance.</p>
