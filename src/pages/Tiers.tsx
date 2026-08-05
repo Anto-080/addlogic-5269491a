@@ -243,7 +243,8 @@ export default function Tiers() {
 
                               </div>
                               <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
-                                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: tier.color }} />
+                                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: ASH_GOLD }} />
+
                               </div>
                               <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>{fmtVisits(tier.id)}</span>
