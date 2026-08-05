@@ -5,7 +5,7 @@ import { TIERS } from "@/lib/mockData";
 import { useUserStats } from "@/hooks/useAppData";
 import { TierIcon } from "@/components/TierIcon";
 import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, ExternalLink } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import biochemTitle from "@/assets/biochemistry-title.png";
 import { WipTapeBanner } from "@/components/WipTapeBanner";
