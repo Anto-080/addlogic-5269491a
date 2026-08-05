@@ -278,8 +278,10 @@ export default function Tiers() {
                 return (
                   <Card
                     key={tier.id}
-                    className="bg-card border-border/50 hover:border-primary/30 transition-all"
-                    style={{ borderLeft: `3px solid ${tier.color}` }}
+                    data-reveal
+                    onClick={onCardClick}
+                    className="border transition-all glow-card cursor-pointer"
+                    style={tierSurface(tier.color)}
                   >
                     <CardContent className="p-4">
                       <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
