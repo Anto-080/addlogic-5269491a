@@ -55,7 +55,7 @@ function useScrollReveal() {
     );
     nodes.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  });
+  }, []);
   return rootRef;
 }
 
