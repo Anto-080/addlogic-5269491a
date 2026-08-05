@@ -5,7 +5,7 @@ import { TIERS } from "@/lib/mockData";
 import { useUserStats } from "@/hooks/useAppData";
 import { TierIcon } from "@/components/TierIcon";
 import { ArrowUpRight, Lock, ChevronDown, Activity, Gavel, ExternalLink } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import biochemTitle from "@/assets/biochemistry-title.png";
 import { WipTapeBanner } from "@/components/WipTapeBanner";
@@ -19,6 +19,46 @@ import mistralMark from "@/assets/mistral-mark.png";
 import { AcademicConnection } from "@/components/AcademicConnection";
 
 const TOP_TIER_GATE = 50;
+
+/** Ash Gold — the unified experience-bar fill used across the tier list. */
+const ASH_GOLD = "#8C6F54";
+
+/** Shaded, tier-tinted card surface (mirrors the Investment Phase cards). */
+function tierSurface(color: string) {
+  return {
+    background: `linear-gradient(160deg, color-mix(in srgb, ${color} 20%, hsl(var(--card))) 0%, color-mix(in srgb, ${color} 7%, hsl(var(--card))) 100%)`,
+    borderColor: `color-mix(in srgb, ${color} 45%, transparent)`,
+    borderLeft: `3px solid ${color}`,
+  } as React.CSSProperties;
+}
+
+/** FE International–style scroll reveal, identical to the Investment Phase. */
+function useScrollReveal() {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>("[data-reveal]"));
+    nodes.forEach((el, i) => {
+      el.style.transitionDelay = `${Math.min(i * 60, 420)}ms`;
+    });
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            (e.target as HTMLElement).setAttribute("data-reveal", "in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" },
+    );
+    nodes.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+  return rootRef;
+}
+
 
 function WarningPill() {
   const [open, setOpen] = useState(false);
@@ -84,10 +124,22 @@ export default function Tiers() {
     return [...top, ...rest];
   }, []);
 
+  const revealRoot = useScrollReveal();
+
+  // Click-to-glow: tapping a tier card toggles a warm-golden halo on it only.
+  const onCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const root = revealRoot.current;
+    root?.querySelectorAll(".glow-card.is-glowing").forEach((n) => {
+      if (n !== card) n.classList.remove("is-glowing");
+    });
+    card.classList.toggle("is-glowing");
+  };
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div ref={revealRoot} className="space-y-6 max-w-5xl mx-auto">
+
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tiers & Sponsors</h1>
           <p className="text-sm text-muted-foreground">Tiers Ranked by Systemic Importance.</p>
@@ -166,8 +218,10 @@ export default function Tiers() {
                   return (
                     <Card
                       key={tier.id}
-                      className="bg-card border-border/50 hover:border-primary/30 transition-all"
-                      style={{ borderLeft: `3px solid ${tier.color}` }}
+                      data-reveal
+                      onClick={onCardClick}
+                      className="border transition-all glow-card cursor-pointer"
+                      style={tierSurface(tier.color)}
                     >
                       <CardContent className="p-4">
                         <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
@@ -189,7 +243,8 @@ export default function Tiers() {
 
                               </div>
                               <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
-                                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: tier.color }} />
+                                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: ASH_GOLD }} />
+
                               </div>
                               <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>{fmtVisits(tier.id)}</span>
@@ -223,8 +278,10 @@ export default function Tiers() {
                 return (
                   <Card
                     key={tier.id}
-                    className="bg-card border-border/50 hover:border-primary/30 transition-all"
-                    style={{ borderLeft: `3px solid ${tier.color}` }}
+                    data-reveal
+                    onClick={onCardClick}
+                    className="border transition-all glow-card cursor-pointer"
+                    style={tierSurface(tier.color)}
                   >
                     <CardContent className="p-4">
                       <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
@@ -246,7 +303,7 @@ export default function Tiers() {
 
                             </div>
                             <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
-                              <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: tier.color }} />
+                              <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: ASH_GOLD }} />
                             </div>
                             <div className="flex justify-between text-xs text-muted-foreground">
                               <span>{fmtVisits(tier.id)}</span>

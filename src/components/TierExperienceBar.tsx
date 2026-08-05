@@ -102,12 +102,8 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
   const liveBonus = Math.max(baseBonus, Math.floor(liveSeconds / 3600));
   const activeMultiplier = tierMultiplier + liveBonus + consentBonus(cookieAutoAccept, analyticsConsent, gpsPrecision);
 
-  // Color spectrum: tier 1 (top) = deep emerald, tier 17 (bottom) = pale pea green.
-  const ramp = Math.max(0, Math.min(1, (tierId - 1) / 16));
-  const hue = 150;
-  const lightness = 22 + ramp * 45;
-  const saturation = 70 - ramp * 25;
-  const fillColor = `hsl(${hue} ${saturation}% ${lightness}%)`;
+  // Ash Gold — single unified experience-bar fill across every tier.
+  const fillColor = "#8C6F54";
 
   return (
     <div className="space-y-2 mb-3">
