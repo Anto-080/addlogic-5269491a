@@ -77,7 +77,7 @@ export default function Earnings() {
                 <p className="text-[11px] text-muted-foreground leading-relaxed italic">
                   Test the withdrawal flow with small transactions while you build your Time-Coin balance
                   alongside your main Experience bar. From <strong className="not-italic text-foreground">Level 25</strong>{" "}
-                  you'll be granted experience-based research grants without depleting the bar you worked
+                  you'll be granted experience-based research grants without depleting the bar you worked so hard
                   for. At Investment Level, tailored zero-risk passive plans let your earnings compound on
                   their own. — <em>Keep researching what you love.</em>
                 </p>
@@ -250,20 +250,20 @@ export default function Earnings() {
                     <strong className="text-foreground">$50/Month till Level 25</strong>. Credit accumulated above that threshold will always remain available on site in the User Account Vault. Stored earnings will start generating a small yearly passive yield from <strong className="text-foreground">Level 15</strong>.
                   </p>
                   <p>
-                    <span className="text-money font-semibold">• Interest Based Grants:</span> From <strong className="text-foreground">Level 25 beyond</strong>, AI-overviewed Grants specific for users' main personal interests will be released gradually from the accumulated credit stored in Vault, while new users will be able to experience the same broad network gain experienced users already were allowed as beginners. Grant amounts will mature Gradually alongside with Tier's Specific Experience from users main Personal Interests.
+                    <span className="text-money font-semibold">• Interest Based Grants:</span> From <strong className="text-foreground">Level 25 beyond</strong>, AI-overviewed Grants specific for users' main personal interests will be released gradually from the accumulated credit stored in Vault, while new users will be able to experience the same broad network gain more Advanced users already were allowed as beginners. Grant amounts will mature Gradually alongside with Tier's Specific Experience from users main Personal Interests.
                   </p>
                   <p>
                     <span className="text-money font-semibold">• Currency &amp; Cryptocurrency Maximal for Non-Ulterior Reporting Limits in face of AML Laws &amp; Inflationary Risks:</span> Top-Level withdrawal for most skilled Researchers which focused on Specialising in their Main Interests Tier-Specific's Experience will reach but not surpass the Equivalent Value of{" "}
-                    <strong className="text-foreground">≤$10,000/Year</strong>.
+                    <strong className="text-foreground">≤$10,000/Year</strong>. The More You Specialise in what you are more Interested, the more Opportunities will open during the Circular-Economy Phase.
                   </p>
                   <p className="italic" style={{ color: "hsl(0 72% 45%)" }}>
-                    &#123; All AI-Signalled: Undue Traffic, Ads Click-Hoarding, or Lack of Genuine Interest for a Researched Topic, would bring to the Partial or Total Seizing of Vaulted Earnings.
+                    &#123; All AI-Signalled: Undue Traffic, Ads Click-Hoarding, or Lack of Genuine Interest for a Researched Topic, would bring to the Selective, Partial or Total Seizing of Vaulted Earnings.
                     <br />
                     <br />
-                    Research what Makes yourself what you Truly Are. Respect Others Time, or Face Consequences for having attempted to Fraud the Community. &#125;
+                    Research Dynamically what Makes Yourself what You Truly Are. Respect Others Users' Time, or Face Consequences for having attempted to Fraud the Community. &#125;
                   </p>
                   <p>
-                    <span className="text-money font-semibold">• Vaulted Earnings Above Withdrawal Threshold:</span> All ulterior Vaulted earnings will be stored indefinitely as user's personal on-site credit balance, used first as Partial-Convertible-Value for product purchasing (on Amazon, eBay) regarding sector-specific interests, and secondly during the Investment Phase — loading as passive-yield-generating Secured Institutional Grade DeFi investments with safety-margin insurance from our side. 
+                    <span className="text-money font-semibold">• Vaulted Earnings Above Withdrawal Threshold:</span> All ulterior Vaulted earnings will be stored indefinitely as user's personal on-site credit balance, used first as Partial-Convertible-Value for product purchasing (on Amazon, eBay) regarding sector-specific interests, and secondly during the Investment Phase — loading as Passively yield generating Secured Institutional-Grade DeFi investments with Safety margin-insurance from our side → [For Non Leveraged Values]
                   </p>
 
                   <p>
@@ -271,10 +271,10 @@ export default function Earnings() {
                   </p>
 
                   <p>
-                    <span className="text-money font-semibold">• Financial Phase:</span> Beyond the site's main Earn-to-Learn potential, users will be able to invest their own money Safely Alongside their Vaulted Time-Credit thanks to <strong className="text-foreground">Kiln Financial Services</strong>. All real-world investments from users own Personal Finances will be withdrawable at any time without any limitations, except for the Limits/Controls& Regulations associated with Anti Money Laundering the Financial Service Require to Operate Legally.
+                    <span className="text-money font-semibold">• Financial Phase:</span> Beyond the site's main Earn-to-Learn potential, users will be able to invest their own money Safely Alongside their Vaulted Time-Credit thanks to <strong className="text-foreground">Kiln Financial Services</strong>. All Real-World Currency investments from users' Own Personal Finances will be withdrawable at any time without any limitations, except for the Limits brought from the Controls & Regulations associated with Anti Money Laundering All the Financial Services Require in order to Operate Legally.
                   </p>
                   <p>
-                    <span className="text-money font-semibold">• Circular Economy:</span> In the last phase of the user's experience climb, contact facilitation between users' favourite companies from their main experience Tier will enable: Cashback on new Products, exclusive early-access, ideas co-development, subsequent job/consultancy opportunities — other than personal Direct investments in what they genuinely Love.
+                    <span className="text-money font-semibold">• Circular Economy:</span> In the last phase of the user's experience climb, Contacts facilitation between users' favourite companies from their main experience Tier will enable: Cashback on Brand New Products, Exclusive Early-Access for Experimental Products not Yet on the Market, Personal Users' ideas co-development, with subsequent job/consultancy opportunities — other than Personal Direct Investments in what Users Genuinely Love.
                   </p>
                 </div>
               </div>
