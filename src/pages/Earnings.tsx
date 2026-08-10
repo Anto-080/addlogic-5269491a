@@ -79,7 +79,7 @@ export default function Earnings() {
                   alongside your main Experience bar. From <strong className="not-italic text-foreground">Level 25</strong>{" "}
                   you'll be granted experience-based research grants without depleting the bar you worked so hard
                   for. At Investment Level, tailored zero-risk passive plans let your earnings compound on
-                  their own. — <em>Keep researching what you love.</em>
+                  their own.        — <em>Keep researching what you love.</em>
                 </p>
               </div>
             </div>
@@ -263,7 +263,7 @@ export default function Earnings() {
                     Research Dynamically what Makes Yourself what You Truly Are. Respect Others Users' Time, or Face Consequences for having attempted to Fraud the Community. &#125;
                   </p>
                   <p>
-                    <span className="text-money font-semibold">• Vaulted Earnings Above Withdrawal Threshold:</span> All ulterior Vaulted earnings will be stored indefinitely as user's personal on-site credit balance, used first as Partial-Convertible-Value for product purchasing (on Amazon, eBay) regarding sector-specific interests, and secondly during the Investment Phase — loading as Passively yield generating Secured Institutional-Grade DeFi investments with Safety margin-insurance from our side → [For Non Leveraged Values]
+                    <span className="text-money font-semibold">• Vaulted Earnings Above Withdrawal Threshold:</span> All ulterior Vaulted earnings will be stored indefinitely as user's personal on-site credit balance, used first as Partial-Convertible-Value for product purchasing (on Amazon, eBay) regarding sector-specific interests, and secondly during the Investment Phase — loading as Passively yield generating Secured Institutional-Grade DeFi investments with Safety margin-insurance from our side→[For Non Leveraged Values]
                   </p>
 
                   <p>
@@ -274,7 +274,7 @@ export default function Earnings() {
                     <span className="text-money font-semibold">• Financial Phase:</span> Beyond the site's main Earn-to-Learn potential, users will be able to invest their own money Safely Alongside their Vaulted Time-Credit thanks to <strong className="text-foreground">Kiln Financial Services</strong>. All Real-World Currency investments from users' Own Personal Finances will be withdrawable at any time without any limitations, except for the Limits brought from the Controls & Regulations associated with Anti Money Laundering All the Financial Services Require in order to Operate Legally.
                   </p>
                   <p>
-                    <span className="text-money font-semibold">• Circular Economy:</span> In the last phase of the user's experience climb, Contacts facilitation between users' favourite companies from their main experience Tier will enable: Cashback on Brand New Products, Exclusive Early-Access for Experimental Products not Yet on the Market, Personal Users' ideas co-development, with subsequent job/consultancy opportunities — other than Personal Direct Investments in what Users Genuinely Love.
+                    <span className="text-money font-semibold">• Circular Economy:</span> In the last phase of the user's experience climb, Contacts facilitation between users' favourite companies from their main experience Tier will enable: Cashback on Brand New Products, Exclusive Early-Access for Experimental Products not Yet on the Market,Sector Acquainted Users' Personal ideas co-development, with subsequent job/consultancy opportunities — other than Personal Direct Investments in what Users Genuinely Love.
                   </p>
                 </div>
               </div>
