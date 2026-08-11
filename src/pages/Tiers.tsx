@@ -241,14 +241,15 @@ export default function Tiers() {
                 {orderedTiers.filter((t) => t.id <= 3).map((tier) => {
                   const barWidth = (tier.multiplier / maxMultiplier) * 100;
                   const isOpen = expanded === tier.id;
-                  return (
-                    <Card
-                      key={tier.id}
-                      data-reveal
-                      onClick={onCardClick}
-                      className="border transition-all glow-card cursor-pointer"
-                      style={tierSurface(tier.color)}
-                    >
+                   return (
+                     <div key={tier.id}>
+                     <FolderTab color={tier.color} />
+                     <Card
+                       data-reveal
+                       onClick={onCardClick}
+                       className="border transition-all glow-card cursor-pointer"
+                       style={tierSurface(tier.color)}
+                     >
                       <CardContent className="p-4">
                         <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
                           <div className="flex items-center gap-4">
