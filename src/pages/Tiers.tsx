@@ -23,14 +23,40 @@ const TOP_TIER_GATE = 50;
 /** Ash Gold — the unified experience-bar fill used across the tier list. */
 const ASH_GOLD = "#8C6F54";
 
-/** Shaded, tier-tinted card surface (mirrors the Investment Phase cards). */
+/**
+ * Old filing-cabinet folder surface: matte tier-tinted paper, a tab notch at
+ * the top-left, a full-width colour identification line across the top and a
+ * soft bottom crease. Tint is more vivid than before but stays opaque/matte.
+ */
 function tierSurface(color: string) {
   return {
-    background: `linear-gradient(160deg, color-mix(in srgb, ${color} 20%, hsl(var(--card))) 0%, color-mix(in srgb, ${color} 7%, hsl(var(--card))) 100%)`,
-    borderColor: `color-mix(in srgb, ${color} 45%, transparent)`,
-    borderLeft: `3px solid ${color}`,
+    background: `
+      linear-gradient(160deg, color-mix(in srgb, ${color} 34%, hsl(var(--card))) 0%, color-mix(in srgb, ${color} 16%, hsl(var(--card))) 100%)
+    `,
+    borderColor: `color-mix(in srgb, ${color} 55%, transparent)`,
+    borderTop: `4px solid ${color}`,
+    borderRadius: "2px 10px 6px 6px",
+    boxShadow: "inset 0 -10px 14px -12px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.05)",
   } as React.CSSProperties;
 }
+
+/** The folder tab that sits above the card's top colour line. */
+function FolderTab({ color }: { color: string }) {
+  return (
+    <div
+      aria-hidden
+      className="h-2.5 w-24 ml-3"
+      style={{
+        background: `color-mix(in srgb, ${color} 34%, hsl(var(--card)))`,
+        borderTop: `3px solid ${color}`,
+        borderLeft: `1px solid color-mix(in srgb, ${color} 55%, transparent)`,
+        borderRight: `1px solid color-mix(in srgb, ${color} 55%, transparent)`,
+        borderRadius: "6px 10px 0 0",
+      }}
+    />
+  );
+}
+
 
 /** FE International–style scroll reveal, identical to the Investment Phase. */
 function useScrollReveal() {
