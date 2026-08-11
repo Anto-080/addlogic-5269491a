@@ -109,34 +109,66 @@ export function bumpInterestSignal(tierId: number, seconds: number): {
   return { totalSeconds: next, multiplierBonus: earnedBumps, newlyGranted };
 }
 
-/** XP per cosmetic level inside a tier ExperienceBar (1 000 points = 1 lvl). */
-export const TIER_XP_PER_LEVEL = 1_000;
-
 /**
- * Inverted progression: regular (global) research rewards scale UP with tier
- * importance, but *tier-specific* experience scales the opposite way — lower
- * tiers (higher tierId) accumulate XP faster than the top-priority tiers.
- * Tier 1 = x1.00 … Tier 17 = x5.00.
+ * Field Experience — "Science field → Sport field".
+ *
+ * Base field-experience rate is a FLAT 1.5 for every graded tier (it adds to
+ * the lifetime multiplier once per level passed). What changes per tier is the
+ * COST of a level: 50 000 XP at the Sciences end down to 1 000 XP at the
+ * Sport end, decaying exponentially across the graded band.
+ *
+ * Top-Tier Research (1–3), Betting (16) and Adult (17) are excluded — they get
+ * their own progression later.
  */
-export function tierXpRate(tierId: number): number {
-  const t = Math.max(1, Math.min(17, Math.floor(tierId || 1)));
-  return 1 + (t - 1) * 0.25;
+export const FIELD_BASE_MULTIPLIER = 1.5;
+
+const EXCLUDED_TIER_IDS = new Set([1, 2, 3, 16, 17]);
+
+/** Graded tier ids, in the canonical list order (Sciences → Sports). */
+const GRADED_TIER_IDS: number[] = TIERS.map((t) => t.id).filter((id) => !EXCLUDED_TIER_IDS.has(id));
+
+export const XP_PER_LEVEL_TOP = 50_000;
+export const XP_PER_LEVEL_FLOOR = 1_000;
+
+export function isGradedTier(tierId: number): boolean {
+  return !EXCLUDED_TIER_IDS.has(Math.floor(tierId || 0));
 }
 
 /**
- * 1 validated second of research → 1 XP, scaled by the inverted tier rate.
- * Returns `{ level, xpInLevel, percent }` from a raw seconds total.
+ * XP required per Field-Experience level for a tier — exponential decay from
+ * 50 000 (highest graded tier) to 1 000 (lowest graded tier).
+ */
+export function xpPerLevelForTier(tierId: number): number {
+  const idx = GRADED_TIER_IDS.indexOf(Math.floor(tierId || 0));
+  const n = GRADED_TIER_IDS.length;
+  if (idx < 0 || n < 2) return XP_PER_LEVEL_TOP;
+  const ratio = XP_PER_LEVEL_FLOOR / XP_PER_LEVEL_TOP;
+  const raw = XP_PER_LEVEL_TOP * Math.pow(ratio, idx / (n - 1));
+  // Round to a readable step (nearest 100, min floor).
+  return Math.max(XP_PER_LEVEL_FLOOR, Math.round(raw / 100) * 100);
+}
+
+/** Kept for API stability — the field base rate is now flat across tiers. */
+export function tierXpRate(_tierId?: number): number {
+  return FIELD_BASE_MULTIPLIER;
+}
+
+/**
+ * 1 validated second of research → 1 XP, scaled by the flat field base rate.
+ * Level cost comes from the tier's own `xpPerLevelForTier`.
  */
 export function tierLevelFromSeconds(seconds: number, tierId = 1): {
   level: number;
   xpInLevel: number;
   percent: number;
   rate: number;
+  xpPerLevel: number;
 } {
-  const rate = tierXpRate(tierId);
+  const rate = FIELD_BASE_MULTIPLIER;
+  const xpPerLevel = xpPerLevelForTier(tierId);
   const xp = Math.max(0, Math.floor(Math.max(0, seconds) * rate));
-  const level = Math.floor(xp / TIER_XP_PER_LEVEL) + 1;
-  const xpInLevel = xp % TIER_XP_PER_LEVEL;
-  return { level, xpInLevel, percent: (xpInLevel / TIER_XP_PER_LEVEL) * 100, rate };
+  const level = Math.floor(xp / xpPerLevel) + 1;
+  const xpInLevel = xp % xpPerLevel;
+  return { level, xpInLevel, percent: (xpInLevel / xpPerLevel) * 100, rate, xpPerLevel };
 }
 
