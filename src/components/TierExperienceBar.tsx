@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTierProgress, useUpdateTierProgress } from "@/hooks/useTierProgress";
-import { bumpInterestSignal, tierLevelFromSeconds, TIER_XP_PER_LEVEL } from "@/lib/zeroPartyCookies";
+import { bumpInterestSignal, tierLevelFromSeconds, isGradedTier, FIELD_BASE_MULTIPLIER } from "@/lib/zeroPartyCookies";
 import { useSettings, consentBonus } from "@/contexts/SettingsContext";
 import { useResearchSession } from "@/contexts/ResearchSessionContext";
 
