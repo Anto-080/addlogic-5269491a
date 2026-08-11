@@ -386,6 +386,7 @@ export default function Tiers() {
                       )}
                     </CardContent>
                   </Card>
+                  </div>
                 );
               })}
             </div>
