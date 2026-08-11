@@ -104,7 +104,7 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") run(); }}
-                placeholder="Search PLOS articles — e.g. CRISPR off-target effects"
+                placeholder="Search PLOS articles —"
                 className="text-xs h-9 bg-transparent border-border/60 focus-visible:ring-1"
               />
               <Button size="sm" onClick={run} disabled={search.isPending} className="gap-1 shrink-0 h-9">
