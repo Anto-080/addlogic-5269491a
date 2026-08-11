@@ -42,7 +42,7 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
   const lastTickRef = useRef(Date.now());
   const [, force] = useState(0);
 
-  const isActiveForThisTier = session?.tierId === tierId;
+  const isActiveForThisTier = session?.tierId === tierId && isGradedTier(tierId);
 
   useEffect(() => {
     if (!isActiveForThisTier) return;
