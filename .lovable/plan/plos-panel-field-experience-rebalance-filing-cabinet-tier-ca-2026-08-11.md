@@ -24,7 +24,7 @@ The XP logic still assumes an old 17-item list and clamps tier ids at 17, so tie
 
 ## 4. Tier card graphics — old filing-cabinet folders
 
-- Keep the current layout; make each card's tint **less transparent and more vivid** while staying matte/opaque — no glow or highlighter effect.
+- Keep the current layout; make each card's tint slightly **less transparent and more vivid** while staying matte/opaque — no glow or highlighter effect.
 - Move the solid colour bar from the left edge to a **full-width line across the top** of each card, as a colour identification code.
 - Reshape each card as an **old paper folder**: a tab notch at the top-left of the card silhouette, slightly warm paper texture, soft folded-edge shading and a subtle bottom crease, so the list reads like a filing cabinet drawer.
 - Scroll-reveal and click-to-glow behaviour from the Investment Phase cards is preserved.
