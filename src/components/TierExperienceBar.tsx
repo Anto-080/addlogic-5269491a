@@ -96,7 +96,8 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
   }, [isActiveForThisTier, tierId, baseSeconds, baseBonus, user]);
 
   const liveSeconds = baseSeconds + (isActiveForThisTier ? accRef.current : 0);
-  const { level, xpInLevel, percent, rate } = tierLevelFromSeconds(liveSeconds, tierId);
+  const { level, xpInLevel, percent, rate, xpPerLevel } = tierLevelFromSeconds(liveSeconds, tierId);
+  const graded = isGradedTier(tierId);
 
   // 1h of validated research = +1 permanent multiplier (lifetime).
   const liveBonus = Math.max(baseBonus, Math.floor(liveSeconds / 3600));
@@ -104,6 +105,23 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
 
   // Ash Gold — single unified experience-bar fill across every tier.
   const fillColor = "#8C6F54";
+
+  if (!graded) {
+    return (
+      <div className="space-y-2 mb-3 opacity-60">
+        <div className="flex justify-between text-[11px]">
+          <span className="text-muted-foreground">Field Experience · separate progression</span>
+          <span className="text-muted-foreground">locked</span>
+        </div>
+        <div className="relative w-full h-3 overflow-hidden rounded-full bg-secondary/60">
+          <div className="h-full w-0" />
+        </div>
+        <p className="text-[10px] text-muted-foreground italic">
+          Top-Tier Research, Betting and Adult sections will receive their own dedicated Field Experience progression later on.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2 mb-3">
@@ -119,8 +137,8 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
             )}
           </span>
           <span className="text-foreground/80 font-medium">
-            {xpInLevel.toLocaleString()} / {TIER_XP_PER_LEVEL.toLocaleString()} XP
-            <span className="ml-1.5 text-[10px] text-muted-foreground">· XP rate x{rate.toFixed(2)}</span>
+            {xpInLevel.toLocaleString()} / {xpPerLevel.toLocaleString()} XP
+            <span className="ml-1.5 text-[10px] text-muted-foreground">· base x{rate.toFixed(2)}</span>
           </span>
 
         </div>
@@ -140,6 +158,11 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
           x{activeMultiplier.toFixed(2)}
         </span>
       </div>
+
+      <p className="text-[10px] text-muted-foreground italic">
+        Each level adds x{FIELD_BASE_MULTIPLIER} to your lifetime field multiplier. Level cost scales with tier importance —
+        {" "}{xpPerLevel.toLocaleString()} XP here.
+      </p>
 
       {!isActiveForThisTier && (
         <p className="text-[10px] text-muted-foreground italic">
