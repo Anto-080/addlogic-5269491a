@@ -1,3 +1,5 @@
+import { TIERS } from "@/lib/mockData";
+
 /**
  * Zero-party cookies = a structured, user-derived signal we WRITE to
  * `document.cookie` ourselves, using the user's in-app behaviour. Unlike
