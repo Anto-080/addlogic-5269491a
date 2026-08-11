@@ -434,9 +434,8 @@ export default function Dashboard() {
           <CardContent className="p-4 space-y-2">
             <ExperienceBar baseMultiplier={1} />
             <p className="text-xs text-muted-foreground">
-              XP grows by <span className="text-foreground/90 font-medium">time × active multiplier</span> while you research. The black
-              marker shows the <span className="text-foreground/90 font-medium">x10 cap</span> — when boosters push the
-              multiplier above 10×, the marker slides left and the crimson fill extends past it.
+              XP grows in <span className="text-foreground/90 font-medium">Real Time Passed Researching × Active Multiplier</span>.
+              <span className="text-foreground/90 font-medium"> Active Multiplier Bonuses Increase by Activating More Permissions for Data Collection.
             </p>
           </CardContent>
         </Card>
@@ -598,16 +597,16 @@ function MilestonesAndAffinityCard({ milestones }: { milestones: MilestoneRow[] 
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <Star className="h-5 w-5 text-gold" />
-          Top Milestones
+        Interests Milestones 
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="rounded-xl border border-border/40 bg-secondary/20 p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-sm font-semibold text-foreground">Meta-Interests Cake</p>
+              <p className="text-sm font-semibold text-foreground">Meta-Interests Affinity Percentage</p>
               <p className="text-[11px] text-muted-foreground">
-                Your skill mix — connect with researchers who share ≥30% overlap.
+                Your skills Ring — Connect with researchers who share High-Affinity Overlapping with your Own Interests .
               </p>
             </div>
             <Link
