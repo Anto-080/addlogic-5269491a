@@ -61,7 +61,7 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
         {showLinkedIn && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border border-border/50 bg-secondary/20">
             <p className="text-xs text-muted-foreground">
-              Connect with LinkedIn — <span className="text-foreground font-medium">For Biochemical Researchers Only</span>
+               — <span className="text-foreground font-medium">For Biochemical Researchers Only</span> —
             </p>
             <Button size="sm" variant="secondary" className="gap-2 self-start shrink-0">
               <ExternalLink className="h-3 w-3" /> Connect with LinkedIn
