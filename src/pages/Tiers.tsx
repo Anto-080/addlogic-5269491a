@@ -304,8 +304,9 @@ export default function Tiers() {
                 const barWidth = (tier.multiplier / maxMultiplier) * 100;
                 const isOpen = expanded === tier.id;
                 return (
+                  <div key={tier.id}>
+                  <FolderTab color={tier.color} />
                   <Card
-                    key={tier.id}
                     data-reveal
                     onClick={onCardClick}
                     className="border transition-all glow-card cursor-pointer"
