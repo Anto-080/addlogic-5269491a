@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ExternalLink, Loader2, Search } from "lucide-react";
-import plosLogo from "@/assets/plos-logo.png";
+import plosFooterAsset from "@/assets/plos-footer.png.asset.json";
+import plosColorAsset from "@/assets/plos-color.png.asset.json";
 import mistralMark from "@/assets/mistral-mark.png";
 import synapsesAsset from "@/assets/hippocampal-synapses.gif.asset.json";
 import { usePlosSearch, type PlosResult } from "@/hooks/usePlosSearch";
@@ -49,14 +50,14 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="w-full block hover:opacity-90 transition-opacity"
+              className="w-full block hover:opacity-90 transition-opacity py-4"
               aria-label="Open PLOS section"
             >
               <img
-                src={plosLogo}
+                src={plosFooterAsset.url}
                 alt="PLOS — Public Library of Science"
-                className="brand-asset block w-full"
-                style={{ height: 88, objectFit: "fill" }}
+                className="brand-asset block mx-auto object-contain"
+                style={{ height: 117, maxWidth: "88%" }}
               />
             </button>
           </CollapsibleTrigger>
@@ -65,7 +66,7 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
         <CollapsibleContent>
           {/* Open state — the synapse animation covers the whole upper block:
               logo, search row and the LinkedIn button all sit on top of it. */}
-          <div className="relative">
+          <div className="relative min-h-[460px] flex flex-col">
             <img
               src={synapsesAsset.url}
               alt="Adult hippocampal spaced synapses animation"
@@ -74,18 +75,19 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
             />
             <div className="absolute inset-0 bg-background/55" />
 
-            <div className="relative p-4 space-y-3">
+            <div className="relative p-4 space-y-4 flex-1 flex flex-col justify-center">
               <CollapsibleTrigger asChild>
                 <button type="button" className="w-full block" aria-label="Close PLOS section">
                   <img
-                    src={plosLogo}
+                    src={plosColorAsset.url}
                     alt="PLOS — Public Library of Science"
                     className="brand-asset mx-auto object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]"
-                    style={{ maxHeight: 140, maxWidth: "80%" }}
+                    style={{ maxHeight: 196, maxWidth: "92%" }}
                   />
                   <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-foreground/70 rotate-180" />
                 </button>
               </CollapsibleTrigger>
+
 
               <div className="text-right">
                 <button
