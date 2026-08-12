@@ -152,15 +152,8 @@ export default function Tiers() {
 
   const revealRoot = useScrollReveal();
 
-  // Click-to-glow: tapping a tier card toggles a warm-golden halo on it only.
-  const onCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = e.currentTarget;
-    const root = revealRoot.current;
-    root?.querySelectorAll(".glow-card.is-glowing").forEach((n) => {
-      if (n !== card) n.classList.remove("is-glowing");
-    });
-    card.classList.toggle("is-glowing");
-  };
+  // Glow is driven by the expanded state (see the tier cards below).
+
 
   return (
     <AppLayout>
@@ -242,13 +235,15 @@ export default function Tiers() {
                   const barWidth = (tier.multiplier / maxMultiplier) * 100;
                   const isOpen = expanded === tier.id;
                    return (
-                     <div key={tier.id}>
+                     <div
+                       key={tier.id}
+                       data-reveal
+                       className={`glow-card rounded-[2px_10px_6px_6px] cursor-pointer ${isOpen ? "is-glowing" : ""}`}
+                     >
                      <FolderTab color={tier.color} />
                      <Card
-                       data-reveal
-                       onClick={onCardClick}
-                       className="border transition-all glow-card cursor-pointer"
-                       style={tierSurface(tier.color)}
+                       className="border transition-all bg-transparent shadow-none"
+                       style={{ ...tierSurface(tier.color), boxShadow: "inset 0 -10px 14px -12px rgba(0,0,0,0.55)" }}
                      >
                       <CardContent className="p-4">
                         <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
@@ -304,13 +299,15 @@ export default function Tiers() {
                 const barWidth = (tier.multiplier / maxMultiplier) * 100;
                 const isOpen = expanded === tier.id;
                 return (
-                  <div key={tier.id}>
+                  <div
+                    key={tier.id}
+                    data-reveal
+                    className={`glow-card rounded-[2px_10px_6px_6px] cursor-pointer ${isOpen ? "is-glowing" : ""}`}
+                  >
                   <FolderTab color={tier.color} />
                   <Card
-                    data-reveal
-                    onClick={onCardClick}
-                    className="border transition-all glow-card cursor-pointer"
-                    style={tierSurface(tier.color)}
+                    className="border transition-all shadow-none"
+                    style={{ ...tierSurface(tier.color), boxShadow: "inset 0 -10px 14px -12px rgba(0,0,0,0.55)" }}
                   >
                     <CardContent className="p-4">
                       <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
