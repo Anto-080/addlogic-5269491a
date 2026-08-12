@@ -44,89 +44,93 @@ export function PlosCard({ showLinkedIn, onOpenUrl }: Props) {
   return (
     <Card className="bg-card border-border/50 overflow-hidden">
       <Collapsible open={panelOpen} onOpenChange={setPanelOpen}>
-        {/* Closed state — PLOS logo stretched across the full width, acts as trigger */}
+        {/* Closed state — PLOS logo stretched across the full card width */}
         {!panelOpen && (
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="w-full block hover:bg-secondary/20 transition-colors"
+              className="w-full block hover:opacity-90 transition-opacity"
               aria-label="Open PLOS section"
             >
               <img
                 src={plosLogo}
                 alt="PLOS — Public Library of Science"
-                className="brand-asset w-full object-contain px-4 py-3"
-                style={{ height: 96 }}
+                className="brand-asset block w-full"
+                style={{ height: 88, objectFit: "fill" }}
               />
             </button>
           </CollapsibleTrigger>
         )}
 
         <CollapsibleContent>
-          {/* Open state — synapse animation with the PLOS logo overlaid */}
-          <CollapsibleTrigger asChild>
-            <button
-              type="button"
-              className="relative w-full block overflow-hidden"
-              aria-label="Close PLOS section"
-            >
-              <img
-                src={synapsesAsset.url}
-                alt="Adult hippocampal spaced synapses animation"
-                className="w-full object-cover"
-                style={{ height: 300 }}
-              />
-              <div className="absolute inset-0 bg-background/45" />
-              <img
-                src={plosLogo}
-                alt="PLOS — Public Library of Science"
-                className="brand-asset absolute inset-0 m-auto object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]"
-                style={{ maxHeight: 200, maxWidth: "80%" }}
-              />
-              <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-foreground/70 rotate-180" />
-            </button>
-          </CollapsibleTrigger>
+          {/* Open state — the synapse animation covers the whole upper block:
+              logo, search row and the LinkedIn button all sit on top of it. */}
+          <div className="relative">
+            <img
+              src={synapsesAsset.url}
+              alt="Adult hippocampal spaced synapses animation"
+              aria-hidden
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-background/55" />
 
-          <CardContent className="p-4 space-y-3">
-            <div className="text-right">
-              <button
-                type="button"
-                onClick={() => onOpenUrl("https://plos.org")}
-                className="text-[11px] tracking-wide text-foreground/60 hover:text-foreground"
-              >
-                ⟩PLOS →
-              </button>
-            </div>
+            <div className="relative p-4 space-y-3">
+              <CollapsibleTrigger asChild>
+                <button type="button" className="w-full block" aria-label="Close PLOS section">
+                  <img
+                    src={plosLogo}
+                    alt="PLOS — Public Library of Science"
+                    className="brand-asset mx-auto object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]"
+                    style={{ maxHeight: 140, maxWidth: "80%" }}
+                  />
+                  <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-foreground/70 rotate-180" />
+                </button>
+              </CollapsibleTrigger>
 
-            {/* Search row — fully transparent input */}
-            <div className="flex gap-2">
-              <Input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") run(); }}
-                placeholder="Search PLOS articles —"
-                className="text-xs h-9 bg-transparent border-border/60 focus-visible:ring-1"
-              />
-              <Button size="sm" onClick={run} disabled={search.isPending} className="gap-1 shrink-0 h-9">
-                {search.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
-                Search
-              </Button>
-            </div>
-
-            {showLinkedIn && (
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border border-border/50 bg-secondary/20">
-                <p className="text-xs text-muted-foreground">
-                  — <span className="text-foreground font-medium">For Biochemical Researchers Only</span> —
-                </p>
-                <Button
-                  size="sm"
-                  className="gap-2 self-start shrink-0 text-white hover:opacity-90"
-                  style={{ backgroundColor: EVERGREEN }}
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => onOpenUrl("https://plos.org")}
+                  className="text-[11px] tracking-wide text-foreground/70 hover:text-foreground"
                 >
-                  <ExternalLink className="h-3 w-3" /> Connect with LinkedIn
+                  ⟩PLOS →
+                </button>
+              </div>
+
+              {/* Search row — fully transparent input */}
+              <div className="flex gap-2">
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") run(); }}
+                  placeholder="Search PLOS articles —"
+                  className="text-xs h-9 bg-transparent border-border/60 focus-visible:ring-1"
+                />
+                <Button size="sm" onClick={run} disabled={search.isPending} className="gap-1 shrink-0 h-9">
+                  {search.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+                  Search
                 </Button>
               </div>
-            )}
+
+              {showLinkedIn && (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border border-border/50 bg-background/40 backdrop-blur-sm">
+                  <p className="text-xs text-muted-foreground">
+                    — <span className="text-foreground font-medium">For Biochemical Researchers Only</span> —
+                  </p>
+                  <Button
+                    size="sm"
+                    className="gap-2 self-start shrink-0 text-white hover:opacity-90"
+                    style={{ backgroundColor: EVERGREEN }}
+                  >
+                    <ExternalLink className="h-3 w-3" /> Connect with LinkedIn
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <CardContent className="p-4 space-y-3">
+
 
             {classified && (
               <div className="flex items-center gap-2 text-[11px] p-2 rounded-lg border border-primary/40 bg-primary/5 text-foreground">
