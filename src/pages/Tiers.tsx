@@ -245,7 +245,6 @@ export default function Tiers() {
                      <div
                        key={tier.id}
                        data-reveal
-                       onClick={onCardClick}
                        className={`glow-card rounded-[2px_10px_6px_6px] cursor-pointer ${isOpen ? "is-glowing" : ""}`}
                      >
                      <FolderTab color={tier.color} />
@@ -310,7 +309,6 @@ export default function Tiers() {
                   <div
                     key={tier.id}
                     data-reveal
-                    onClick={onCardClick}
                     className={`glow-card rounded-[2px_10px_6px_6px] cursor-pointer ${isOpen ? "is-glowing" : ""}`}
                   >
                   <FolderTab color={tier.color} />
