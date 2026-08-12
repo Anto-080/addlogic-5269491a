@@ -434,8 +434,8 @@ export default function Dashboard() {
           <CardContent className="p-4 space-y-2">
             <ExperienceBar baseMultiplier={1} />
             <p className="text-xs text-muted-foreground">
-              XP grows in <span className="text-foreground/90 font-medium">Real Time Passed Researching × Active Multiplier</span>.
-              <span className="text-foreground/90 font-medium"> Active Multiplier Bonuses Increase by Activating More Permissions for Data Collection.</span>
+              XP grows in Real Time Passed Researching × Active Multiplier.
+              Active Multiplier Bonuses Increase by Activating Consensus Toggles for Data Collection.
             </p>
           </CardContent>
         </Card>
