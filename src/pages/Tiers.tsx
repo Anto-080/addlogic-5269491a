@@ -152,15 +152,8 @@ export default function Tiers() {
 
   const revealRoot = useScrollReveal();
 
-  // Click-to-glow: tapping a tier card toggles a warm-golden halo on it only.
-  const onCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const card = e.currentTarget;
-    const root = revealRoot.current;
-    root?.querySelectorAll(".glow-card.is-glowing").forEach((n) => {
-      if (n !== card) n.classList.remove("is-glowing");
-    });
-    card.classList.toggle("is-glowing");
-  };
+  // Glow is driven by the expanded state (see the tier cards below).
+
 
   return (
     <AppLayout>
