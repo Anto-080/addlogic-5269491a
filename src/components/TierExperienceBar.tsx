@@ -152,7 +152,7 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
 
       <div className="flex justify-between text-[11px]">
         <span className="text-muted-foreground">
-          Lifetime multiplier · base x{tierMultiplier} + bonus x{liveBonus}
+          Lifetime multiplier bonus · x{liveBonus} <span className="text-[10px]">(+x{FIELD_BASE_MULTIPLIER} each new level)</span>
         </span>
         <span className="font-semibold" style={{ color: "hsl(348 83% 60%)" }}>
           x{activeMultiplier.toFixed(2)}
@@ -160,7 +160,7 @@ export function TierExperienceBar({ tierId, tierMultiplier }: Props) {
       </div>
 
       <p className="text-[10px] text-muted-foreground italic">
-        Each level adds x{FIELD_BASE_MULTIPLIER} to your lifetime field multiplier. Level cost scales with tier importance —
+        Every tier grants the same flat x{FIELD_BASE_MULTIPLIER} per level — only the level cost scales with tier importance:
         {" "}{xpPerLevel.toLocaleString()} XP here.
       </p>
 
