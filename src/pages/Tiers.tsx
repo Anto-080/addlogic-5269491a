@@ -242,13 +242,16 @@ export default function Tiers() {
                   const barWidth = (tier.multiplier / maxMultiplier) * 100;
                   const isOpen = expanded === tier.id;
                    return (
-                     <div key={tier.id}>
-                     <FolderTab color={tier.color} />
-                     <Card
+                     <div
+                       key={tier.id}
                        data-reveal
                        onClick={onCardClick}
-                       className="border transition-all glow-card cursor-pointer"
-                       style={tierSurface(tier.color)}
+                       className={`glow-card rounded-[2px_10px_6px_6px] cursor-pointer ${isOpen ? "is-glowing" : ""}`}
+                     >
+                     <FolderTab color={tier.color} />
+                     <Card
+                       className="border transition-all bg-transparent shadow-none"
+                       style={{ ...tierSurface(tier.color), boxShadow: "inset 0 -10px 14px -12px rgba(0,0,0,0.55)" }}
                      >
                       <CardContent className="p-4">
                         <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
