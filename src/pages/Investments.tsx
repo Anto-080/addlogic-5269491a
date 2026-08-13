@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Shield, Users, ChevronDown } from "lucide-react";
@@ -8,6 +8,8 @@ import infinityLoop from "@/assets/infinity-loop.jpg";
 import fluxesMountain from "@/assets/fluxes-mountain.jpeg";
 import { useUserStats } from "@/hooks/useAppData";
 import { IdeasLibrary } from "@/components/IdeasLibrary";
+import { StakingPanel, DeltaNeutralPanel, CompaniesPanel } from "@/components/InvestmentPanels";
+
 
 const CIRCULAR_UNLOCK = 100;
 const INVESTMENT_UNLOCK = 50;
@@ -65,9 +67,29 @@ export default function Investments() {
     card.classList.toggle("is-glowing");
   };
 
+  const balance = stats?.earnings_all_time ?? 0;
+  const [panel, setPanel] = useState<null | "staking" | "delta" | "companies">(null);
+
+  useEffect(() => {
+    if (panel) window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  }, [panel]);
+
+  if (panel) {
+    return (
+      <AppLayout>
+        <div className="space-y-6 max-w-5xl mx-auto">
+          {panel === "staking" && <StakingPanel balance={balance} level={userLevel} onBack={() => setPanel(null)} />}
+          {panel === "delta" && <DeltaNeutralPanel balance={balance} onBack={() => setPanel(null)} />}
+          {panel === "companies" && <CompaniesPanel onBack={() => setPanel(null)} />}
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div ref={revealRoot} className="space-y-6 max-w-5xl mx-auto">
+
         <div data-reveal>
           <h1 className="text-2xl font-bold text-foreground">Investment Phase</h1>
           <p className="text-sm text-muted-foreground">Unlock by reaching higher experience levels.</p>
@@ -103,12 +125,18 @@ export default function Investments() {
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { Icon: TrendingUp, title: "Stablecoin Staking", desc: "Deposit earnings into staking pools. Earn passive yield while stabilizing the platform's transaction flow." },
-            { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by Researchers' earnings and private investors liquidity. Access institutional-grade passive yealds, \u2206Delta-Neutral strategies minimize risk." },
-            { Icon: Shield, title: "Sector-Based Investing", desc: "Invest in companies matching your research tier. Top-tier researchers can back breakthroughs in their area of expertise." },
-          ].map(({ Icon, title, desc }) => (
-            <Card key={title} data-reveal onClick={onCardClick} className="bg-card border-border/50 opacity-80 glow-card cursor-pointer">
+          {([
+            { Icon: TrendingUp, title: "Stablecoin Staking", desc: "Deposit earnings into staking pools. Earn passive yield while stabilizing the platform's transaction flow.", panel: "staking" as const },
+            { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by Researchers' earnings and private investors liquidity. Access institutional-grade passive yealds, \u2206Delta-Neutral strategies minimize risk.", panel: "delta" as const },
+            { Icon: Shield, title: "Sector-Based Investing", desc: "Invest in companies matching your research tier. Top-tier researchers can back breakthroughs in their area of expertise.", panel: "companies" as const },
+          ]).map(({ Icon, title, desc, panel: target }) => (
+            <Card
+              key={title}
+              data-reveal
+              onClick={onCardClick}
+              onDoubleClick={() => setPanel(target)}
+              className="bg-card border-border/50 opacity-80 glow-card cursor-pointer select-none"
+            >
               <CardContent className="p-4">
                 <Icon className="h-8 w-8 mb-3" style={{ color: "#004627" }} />
                 <h3 className="text-sm font-semibold text-foreground mb-1">{title}</h3>
@@ -116,6 +144,7 @@ export default function Investments() {
               </CardContent>
             </Card>
           ))}
+
         </div>
 
         <Card data-reveal onClick={onCardClick} className="bg-card border-border/50 opacity-90 sm:col-span-2 glow-card cursor-pointer">
