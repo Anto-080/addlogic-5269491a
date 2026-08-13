@@ -125,12 +125,18 @@ export default function Investments() {
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { Icon: TrendingUp, title: "Stablecoin Staking", desc: "Deposit earnings into staking pools. Earn passive yield while stabilizing the platform's transaction flow." },
-            { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by Researchers' earnings and private investors liquidity. Access institutional-grade passive yealds, \u2206Delta-Neutral strategies minimize risk." },
-            { Icon: Shield, title: "Sector-Based Investing", desc: "Invest in companies matching your research tier. Top-tier researchers can back breakthroughs in their area of expertise." },
-          ].map(({ Icon, title, desc }) => (
-            <Card key={title} data-reveal onClick={onCardClick} className="bg-card border-border/50 opacity-80 glow-card cursor-pointer">
+          {([
+            { Icon: TrendingUp, title: "Stablecoin Staking", desc: "Deposit earnings into staking pools. Earn passive yield while stabilizing the platform's transaction flow.", panel: "staking" as const },
+            { Icon: Users, title: "Collective Investment Pools", desc: "Join community pools funded by Researchers' earnings and private investors liquidity. Access institutional-grade passive yealds, \u2206Delta-Neutral strategies minimize risk.", panel: "delta" as const },
+            { Icon: Shield, title: "Sector-Based Investing", desc: "Invest in companies matching your research tier. Top-tier researchers can back breakthroughs in their area of expertise.", panel: "companies" as const },
+          ]).map(({ Icon, title, desc, panel: target }) => (
+            <Card
+              key={title}
+              data-reveal
+              onClick={onCardClick}
+              onDoubleClick={() => setPanel(target)}
+              className="bg-card border-border/50 opacity-80 glow-card cursor-pointer select-none"
+            >
               <CardContent className="p-4">
                 <Icon className="h-8 w-8 mb-3" style={{ color: "#004627" }} />
                 <h3 className="text-sm font-semibold text-foreground mb-1">{title}</h3>
@@ -138,6 +144,7 @@ export default function Investments() {
               </CardContent>
             </Card>
           ))}
+
         </div>
 
         <Card data-reveal onClick={onCardClick} className="bg-card border-border/50 opacity-90 sm:col-span-2 glow-card cursor-pointer">
