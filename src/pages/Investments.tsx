@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Shield, Users, ChevronDown } from "lucide-react";
@@ -8,6 +8,8 @@ import infinityLoop from "@/assets/infinity-loop.jpg";
 import fluxesMountain from "@/assets/fluxes-mountain.jpeg";
 import { useUserStats } from "@/hooks/useAppData";
 import { IdeasLibrary } from "@/components/IdeasLibrary";
+import { StakingPanel, DeltaNeutralPanel, CompaniesPanel } from "@/components/InvestmentPanels";
+
 
 const CIRCULAR_UNLOCK = 100;
 const INVESTMENT_UNLOCK = 50;
