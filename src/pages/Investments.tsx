@@ -79,7 +79,7 @@ export default function Investments() {
       <AppLayout>
         <div className="space-y-6 max-w-5xl mx-auto">
           {panel === "staking" && <StakingPanel balance={balance} level={userLevel} onBack={() => setPanel(null)} />}
-          {panel === "delta" && <DeltaNeutralPanel balance={balance} onBack={() => setPanel(null)} />}
+          {panel === "delta" && <DeltaNeutralPanel onBack={() => setPanel(null)} />}
           {panel === "companies" && <CompaniesPanel onBack={() => setPanel(null)} />}
         </div>
       </AppLayout>

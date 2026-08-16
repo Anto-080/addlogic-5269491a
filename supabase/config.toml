@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.academic-directory]
 verify_jwt = false
+
+[functions.company-finance]
+verify_jwt = false
