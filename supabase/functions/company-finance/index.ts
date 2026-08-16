@@ -11,10 +11,31 @@ const corsHeaders = {
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
-async function yf(url: string) {
-  const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
+async function yf(url: string, extra: Record<string, string> = {}) {
+  const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json", ...extra } });
   if (!r.ok) throw new Error(`Yahoo ${r.status}`);
   return await r.json();
+}
+
+/** Yahoo requires a cookie + crumb pair for quoteSummary. Cached per invocation. */
+let session: { cookie: string; crumb: string } | null = null;
+async function ensureSession() {
+  if (session) return session;
+  try {
+    const res = await fetch("https://fc.yahoo.com", { headers: { "User-Agent": UA }, redirect: "manual" });
+    const raw = res.headers.get("set-cookie") ?? "";
+    const cookie = raw.split(";")[0];
+    if (!cookie) return null;
+    const cr = await fetch("https://query1.finance.yahoo.com/v1/test/getcrumb", {
+      headers: { "User-Agent": UA, Cookie: cookie },
+    });
+    const crumb = (await cr.text()).trim();
+    if (!crumb || crumb.length > 32) return null;
+    session = { cookie, crumb };
+    return session;
+  } catch {
+    return null;
+  }
 }
 
 type Company = {
