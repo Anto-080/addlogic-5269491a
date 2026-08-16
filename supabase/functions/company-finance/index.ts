@@ -51,8 +51,11 @@ type Company = {
 
 async function detail(symbol: string): Promise<Partial<Company>> {
   try {
+    const s = await ensureSession();
+    if (!s) return {};
     const j = await yf(
-      `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=assetProfile,price,summaryProfile`,
+      `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=assetProfile,price,summaryProfile&crumb=${encodeURIComponent(s.crumb)}`,
+      { Cookie: s.cookie },
     );
     const res = j?.quoteSummary?.result?.[0];
     const price = res?.price ?? {};
