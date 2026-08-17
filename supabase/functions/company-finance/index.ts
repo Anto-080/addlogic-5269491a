@@ -119,22 +119,42 @@ async function rates(interval: string) {
         const annVol = Math.sqrt(variance) * per * 100;
         const rate = Math.max(1.5, Math.min(14, s.base + s.k * annVol));
         const avgVolume = vols.length ? vols.reduce((a, b) => a + b, 0) / vols.length : null;
+        const price = closes.length ? closes[closes.length - 1] : null;
+        // Live-day notional blended with the historical mean over the selected period.
+        const liveNotional = vols.length && price ? vols[vols.length - 1] * price : null;
+        const meanNotional = avgVolume && price ? avgVolume * price : null;
+        const notional =
+          liveNotional != null && meanNotional != null
+            ? (liveNotional + meanNotional) / 2
+            : liveNotional ?? meanNotional;
+        // Interest accrued over one period of the selected granularity.
+        const periods = interval === "1mo" ? 12 : interval === "1wk" ? 52 : 365;
+        const periodRate = (Math.pow(1 + rate / 100, 1 / periods) - 1) * 100;
         return {
           key: s.key,
           label: s.label,
           symbol: s.symbol,
           rate: Number(rate.toFixed(2)),
+          periodRate: Number(periodRate.toFixed(4)),
+          notional,
           annualizedVolatility: Number(annVol.toFixed(1)),
           avgVolume,
-          price: closes.length ? closes[closes.length - 1] : null,
+          price,
         };
       } catch {
-        return { key: s.key, label: s.label, symbol: s.symbol, rate: s.base, annualizedVolatility: null, avgVolume: null, price: null };
+        return { key: s.key, label: s.label, symbol: s.symbol, rate: s.base, periodRate: null, notional: null, annualizedVolatility: null, avgVolume: null, price: null };
       }
     }),
   );
-  return out;
+
+  // Trade-volume share: money deposited in each plan relative to the others for the period.
+  const total = out.reduce((a, r: any) => a + (r.notional ?? 0), 0);
+  return out.map((r: any) => ({
+    ...r,
+    volumeShare: total > 0 && r.notional != null ? Number(((r.notional / total) * 100).toFixed(2)) : null,
+  }));
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
