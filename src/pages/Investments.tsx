@@ -71,20 +71,26 @@ export default function Investments() {
   const [panel, setPanel] = useState<null | "staking" | "delta" | "companies">(null);
 
   useEffect(() => {
-    if (panel) window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, left: 0, behavior: panel ? "smooth" : "auto" });
   }, [panel]);
+
+  const backToPhase = () => {
+    setPanel(null);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  };
 
   if (panel) {
     return (
       <AppLayout>
         <div className="space-y-6 max-w-5xl mx-auto">
-          {panel === "staking" && <StakingPanel balance={balance} level={userLevel} onBack={() => setPanel(null)} />}
-          {panel === "delta" && <DeltaNeutralPanel onBack={() => setPanel(null)} />}
-          {panel === "companies" && <CompaniesPanel onBack={() => setPanel(null)} />}
+          {panel === "staking" && <StakingPanel balance={balance} level={userLevel} onBack={backToPhase} />}
+          {panel === "delta" && <DeltaNeutralPanel onBack={backToPhase} />}
+          {panel === "companies" && <CompaniesPanel onBack={backToPhase} />}
         </div>
       </AppLayout>
     );
   }
+
 
   return (
     <AppLayout>
