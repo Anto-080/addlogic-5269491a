@@ -1,14 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Building2, ExternalLink, Loader2, RefreshCw, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  ExternalLink,
+  FolderArchive,
+  Loader2,
+  Lock,
+  Pin,
+  RefreshCw,
+  Search,
+  Star,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { Link } from "react-router-dom";
 
 const ASH_GOLD = "#8C6F54";
 const EVERGREEN = "#004627";
+const BRONZE = "#A67D3D";
+const SILVER = "#D3D6D8";
+const EMERALD_MSG = "#8BE796";
 
 /** Baseline yield: 3% from Level 15 until the Financial Phase (Level 50). */
 export const BASELINE_LEVEL = 15;
@@ -35,10 +49,11 @@ function projection(amount: number, rate: number, years: number) {
 const money = (n: number) =>
   n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+/** Non-interactive chart: only the projection dot responds to the pointer. */
 function Chart({ data, color }: { data: { year: string; value: number }[]; color: string }) {
   const gid = `grad-${color.replace("#", "")}`;
   return (
-    <div className="h-56 w-full">
+    <div className="h-56 w-full select-none" style={{ WebkitTapHighlightColor: "transparent" }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
           <defs>
@@ -48,9 +63,21 @@ function Chart({ data, color }: { data: { year: string; value: number }[]; color
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.35} />
-          <XAxis dataKey="year" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-          <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} width={62} />
+          <XAxis
+            dataKey="year"
+            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+            width={62}
+            tickLine={false}
+            axisLine={false}
+          />
           <Tooltip
+            cursor={false}
+            isAnimationActive={false}
             contentStyle={{
               background: "hsl(var(--card))",
               border: "1px solid hsl(var(--border))",
@@ -59,10 +86,57 @@ function Chart({ data, color }: { data: { year: string; value: number }[]; color
             }}
             formatter={(v: number) => [`$${money(v)}`, "Projected"]}
           />
-          <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fill={`url(#${gid})`} />
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke={color}
+            strokeWidth={2}
+            fill={`url(#${gid})`}
+            activeDot={{ r: 5, fill: color, stroke: "hsl(var(--card))", strokeWidth: 2 }}
+            animationDuration={700}
+            animationEasing="ease-in-out"
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>
+  );
+}
+
+/** Bronze-bordered live-feed meter. */
+function MeterBar({ label, value, pct }: { label: string; value: string; pct: number }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</span>
+        <span className="text-[11px] font-semibold" style={{ color: BRONZE }}>{value}</span>
+      </div>
+      <div
+        className="h-3 w-full overflow-hidden"
+        style={{ border: `1px solid ${BRONZE}`, borderRadius: 2, background: "hsl(var(--secondary))" }}
+      >
+        <div
+          className="h-full transition-all duration-700 ease-out"
+          style={{ width: `${Math.max(2, Math.min(100, pct))}%`, backgroundColor: BRONZE }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function InvestPersonalButton({ label = "Invest your Personal Assets" }: { label?: string }) {
+  return (
+    <button
+      type="button"
+      className="w-full text-xs font-semibold px-4 py-2 text-white transition-transform active:scale-[0.99]"
+      style={{
+        backgroundColor: BRONZE,
+        border: `2px solid ${SILVER}`,
+        borderRadius: 9999,
+        boxShadow: `0 0 0 1px ${SILVER}33`,
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -79,29 +153,32 @@ function ProjectionControls({
   setYears: (n: number) => void;
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <div className="space-y-1.5">
-        <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-          Hypothetical deposit (own funds)
-        </label>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">$</span>
-          <Input
-            type="number"
-            min={0}
-            step={100}
-            value={amount}
-            onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))}
-            className="bg-secondary/50 h-9"
-          />
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Projected Earnings on Deposit
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">$</span>
+            <Input
+              type="number"
+              min={0}
+              step={100}
+              value={amount}
+              onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))}
+              className="bg-secondary/50 h-9"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Years projected · <span className="text-foreground font-semibold">{years}</span>
+          </label>
+          <Slider min={1} max={10} step={1} value={[years]} onValueChange={(v) => setYears(v[0])} />
         </div>
       </div>
-      <div className="space-y-2">
-        <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-          Years projected · <span className="text-foreground font-semibold">{years}</span>
-        </label>
-        <Slider min={1} max={10} step={1} value={[years]} onValueChange={(v) => setYears(v[0])} />
-      </div>
+      <InvestPersonalButton />
     </div>
   );
 }
@@ -124,7 +201,7 @@ function PanelShell({
           <h2 className="text-lg font-bold text-foreground">{title}</h2>
           <p className="text-xs text-muted-foreground">{subtitle}</p>
         </div>
-        <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground" onClick={onBack}>
+        <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground shrink-0" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
       </div>
@@ -183,6 +260,13 @@ export function StakingPanel({ balance, level, onBack }: { balance: number; leve
           <ProjectionControls amount={amount} setAmount={setAmount} years={years} setYears={setYears} />
           <Chart data={data} color={ASH_GOLD} />
 
+          <p
+            className="text-center text-xs font-semibold px-3 py-2 rounded-md"
+            style={{ color: EMERALD_MSG, backgroundColor: "hsl(150 60% 20% / 0.18)", border: `1px solid ${EMERALD_MSG}44` }}
+          >
+            Investing Personal Assets increase both Overall &amp; Financial Sector Field Experience
+          </p>
+
           <p className="text-xs text-foreground/90">
             ${money(amount)} at {preview}% for {years} year{years > 1 ? "s" : ""} → <span className="font-semibold">${money(final)}</span>{" "}
             (+${money(final - amount)})
@@ -224,12 +308,42 @@ const PLAN_NOTES: Record<string, string> = {
 
 const PLAN_COLORS: Record<string, string> = { paxg: ASH_GOLD, wbtc: "#B4623A", lending: EVERGREEN };
 
+/** Yearly interest average swings shown above each graph. */
+const PLAN_SWINGS: Record<string, [number, number]> = {
+  paxg: [6.5, 10],
+  wbtc: [7, 20],
+  lending: [4, 12],
+};
+
+const LOCKED_PLANS = [
+  {
+    key: "food",
+    label: "Wrapped Food Futures",
+    color: "#2D8442",
+    requirement: "Lv.25 Field Experience on both Financial & Ecology",
+  },
+  {
+    key: "energy",
+    label: "Wrapped Energy Futures",
+    color: "#0892D0",
+    requirement: "Lv.25 Field Experience on both Financial & Energy",
+  },
+  {
+    key: "science",
+    label: "Science & Biotechnology Futures",
+    color: "#4E387E",
+    requirement: "Lv.25 Field Experience on both Financial & Science",
+  },
+];
+
 function fnBase() {
   return `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/company-finance`;
 }
 function fnHeaders() {
   return { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` };
 }
+
+const compact = (n: number) => Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(n);
 
 export function DeltaNeutralPanel({ onBack }: { balance?: number; onBack: () => void }) {
   const [interval, setInterval] = useState<(typeof INTERVALS)[number]["key"]>("1d");
@@ -252,6 +366,8 @@ export function DeltaNeutralPanel({ onBack }: { balance?: number; onBack: () => 
       alive = false;
     };
   }, [interval]);
+
+  const maxVolume = Math.max(1, ...rates.map((r) => r.avgVolume ?? 0));
 
   return (
     <PanelShell
@@ -287,24 +403,39 @@ export function DeltaNeutralPanel({ onBack }: { balance?: number; onBack: () => 
       {rates.map((r) => {
         const data = projection(amount, r.rate, years);
         const final = data[data.length - 1]?.value ?? amount;
+        const swing = PLAN_SWINGS[r.key];
+        const color = PLAN_COLORS[r.key] ?? ASH_GOLD;
+        const interestPct = swing
+          ? ((r.rate - swing[0]) / Math.max(0.1, swing[1] - swing[0])) * 100
+          : Math.min(100, r.rate * 8);
+        const volumePct = ((r.avgVolume ?? 0) / maxVolume) * 100;
         return (
           <Card key={r.key} className="bg-card border-border/50">
             <CardContent className="p-4 space-y-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <h3 className="text-sm font-semibold text-foreground">{r.label}</h3>
-                <span className="text-xs font-semibold" style={{ color: PLAN_COLORS[r.key] ?? ASH_GOLD }}>
-                  {r.rate}% / year
-                </span>
-              </div>
-              <Chart data={data} color={PLAN_COLORS[r.key] ?? ASH_GOLD} />
+              <h3 className="text-sm font-semibold text-foreground">{r.label}</h3>
+              {swing && (
+                <p className="text-center text-[11px] font-semibold" style={{ color }}>
+                  Yearly Interests Averages Swings · {String(swing[0]).replace(".", ",")}–{swing[1]}%
+                </p>
+              )}
+              <Chart data={data} color={color} />
               <p className="text-xs text-foreground/90">
                 ${money(amount)} → <span className="font-semibold">${money(final)}</span> in {years} year
                 {years > 1 ? "s" : ""}
               </p>
-              <p className="text-[11px] text-muted-foreground">
-                {PLAN_NOTES[r.key] ?? ""} {r.annualizedVolatility != null && `Annualised volatility ${r.annualizedVolatility}%.`}{" "}
-                {r.avgVolume != null && `Avg ${INTERVALS.find((i) => i.key === interval)?.label.toLowerCase()} volume ${Intl.NumberFormat(undefined, { notation: "compact" }).format(r.avgVolume)}.`}
-              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <MeterBar
+                  label="Percentage of Interest Live Feed"
+                  value={`${r.rate}%`}
+                  pct={interestPct}
+                />
+                <MeterBar
+                  label="Trade Volume / Liquidity"
+                  value={r.avgVolume != null ? compact(r.avgVolume) : "—"}
+                  pct={volumePct}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">{PLAN_NOTES[r.key] ?? ""}</p>
             </CardContent>
           </Card>
         );
@@ -313,6 +444,33 @@ export function DeltaNeutralPanel({ onBack }: { balance?: number; onBack: () => 
       {!loading && rates.length === 0 && (
         <p className="text-xs text-destructive">Live market data unavailable right now — try again shortly.</p>
       )}
+
+      {/* Locked future markets */}
+      {LOCKED_PLANS.map((p) => (
+        <Card key={p.key} className="border-border/50 overflow-hidden" style={{ backgroundColor: `${p.color}14` }}>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold" style={{ color: p.color }}>{p.label}</h3>
+              <span
+                className="text-[10px] font-semibold px-2 py-1 rounded-full inline-flex items-center gap-1 text-white"
+                style={{ backgroundColor: p.color }}
+              >
+                <Lock className="h-3 w-3" /> LOCKED
+              </span>
+            </div>
+            <div
+              className="h-32 w-full rounded-md flex items-center justify-center select-none"
+              style={{
+                background: `repeating-linear-gradient(135deg, ${p.color}22 0 10px, transparent 10px 20px)`,
+                border: `1px solid ${p.color}55`,
+              }}
+            >
+              <Lock className="h-6 w-6" style={{ color: p.color }} />
+            </div>
+            <p className="text-[11px] text-muted-foreground">{p.requirement}.</p>
+          </CardContent>
+        </Card>
+      ))}
     </PanelShell>
   );
 }
@@ -331,6 +489,9 @@ type Company = {
 };
 
 const CACHE_KEY = "yf-company-cache-v1";
+const PIN_KEY = "yf-pinned-companies-v1";
+const RATED_KEY = "yf-rated-companies-v1";
+const PORTFOLIO_KEY = "yf-portfolio-companies-v1";
 const DAY_MS = 86_400_000;
 
 type CacheShape = Record<string, { at: number; companies: Company[] }>;
@@ -350,8 +511,73 @@ function writeCache(c: CacheShape) {
   }
 }
 
+function readStore<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function writeStore(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignore */
+  }
+}
+
+type RatedCompany = Company & { stars: number; ratedAt: number };
+type Holding = Company & { addedAt: number };
+
 const compactCap = (n: number | null, currency: string | null) =>
   n == null ? "—" : `${currency ? `${currency} ` : ""}${Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(n)}`;
+
+/** Non-emoji filing-cabinet glyph reused for the Portfolio button. */
+function FilingCabinetIcon({ className }: { className?: string }) {
+  return <FolderArchive className={className} />;
+}
+
+function StarRow({
+  value,
+  onChange,
+  size = 20,
+}: {
+  value: number;
+  onChange?: (n: number) => void;
+  size?: number;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          disabled={!onChange}
+          onClick={() => onChange?.(n)}
+          className={onChange ? "transition-transform hover:scale-110" : "cursor-default"}
+          aria-label={`${n} star${n > 1 ? "s" : ""}`}
+        >
+          <Star
+            style={{ width: size, height: size, color: BRONZE }}
+            fill={n <= value ? BRONZE : "none"}
+            strokeWidth={1.6}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CompanyMeta({ c }: { c: Company }) {
+  return (
+    <p className="text-[11px] text-muted-foreground">
+      {c.symbol}
+      {c.exchange ? ` · ${c.exchange}` : ""}
+      {c.sector ? ` · ${c.sector}` : ""}
+    </p>
+  );
+}
 
 export function CompaniesPanel({ onBack }: { onBack: () => void }) {
   const [q, setQ] = useState("");
@@ -360,6 +586,32 @@ export function CompaniesPanel({ onBack }: { onBack: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [cachedAt, setCachedAt] = useState<number | null>(null);
   const reqRef = useRef(0);
+
+  const [pinned, setPinned] = useState<Company[]>(() => readStore<Company[]>(PIN_KEY, []));
+  const [rated, setRated] = useState<RatedCompany[]>(() => readStore<RatedCompany[]>(RATED_KEY, []));
+  const [portfolio, setPortfolio] = useState<Holding[]>(() => readStore<Holding[]>(PORTFOLIO_KEY, []));
+  const [rating, setRating] = useState<{ company: Company; stars: number } | null>(null);
+  const [drawer, setDrawer] = useState<null | "rated" | "portfolio">(null);
+
+  useEffect(() => writeStore(PIN_KEY, pinned), [pinned]);
+  useEffect(() => writeStore(RATED_KEY, rated), [rated]);
+  useEffect(() => writeStore(PORTFOLIO_KEY, portfolio), [portfolio]);
+
+  const isPinned = (s: string) => pinned.some((p) => p.symbol === s);
+  const togglePin = (c: Company) =>
+    setPinned((prev) => (prev.some((p) => p.symbol === c.symbol) ? prev.filter((p) => p.symbol !== c.symbol) : [c, ...prev]));
+
+  const addToPortfolio = (c: Company) =>
+    setPortfolio((prev) =>
+      prev.some((p) => p.symbol === c.symbol) ? prev : [{ ...c, addedAt: Date.now() }, ...prev],
+    );
+
+  const saveRating = () => {
+    if (!rating) return;
+    const entry: RatedCompany = { ...rating.company, stars: rating.stars, ratedAt: Date.now() };
+    setRated((prev) => [entry, ...prev.filter((p) => p.symbol !== entry.symbol)]);
+    setRating(null);
+  };
 
   const run = async (query: string, force = false) => {
     const key = query.trim().toLowerCase();
@@ -392,6 +644,37 @@ export function CompaniesPanel({ onBack }: { onBack: () => void }) {
     }
   };
 
+  /* ── Full-screen 5-star rating overlay ── */
+  if (rating) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 p-6 bg-background/98 backdrop-blur-sm animate-fade-in">
+        <button
+          type="button"
+          onClick={() => setRating(null)}
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+          aria-label="Close rating"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <div className="text-center space-y-1">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Rate Company</p>
+          <h2 className="text-xl font-bold text-foreground">{rating.company.name}</h2>
+          <CompanyMeta c={rating.company} />
+        </div>
+        <StarRow value={rating.stars} size={44} onChange={(n) => setRating({ ...rating, stars: n })} />
+        <p className="text-xs text-muted-foreground">{rating.stars || 0} / 5</p>
+        <Button
+          disabled={!rating.stars}
+          onClick={saveRating}
+          className="text-white"
+          style={{ backgroundColor: EVERGREEN, border: `2px solid ${SILVER}`, borderRadius: 9999 }}
+        >
+          Save rating
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <PanelShell
       title="Sector-Based Investing"
@@ -420,6 +703,29 @@ export function CompaniesPanel({ onBack }: { onBack: () => void }) {
               Search
             </Button>
           </div>
+
+          {pinned.length > 0 && (
+            <div className="space-y-2 pt-1">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                <Pin className="h-3 w-3" style={{ color: BRONZE }} /> Saved Pinned Companies
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {pinned.map((p) => (
+                  <span
+                    key={p.symbol}
+                    className="text-[11px] px-2 py-1 rounded-full inline-flex items-center gap-1.5 text-foreground/90"
+                    style={{ border: `1px solid ${BRONZE}`, backgroundColor: "hsl(var(--secondary))" }}
+                  >
+                    {p.symbol}
+                    <button type="button" onClick={() => togglePin(p)} aria-label={`Unpin ${p.symbol}`}>
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {cachedAt && (
             <button
               type="button"
@@ -441,17 +747,30 @@ export function CompaniesPanel({ onBack }: { onBack: () => void }) {
                 <Building2 className="h-4 w-4 mt-0.5 shrink-0" style={{ color: ASH_GOLD }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {c.symbol}
-                    {c.exchange ? ` · ${c.exchange}` : ""}
-                    {c.sector ? ` · ${c.sector}` : ""}
-                  </p>
+                  <CompanyMeta c={c} />
                 </div>
                 <span className="text-[11px] font-semibold shrink-0" style={{ color: EVERGREEN }}>
                   {compactCap(c.marketCap, c.currency)}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => togglePin(c)}
+                  className="shrink-0 rounded-full p-1 transition-colors"
+                  style={{
+                    border: `1px solid ${isPinned(c.symbol) ? BRONZE : "hsl(var(--border))"}`,
+                    backgroundColor: isPinned(c.symbol) ? `${BRONZE}22` : "transparent",
+                  }}
+                  aria-label={isPinned(c.symbol) ? `Unpin ${c.symbol}` : `Pin ${c.symbol}`}
+                  title={isPinned(c.symbol) ? "Pinned" : "Pin this company"}
+                >
+                  <Pin
+                    className="h-3.5 w-3.5"
+                    style={{ color: isPinned(c.symbol) ? BRONZE : "hsl(var(--muted-foreground))" }}
+                    fill={isPinned(c.symbol) ? BRONZE : "none"}
+                  />
+                </button>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {c.website && (
                   <a
                     href={c.website}
@@ -463,18 +782,102 @@ export function CompaniesPanel({ onBack }: { onBack: () => void }) {
                     <ExternalLink className="h-3 w-3" /> Website
                   </a>
                 )}
-                <Link
-                  to={`/connections?company=${encodeURIComponent(c.symbol)}`}
-                  className="text-[11px] px-2 py-1 rounded-full border text-foreground/90"
+                <button
+                  type="button"
+                  onClick={() => setRating({ company: c, stars: rated.find((r) => r.symbol === c.symbol)?.stars ?? 0 })}
+                  className="text-[11px] px-2 py-1 rounded-full border text-foreground/90 inline-flex items-center gap-1"
                   style={{ borderColor: ASH_GOLD, backgroundColor: "hsl(var(--secondary))" }}
                 >
-                  Researcher profiles
-                </Link>
+                  <Star className="h-3 w-3" style={{ color: BRONZE }} /> Rate Company
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addToPortfolio(c)}
+                  className="text-[11px] font-semibold px-3 py-1 text-white"
+                  style={{ backgroundColor: BRONZE, border: `2px solid ${SILVER}`, borderRadius: 9999 }}
+                >
+                  {portfolio.some((p) => p.symbol === c.symbol) ? "In Portfolio" : "Invest"}
+                </button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Bottom storage buttons */}
+      <div className="flex items-center justify-between gap-3 pt-2">
+        <button
+          type="button"
+          onClick={() => setDrawer(drawer === "rated" ? null : "rated")}
+          className="text-[11px] font-semibold px-3 py-2 rounded-md inline-flex items-center gap-1.5 text-foreground/90"
+          style={{ border: `1px solid ${BRONZE}`, backgroundColor: "hsl(var(--secondary))" }}
+        >
+          <Star className="h-3.5 w-3.5" style={{ color: BRONZE }} fill={BRONZE} /> Saved Rated Companies
+          {rated.length > 0 && <span className="text-muted-foreground">({rated.length})</span>}
+        </button>
+        <button
+          type="button"
+          onClick={() => setDrawer(drawer === "portfolio" ? null : "portfolio")}
+          className="text-[11px] font-semibold px-3 py-2 rounded-md inline-flex items-center gap-1.5 text-foreground/90"
+          style={{ border: `1px solid ${BRONZE}`, backgroundColor: "hsl(var(--secondary))" }}
+        >
+          <FilingCabinetIcon className="h-3.5 w-3.5" /> Portfolio
+          {portfolio.length > 0 && <span className="text-muted-foreground">({portfolio.length})</span>}
+        </button>
+      </div>
+
+      {drawer === "rated" && (
+        <Card className="bg-card border-border/50 animate-fade-in">
+          <CardContent className="p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Saved Rated Companies</h3>
+            {rated.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No ratings saved yet.</p>
+            ) : (
+              rated.map((r) => (
+                <div key={r.symbol} className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground truncate">{r.name}</p>
+                    <CompanyMeta c={r} />
+                  </div>
+                  <StarRow value={r.stars} size={14} />
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {drawer === "portfolio" && (
+        <Card className="bg-card border-border/50 animate-fade-in">
+          <CardContent className="p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Portfolio — Wrapped Stock Options Owned</h3>
+            {portfolio.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No wrapped stock options held yet.</p>
+            ) : (
+              portfolio.map((h) => (
+                <div key={h.symbol} className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground truncate">{h.name}</p>
+                    <CompanyMeta c={h} />
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[11px] font-semibold" style={{ color: BRONZE }}>
+                      {h.price != null ? `$${money(h.price)}` : "—"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPortfolio((prev) => prev.filter((p) => p.symbol !== h.symbol))}
+                      aria-label={`Remove ${h.symbol}`}
+                    >
+                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      )}
     </PanelShell>
   );
 }
