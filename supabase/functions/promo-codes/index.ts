@@ -21,27 +21,28 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  const token = authHeader.replace("Bearer ", "").trim();
   try {
     const userClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
     );
-    const { data: claims, error: authErr } = await userClient.auth.getClaims(
-      authHeader.replace("Bearer ", ""),
-    );
-    if (authErr || !claims?.claims?.sub) {
+    const { data, error: authErr } = await userClient.auth.getUser(token);
+    if (authErr || !data?.user) {
+      console.error("promo-codes auth failed", authErr?.message);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-  } catch {
+  } catch (e) {
+    console.error("promo-codes auth threw", e);
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
 
   const key = Deno.env.get("RAPIDAPI_KEY");
   if (!key) {
