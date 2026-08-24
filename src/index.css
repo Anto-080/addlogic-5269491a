@@ -115,7 +115,7 @@
 
   .font-typewriter,
   .font-typewriter * {
-    font-family: 'Secret Service Typewriter', 'Courier New', Courier, monospace !important;
+    font-family: 'Courier 10 Pitch', 'Courier New', Courier, monospace !important;
   }
 }
 
