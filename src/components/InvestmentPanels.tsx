@@ -5,7 +5,6 @@ import {
   ExternalLink,
   FolderArchive,
   Loader2,
-  Lock,
   Pin,
   RefreshCw,
   Search,
@@ -445,32 +444,38 @@ export function DeltaNeutralPanel({ onBack }: { balance?: number; onBack: () => 
         <p className="text-xs text-destructive">Live market data unavailable right now — try again shortly.</p>
       )}
 
-      {/* Locked future markets */}
-      {LOCKED_PLANS.map((p) => (
-        <Card key={p.key} className="border-border/50 overflow-hidden" style={{ backgroundColor: `${p.color}14` }}>
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between gap-2">
+      {/* Locked future markets — same layout as the live plans, but veiled */}
+      {LOCKED_PLANS.map((p) => {
+        const ghost = projection(amount, 8, years);
+        return (
+          <Card key={p.key} className="bg-card border-border/50 overflow-hidden">
+            <CardContent className="p-4 space-y-3">
               <h3 className="text-sm font-semibold" style={{ color: p.color }}>{p.label}</h3>
-              <span
-                className="text-[10px] font-semibold px-2 py-1 rounded-full inline-flex items-center gap-1 text-white"
-                style={{ backgroundColor: p.color }}
+              <p className="text-center text-[11px] font-semibold" style={{ color: p.color }}>
+                Yearly Interests Averages Swings · —
+              </p>
+              <div
+                className="pointer-events-none select-none"
+                style={{ filter: "blur(7px)", opacity: 0.4 }}
+                aria-hidden
               >
-                <Lock className="h-3 w-3" /> LOCKED
-              </span>
-            </div>
-            <div
-              className="h-32 w-full rounded-md flex items-center justify-center select-none"
-              style={{
-                background: `repeating-linear-gradient(135deg, ${p.color}22 0 10px, transparent 10px 20px)`,
-                border: `1px solid ${p.color}55`,
-              }}
-            >
-              <Lock className="h-6 w-6" style={{ color: p.color }} />
-            </div>
-            <p className="text-[11px] text-muted-foreground">{p.requirement}.</p>
-          </CardContent>
-        </Card>
-      ))}
+                <Chart data={ghost} color={p.color} />
+              </div>
+              <div
+                className="grid gap-3 sm:grid-cols-2 pointer-events-none select-none"
+                style={{ filter: "blur(4px)", opacity: 0.4 }}
+                aria-hidden
+              >
+                <MeterBar label="Percentage of Interest Live Feed" value="—" pct={55} />
+                <MeterBar label="Trade Volume / Liquidity" value="—" pct={55} />
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center">
+                Locked — {p.requirement}.
+              </p>
+            </CardContent>
+          </Card>
+        );
+      })}
     </PanelShell>
   );
 }
