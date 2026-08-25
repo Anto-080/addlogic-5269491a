@@ -13,7 +13,7 @@ import { StablecoinWithdraw } from "@/components/StablecoinWithdraw";
 import { TierIcon } from "@/components/TierIcon";
 import { NavLink } from "react-router-dom";
 
-import timeCoinMedallion from "@/assets/time-coin-medallion.jpeg";
+import timeCoinMedallionAsset from "@/assets/time-coin-medallion.png.asset.json";
 
 const VAULT_GOLD = "#B0903D";
 
@@ -98,10 +98,10 @@ export default function Earnings() {
             {/* Time-Coin medallion + Franklin quote — full-width centered */}
             <div className="flex flex-col items-center justify-center gap-2 pt-1 w-full">
               <img
-                src={timeCoinMedallion}
-                alt="Time-Coin medallion"
-                className="rounded-full shadow-lg"
-                style={{ maxWidth: 240, width: "100%", height: "auto" }}
+                src={timeCoinMedallionAsset.url}
+                alt="Time-Coin medallion — eternal hourglass seal"
+                className="brand-asset shadow-lg"
+                style={{ maxWidth: 240, width: "100%", height: "auto", borderRadius: "50%" }}
                 draggable={false}
               />
               <p
