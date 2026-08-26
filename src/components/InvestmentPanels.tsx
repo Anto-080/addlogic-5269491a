@@ -272,11 +272,16 @@ export function StakingPanel({ balance, level, onBack }: { balance: number; leve
           </p>
           <p className="text-xs text-muted-foreground">
             The Projected amount is based upon your Earnt Time-Coins Balance Only.
-
+</p>
 —
-
-Baseline 3% runs from Level 15 until the Lv-50 Financial Phase for both On-Site Earnt Time-Coins and Deposit — the Ladder then rises one step every 10 levels, up to 10%, only for the Time-Coins Earnt while Researching. Deposits Keep Benefitting with Baseline 3% when Staked.
-          </p>
+<p
+Baseline 3% runs from Level 15 until the Lv-50 Financial Phase for both On-Site Earnt Time-Coins and Deposit — 
+        </p>
+        <p
+          The Ladder then rises one step every 10 levels, up to 10%, only for the Time-Coins Earnt while Researching. Deposits Keep Benefitting with Baseline 3% when Staked.
+       
+        
+      </p>
         </CardContent>
       </Card>
     </PanelShell>
