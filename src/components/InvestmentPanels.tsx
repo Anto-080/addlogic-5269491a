@@ -156,7 +156,7 @@ function ProjectionControls({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Projected Earnings on Deposit
+            Projected Yeald on Earnt Time-Coins 
           </label>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">$</span>
