@@ -271,9 +271,11 @@ export function StakingPanel({ balance, level, onBack }: { balance: number; leve
             (+${money(final - amount)})
           </p>
           <p className="text-xs text-muted-foreground">
-            The projected amount is an artificial value, detached from your on-site Time-Coin balance — it simulates what
-            personal funds deposited into the same plan would return. Baseline {BASELINE_RATE}% runs from Level{" "}
-            {BASELINE_LEVEL} until the Financial Phase; the ladder then rises one step every 10 levels, up to 10%.
+            The Projected amount is based upon your Earnt Time-Coins Balance Only.
+
+—
+
+Baseline 3% runs from Level 15 until the Lv-50 Financial Phase for both On-Site Earnt Time-Coins and Deposit — the Ladder then rises one step every 10 levels, up to 10%, only for the Time-Coins Earnt while Researching. Deposits Keep Benefitting with Baseline 3% when Staked.
           </p>
         </CardContent>
       </Card>
@@ -317,19 +319,19 @@ const PLAN_SWINGS: Record<string, [number, number]> = {
 const LOCKED_PLANS = [
   {
     key: "food",
-    label: "Wrapped Food Futures",
+    label: "W-Food Futures",
     color: "#2D8442",
     requirement: "Lv.25 Field Experience on both Financial & Ecology",
   },
   {
     key: "energy",
-    label: "Wrapped Energy Futures",
+    label: " W-Energy Futures",
     color: "#0892D0",
     requirement: "Lv.25 Field Experience on both Financial & Energy",
   },
   {
     key: "science",
-    label: "Science & Biotechnology Futures",
+    label: "W-Science & Biotechnology Futures",
     color: "#4E387E",
     requirement: "Lv.25 Field Experience on both Financial & Science",
   },
