@@ -122,7 +122,7 @@ function MeterBar({ label, value, pct }: { label: string; value: string; pct: nu
   );
 }
 
-function InvestPersonalButton({ label = "Invest your Personal Assets" }: { label?: string }) {
+function InvestPersonalButton({ label = "Invest Your Personal Assets" }: { label?: string }) {
   return (
     <button
       type="button"
