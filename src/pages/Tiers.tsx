@@ -256,8 +256,8 @@ export default function Tiers() {
                      >
                      <FolderTab color={tier.color} />
                      <Card
-                       className="border transition-all bg-transparent shadow-none"
-                       style={{ ...tierSurface(tier.color), boxShadow: "inset 0 -10px 14px -12px rgba(0,0,0,0.55)" }}
+                       className="border transition-all bg-transparent shadow-none paper-folder"
+                       style={tierSurface(tier.color)}
                      >
                       <CardContent className="p-4">
                         <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
@@ -320,8 +320,8 @@ export default function Tiers() {
                   >
                   <FolderTab color={tier.color} />
                   <Card
-                    className="border transition-all shadow-none"
-                    style={{ ...tierSurface(tier.color), boxShadow: "inset 0 -10px 14px -12px rgba(0,0,0,0.55)" }}
+                    className="border transition-all shadow-none paper-folder"
+                    style={tierSurface(tier.color)}
                   >
                     <CardContent className="p-4">
                       <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
