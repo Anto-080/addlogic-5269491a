@@ -13,14 +13,19 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 const ASH_GOLD = "#8C6F54";
 const EVERGREEN = "#004627";
 const BRONZE = "#A67D3D";
 const SILVER = "#D3D6D8";
+const SILVER_GREY = "#565B64";
 const EMERALD_MSG = "#8BE796";
 
 /** Baseline yield: 3% from Level 15 until the Financial Phase (Level 50). */
@@ -122,10 +127,17 @@ function MeterBar({ label, value, pct }: { label: string; value: string; pct: nu
   );
 }
 
-function InvestPersonalButton({ label = "Invest Your Personal Assets" }: { label?: string }) {
+function InvestPersonalButton({
+  label = "Invest Your Personal Assets",
+  onClick,
+}: {
+  label?: string;
+  onClick?: () => void;
+}) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="w-full text-xs font-semibold px-4 py-2 text-white transition-transform active:scale-[0.99]"
       style={{
         backgroundColor: BRONZE,
@@ -139,37 +151,187 @@ function InvestPersonalButton({ label = "Invest Your Personal Assets" }: { label
   );
 }
 
-/** The only interactive controls: hypothetical amount + projected years. */
+/** Deposit window — amount + Google Pay / MiniPay rail wiring. */
+type Rail = "gpay" | "minipay";
+
+const RAILS: { id: Rail; name: string; column: "google_wallet_email" | "minipay_address"; label: string; placeholder: string }[] = [
+  { id: "gpay", name: "Google Pay", column: "google_wallet_email", label: "Google account email", placeholder: "you@gmail.com" },
+  { id: "minipay", name: "MiniPay", column: "minipay_address", label: "MiniPay (Celo) address", placeholder: "0x…" },
+];
+
+function DepositDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { user } = useAuth();
+  const [rail, setRail] = useState<Rail>("gpay");
+  const [amount, setAmount] = useState("");
+  const [dest, setDest] = useState<Record<Rail, string | null>>({ gpay: null, minipay: null });
+  const [linkValue, setLinkValue] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("minipay_address, google_wallet_email")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      setDest({
+        gpay: ((data as any)?.google_wallet_email as string | null) ?? null,
+        minipay: ((data as any)?.minipay_address as string | null) ?? null,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, user]);
+
+  const cfg = RAILS.find((r) => r.id === rail)!;
+  const linked = dest[rail];
+
+  const saveLink = async () => {
+    if (!user) return;
+    const trimmed = linkValue.trim();
+    if (trimmed.length < 5) {
+      toast({ title: `Invalid ${cfg.name}`, description: cfg.label, variant: "destructive" });
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ [cfg.column]: trimmed } as any)
+      .eq("user_id", user.id);
+    setBusy(false);
+    if (error) {
+      toast({ title: "Could not link", description: error.message, variant: "destructive" });
+      return;
+    }
+    setDest((d) => ({ ...d, [rail]: trimmed }));
+    setLinkValue("");
+    toast({ title: `${cfg.name} linked` });
+  };
+
+  const confirm = () => {
+    const n = parseFloat(amount) || 0;
+    if (n <= 0) {
+      toast({ title: "Enter an amount", description: "Deposits start at $1.00.", variant: "destructive" });
+      return;
+    }
+    if (!linked) {
+      toast({ title: `Link ${cfg.name} first`, description: cfg.label, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: "Deposit initiated",
+      description: `$${money(n)} via ${cfg.name} (${linked}). Insurance margin is applied on settlement.`,
+    });
+    onOpenChange(false);
+    setAmount("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-base">Invest Your Personal Assets</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Amount to deposit</label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">$</span>
+              <Input
+                type="number"
+                min={0}
+                step={10}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="bg-secondary/50 h-9"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {RAILS.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setRail(r.id)}
+                className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                  rail === r.id ? "border-primary bg-secondary/60" : "border-border bg-secondary/30"
+                }`}
+              >
+                <p className="text-xs font-semibold text-foreground">{r.name}</p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {dest[r.id] ? dest[r.id] : "Not linked"}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          {!linked && (
+            <div className="space-y-2 rounded-lg border border-border/60 p-3">
+              <label className="text-[11px] uppercase tracking-wide text-muted-foreground">{cfg.label}</label>
+              <Input
+                value={linkValue}
+                onChange={(e) => setLinkValue(e.target.value)}
+                placeholder={cfg.placeholder}
+                className="bg-secondary/50 h-9"
+              />
+              <Button size="sm" className="w-full" onClick={saveLink} disabled={busy}>
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Link ${cfg.name}`}
+              </Button>
+            </div>
+          )}
+
+          <InvestPersonalButton label="Confirm Deposit" onClick={confirm} />
+          <p className="text-[10px] text-muted-foreground">
+            Deposited assets follow the Baseline {BASELINE_RATE}% while staked and are covered by the multi-platform
+            insurance margin.
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Projection controls. Staking uses the years slider only. */
 function ProjectionControls({
   amount,
   setAmount,
   years,
   setYears,
+  showAmount = true,
 }: {
   amount: number;
   setAmount: (n: number) => void;
   years: number;
   setYears: (n: number) => void;
+  showAmount?: boolean;
 }) {
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Projected Yeald on Earnt Time-Coins 
-          </label>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">$</span>
-            <Input
-              type="number"
-              min={0}
-              step={100}
-              value={amount}
-              onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))}
-              className="bg-secondary/50 h-9"
-            />
+      <div className={`grid gap-4 ${showAmount ? "sm:grid-cols-2" : ""}`}>
+        {showAmount && (
+          <div className="space-y-1.5">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Projected Earnings on Deposit
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">$</span>
+              <Input
+                type="number"
+                min={0}
+                step={100}
+                value={amount}
+                onChange={(e) => setAmount(Math.max(0, Number(e.target.value) || 0))}
+                className="bg-secondary/50 h-9"
+              />
+            </div>
           </div>
-        </div>
+        )}
         <div className="space-y-2">
           <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
             Years projected · <span className="text-foreground font-semibold">{years}</span>
@@ -177,7 +339,7 @@ function ProjectionControls({
           <Slider min={1} max={10} step={1} value={[years]} onValueChange={(v) => setYears(v[0])} />
         </div>
       </div>
-      <InvestPersonalButton />
+      {showAmount && <InvestPersonalButton />}
     </div>
   );
 }
@@ -213,11 +375,20 @@ function PanelShell({
 
 export function StakingPanel({ balance, level, onBack }: { balance: number; level: number; onBack: () => void }) {
   const { rate, idx, baseline } = yieldForLevel(level);
-  const [preview, setPreview] = useState(rate || BASELINE_RATE);
-  const [amount, setAmount] = useState(Math.round(balance) || 1000);
-  const [years, setYears] = useState(10);
-  const data = useMemo(() => projection(amount, preview, years), [amount, preview, years]);
-  const final = data[data.length - 1]?.value ?? amount;
+  const timeCoins = Math.round(balance) || 1000;
+
+  // Graph A — baseline only, on-site earnt Time-Coins.
+  const [yearsA, setYearsA] = useState(10);
+  const dataA = useMemo(() => projection(timeCoins, BASELINE_RATE, yearsA), [timeCoins, yearsA]);
+  const finalA = dataA[dataA.length - 1]?.value ?? timeCoins;
+
+  // Graph B — aggregated multi-platform staking with the interest ladder.
+  const [yearsB, setYearsB] = useState(10);
+  const [preview, setPreview] = useState(baseline ? YIELD_LADDER[0] : rate);
+  const dataB = useMemo(() => projection(timeCoins, preview, yearsB), [timeCoins, preview, yearsB]);
+  const finalB = dataB[dataB.length - 1]?.value ?? timeCoins;
+
+  const [deposit, setDeposit] = useState(false);
 
   return (
     <PanelShell
@@ -229,12 +400,57 @@ export function StakingPanel({ balance, level, onBack }: { balance: number; leve
       }
       onBack={onBack}
     >
+      {/* ─── Graph A — On-site earnt Time-Coins only ─── */}
       <Card className="bg-card border-border/50">
         <CardContent className="p-4 space-y-4">
+          <p className="text-sm font-semibold text-foreground">
+            Stablecoin Staking — <span className="text-muted-foreground font-normal">On-Site Earnt Time-Coins</span>
+          </p>
+
+          <ProjectionControls
+            amount={timeCoins}
+            setAmount={() => {}}
+            years={yearsA}
+            setYears={setYearsA}
+            showAmount={false}
+          />
+          <Chart data={dataA} color={ASH_GOLD} />
+
+          <p
+            className="text-center text-xs font-semibold px-3 py-2 rounded-md"
+            style={{ color: EMERALD_MSG, backgroundColor: "hsl(150 60% 20% / 0.18)", border: `1px solid ${EMERALD_MSG}44` }}
+          >
+            Investing Personal Assets increase both Overall &amp; Financial Sector Field Experience
+          </p>
+
+          <InvestPersonalButton onClick={() => setDeposit(true)} />
+
+          <p className="text-xs text-foreground/90">
+            ${money(timeCoins)} at {BASELINE_RATE}% for {yearsA} year{yearsA > 1 ? "s" : ""} →{" "}
+            <span className="font-semibold">${money(finalA)}</span> (+${money(finalA - timeCoins)})
+          </p>
+          <p className="text-xs text-muted-foreground">
+            The Projected amount is based upon your Earnt Time-Coins Balance Only.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Baseline {BASELINE_RATE}% runs from Level {BASELINE_LEVEL} until the Lv-50 Financial Phase.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* ─── Graph B — Aggregated multi-platform staking ─── */}
+      <Card className="bg-card" style={{ borderColor: `${SILVER_GREY}88` }}>
+        <CardContent className="p-4 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Aggregated Stablecoins Staking</p>
+            <p className="text-[11px] uppercase tracking-wide" style={{ color: SILVER_GREY }}>
+              [Multi Platform · Insurance Margin Required]
+            </p>
+          </div>
+
           <div className="flex flex-wrap gap-2">
-            {[BASELINE_RATE, ...YIELD_LADDER].map((r, i) => {
-              const isBaseline = i === 0;
-              const unlocked = isBaseline ? level >= BASELINE_LEVEL : i - 1 <= idx;
+            {YIELD_LADDER.map((r, i) => {
+              const unlocked = !baseline && i <= idx;
               const active = preview === r;
               return (
                 <button
@@ -246,45 +462,42 @@ export function StakingPanel({ balance, level, onBack }: { balance: number; leve
                     active ? "text-white" : "text-muted-foreground"
                   } ${unlocked ? "cursor-pointer" : "opacity-40 cursor-not-allowed"}`}
                   style={{
-                    backgroundColor: active ? EVERGREEN : "hsl(var(--secondary))",
-                    borderColor: active ? ASH_GOLD : "hsl(var(--border))",
+                    backgroundColor: active ? SILVER_GREY : "hsl(var(--secondary))",
+                    borderColor: active ? SILVER : "hsl(var(--border))",
                   }}
                 >
-                  {r}%{isBaseline ? " BASE" : i - 1 === YIELD_LADDER.length - 1 ? " MAX" : ""}
+                  {r}%{i === 0 ? " BASE" : i === YIELD_LADDER.length - 1 ? " MAX" : ""}
                 </button>
               );
             })}
           </div>
 
-          <ProjectionControls amount={amount} setAmount={setAmount} years={years} setYears={setYears} />
-          <Chart data={data} color={ASH_GOLD} />
-
-          <p
-            className="text-center text-xs font-semibold px-3 py-2 rounded-md"
-            style={{ color: EMERALD_MSG, backgroundColor: "hsl(150 60% 20% / 0.18)", border: `1px solid ${EMERALD_MSG}44` }}
-          >
-            Investing Personal Assets increase both Overall &amp; Financial Sector Field Experience
-          </p>
+          <ProjectionControls
+            amount={timeCoins}
+            setAmount={() => {}}
+            years={yearsB}
+            setYears={setYearsB}
+            showAmount={false}
+          />
+          <Chart data={dataB} color={SILVER_GREY} />
 
           <p className="text-xs text-foreground/90">
-            ${money(amount)} at {preview}% for {years} year{years > 1 ? "s" : ""} → <span className="font-semibold">${money(final)}</span>{" "}
-            (+${money(final - amount)})
+            ${money(timeCoins)} at {preview}% for {yearsB} year{yearsB > 1 ? "s" : ""} →{" "}
+            <span className="font-semibold">${money(finalB)}</span> (+${money(finalB - timeCoins)})
           </p>
           <p className="text-xs text-muted-foreground">
-            The Projected amount is based upon your Earnt Time-Coins Balance Only.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Baseline 3% runs from Level 15 until the Lv-50 Financial Phase for both On-Site Earnt Time-Coins and Deposit.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            The Ladder then rises one step every 10 levels, up to 10%, only for the Time-Coins Earnt while Researching.
-            Deposits Keep Benefitting with Baseline 3% when Staked.
+            The Ladder starts at {YIELD_LADDER[0]}% and rises one step every 10 experience levels, up to{" "}
+            {YIELD_LADDER[YIELD_LADDER.length - 1]}%, only for the Time-Coins Earnt while Researching. Aggregated
+            multi-platform staking requires an insurance margin.
           </p>
         </CardContent>
       </Card>
+
+      <DepositDialog open={deposit} onOpenChange={setDeposit} />
     </PanelShell>
   );
 }
+
 
 /* ─────────────────────── 2 — ∆Delta-neutral plans ─────────────────────── */
 
