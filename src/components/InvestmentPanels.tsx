@@ -13,14 +13,19 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 const ASH_GOLD = "#8C6F54";
 const EVERGREEN = "#004627";
 const BRONZE = "#A67D3D";
 const SILVER = "#D3D6D8";
+const SILVER_GREY = "#565B64";
 const EMERALD_MSG = "#8BE796";
 
 /** Baseline yield: 3% from Level 15 until the Financial Phase (Level 50). */
