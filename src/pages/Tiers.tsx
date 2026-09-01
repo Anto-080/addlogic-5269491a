@@ -23,29 +23,23 @@ const TOP_TIER_GATE = 50;
 /** Ash Gold — the unified experience-bar fill used across the tier list. */
 const ASH_GOLD = "#8C6F54";
 
-/** Pale-brown cardboard used for every folder body and tab. */
-const CARDBOARD = "#987654";
-
 /**
- * Old paper filing-folder surface: pale-brown cardboard with the tier colour
- * laid over it as a faint translucent tint, rough fibre striations, a soft
- * bottom crease and a slightly irregular cut. The tier colour itself is
- * unchanged so sectors stay identifiable.
+ * Filing-cabinet folder surface: vivid opaque tier tint with a soft top light
+ * and a slightly irregular cut. The tier colour stays dominant so sectors are
+ * immediately identifiable.
  */
 function tierSurface(color: string) {
   return {
-    backgroundColor: CARDBOARD,
+    backgroundColor: `color-mix(in srgb, ${color} 78%, #0c120f)`,
     backgroundImage: `
-      linear-gradient(160deg, color-mix(in srgb, ${color} 26%, transparent) 0%, color-mix(in srgb, ${color} 12%, transparent) 100%),
-      repeating-linear-gradient(91deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 4px),
-      repeating-linear-gradient(2deg, rgba(0,0,0,0.055) 0px, rgba(0,0,0,0.055) 2px, transparent 2px, transparent 6px),
-      radial-gradient(130% 90% at 12% 0%, rgba(255,255,255,0.10), transparent 62%)
+      linear-gradient(160deg, color-mix(in srgb, ${color} 92%, #fff 3%) 0%, color-mix(in srgb, ${color} 68%, #000 18%) 100%),
+      radial-gradient(130% 90% at 12% 0%, rgba(255,255,255,0.08), transparent 62%)
     `,
-    borderColor: `color-mix(in srgb, ${color} 28%, #6f5540)`,
+    borderColor: `color-mix(in srgb, ${color} 55%, #0c120f)`,
     borderTop: `4px solid ${color}`,
     borderRadius: "2px 13px 7px 5px",
     boxShadow:
-      "inset 0 -12px 16px -12px rgba(0,0,0,0.6), inset 0 0 44px rgba(0,0,0,0.14), 0 1px 0 rgba(255,255,255,0.06)",
+      "inset 0 -10px 14px -12px rgba(0,0,0,0.55), inset 0 0 36px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.05)",
   } as React.CSSProperties;
 }
 
@@ -54,16 +48,15 @@ function FolderTab({ color }: { color: string }) {
   return (
     <div
       aria-hidden
-      className="h-2.5 w-24 ml-3 paper-folder"
+      className="h-2.5 w-24 ml-3"
       style={{
-        backgroundColor: CARDBOARD,
+        backgroundColor: `color-mix(in srgb, ${color} 85%, #0c120f)`,
         backgroundImage: `
-          linear-gradient(180deg, color-mix(in srgb, ${color} 24%, transparent), color-mix(in srgb, ${color} 10%, transparent)),
-          repeating-linear-gradient(89deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 4px)
+          linear-gradient(180deg, color-mix(in srgb, ${color} 96%, #fff 2%), color-mix(in srgb, ${color} 78%, #000 12%))
         `,
         borderTop: `3px solid ${color}`,
-        borderLeft: `1px solid color-mix(in srgb, ${color} 28%, #6f5540)`,
-        borderRight: `1px solid color-mix(in srgb, ${color} 28%, #6f5540)`,
+        borderLeft: `1px solid color-mix(in srgb, ${color} 55%, #0c120f)`,
+        borderRight: `1px solid color-mix(in srgb, ${color} 55%, #0c120f)`,
         borderRadius: "7px 11px 0 0",
       }}
     />
@@ -256,7 +249,7 @@ export default function Tiers() {
                      >
                      <FolderTab color={tier.color} />
                      <Card
-                       className="border transition-all bg-transparent shadow-none paper-folder"
+                       className="border transition-all bg-transparent shadow-none"
                        style={tierSurface(tier.color)}
                      >
                       <CardContent className="p-4">
@@ -320,7 +313,7 @@ export default function Tiers() {
                   >
                   <FolderTab color={tier.color} />
                   <Card
-                    className="border transition-all shadow-none paper-folder"
+                    className="border transition-all shadow-none"
                     style={tierSurface(tier.color)}
                   >
                     <CardContent className="p-4">
