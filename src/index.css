@@ -257,6 +257,23 @@
     mix-blend-mode: normal !important;
     filter: none !important;
   }
+
+  /* Rough old-paper grain for the tier filing folders. */
+  .paper-folder {
+    position: relative;
+  }
+  .paper-folder::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: 0.3;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='0.55'/></svg>");
+    background-size: 180px 180px;
+  }
+
 }
 
 @layer utilities {
