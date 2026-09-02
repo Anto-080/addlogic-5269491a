@@ -319,7 +319,7 @@ export default function Tiers() {
                   >
                   <FolderTab color={tier.color} />
                   <Card
-                    className="border transition-all shadow-none"
+                    className="border transition-all bg-transparent shadow-none"
                     style={tierSurface(tier.color)}
                   >
                     <CardContent className="p-4">
