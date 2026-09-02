@@ -19,6 +19,7 @@ import Connections from "./pages/Connections";
 import Investments from "./pages/Investments";
 import Settings from "./pages/Settings";
 import Offers from "./pages/Offers";
+import FinancialTrends from "./pages/FinancialTrends";
 import VaultDiff from "./pages/VaultDiff";
 import NotFound from "./pages/NotFound";
 
