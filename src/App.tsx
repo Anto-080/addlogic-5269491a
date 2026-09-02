@@ -64,6 +64,8 @@ const App = () => (
                     <Route path="/investments" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
                     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                     <Route path="/offers" element={<ProtectedRoute><Offers /></ProtectedRoute>} />
+                    <Route path="/financial-trends" element={<ProtectedRoute><FinancialTrends /></ProtectedRoute>} />
+
                     {import.meta.env.DEV && (
                       <Route path="/dev/vault-diff" element={<VaultDiff />} />
                     )}
