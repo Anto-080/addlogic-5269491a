@@ -24,22 +24,28 @@ const TOP_TIER_GATE = 50;
 const ASH_GOLD = "#8C6F54";
 
 /**
- * Filing-cabinet folder surface: vivid opaque tier tint with a soft top light
- * and a slightly irregular cut. The tier colour stays dominant so sectors are
- * immediately identifiable.
+ * Glassy folder surface: the tier colour is vivid at the very top edge and
+ * fades away almost instantly, leaving a transparent frosted folder through
+ * which the page background shows towards the bottom.
  */
 function tierSurface(color: string) {
   return {
-    backgroundColor: `color-mix(in srgb, ${color} 78%, #0c120f)`,
+    backgroundColor: "transparent",
     backgroundImage: `
-      linear-gradient(160deg, color-mix(in srgb, ${color} 92%, #fff 3%) 0%, color-mix(in srgb, ${color} 68%, #000 18%) 100%),
-      radial-gradient(130% 90% at 12% 0%, rgba(255,255,255,0.08), transparent 62%)
+      linear-gradient(180deg,
+        color-mix(in srgb, ${color} 82%, transparent) 0%,
+        color-mix(in srgb, ${color} 34%, transparent) 7%,
+        color-mix(in srgb, ${color} 10%, transparent) 16%,
+        rgba(255,255,255,0.04) 45%,
+        rgba(255,255,255,0.015) 100%)
     `,
-    borderColor: `color-mix(in srgb, ${color} 55%, #0c120f)`,
-    borderTop: `4px solid ${color}`,
+    backdropFilter: "blur(10px) saturate(115%)",
+    WebkitBackdropFilter: "blur(10px) saturate(115%)",
+    borderColor: `color-mix(in srgb, ${color} 30%, transparent)`,
+    borderTop: `2px solid color-mix(in srgb, ${color} 75%, transparent)`,
     borderRadius: "2px 13px 7px 5px",
     boxShadow:
-      "inset 0 -10px 14px -12px rgba(0,0,0,0.55), inset 0 0 36px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.05)",
+      "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px -14px rgba(0,0,0,0.6)",
   } as React.CSSProperties;
 }
 
@@ -50,18 +56,18 @@ function FolderTab({ color }: { color: string }) {
       aria-hidden
       className="h-2.5 w-24 ml-3"
       style={{
-        backgroundColor: `color-mix(in srgb, ${color} 85%, #0c120f)`,
-        backgroundImage: `
-          linear-gradient(180deg, color-mix(in srgb, ${color} 96%, #fff 2%), color-mix(in srgb, ${color} 78%, #000 12%))
-        `,
-        borderTop: `3px solid ${color}`,
-        borderLeft: `1px solid color-mix(in srgb, ${color} 55%, #0c120f)`,
-        borderRight: `1px solid color-mix(in srgb, ${color} 55%, #0c120f)`,
+        backgroundImage: `linear-gradient(180deg, color-mix(in srgb, ${color} 80%, transparent), color-mix(in srgb, ${color} 22%, transparent))`,
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+        borderTop: `2px solid color-mix(in srgb, ${color} 75%, transparent)`,
+        borderLeft: `1px solid color-mix(in srgb, ${color} 28%, transparent)`,
+        borderRight: `1px solid color-mix(in srgb, ${color} 28%, transparent)`,
         borderRadius: "7px 11px 0 0",
       }}
     />
   );
 }
+
 
 
 
@@ -313,7 +319,7 @@ export default function Tiers() {
                   >
                   <FolderTab color={tier.color} />
                   <Card
-                    className="border transition-all shadow-none"
+                    className="border transition-all bg-transparent shadow-none"
                     style={tierSurface(tier.color)}
                   >
                     <CardContent className="p-4">
