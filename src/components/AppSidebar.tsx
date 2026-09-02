@@ -1,4 +1,4 @@
-import { Users, Lock, LogOut, Tag, Heart } from "lucide-react";
+import { Users, Lock, LogOut, Tag, Heart, LineChart } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import addlogicMark from "@/assets/addlogic-mark-square.jpg";
@@ -14,7 +14,9 @@ const secondaryItems = [
   { title: "Connections", url: "/connections", icon: Users },
   { title: "Investments", url: "/investments", icon: Lock },
   { title: "Offers", url: "/offers", icon: Tag },
+  { title: "Financial Trends", url: "/financial-trends", icon: LineChart },
 ];
+
 
 export function AppSidebar() {
   const { state } = useSidebar();
