@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { persistKeywords, persistSubcategories, extractKeywords } from "@/hooks/useClassifyInterest";
+import { persistKeywords, persistTaxonomy, extractKeywords } from "@/hooks/useClassifyInterest";
 
 /**
  * Site-wide interest lock-in. Called from EVERY search bar (PLOS,
