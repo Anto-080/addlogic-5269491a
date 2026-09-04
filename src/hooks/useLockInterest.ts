@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { persistKeywords, persistSubcategories, extractKeywords, type ClassifyResult } from "@/hooks/useClassifyInterest";
+import { persistKeywords, persistTaxonomy, extractKeywords, normalizeClassifyResult, type ClassifyResult } from "@/hooks/useClassifyInterest";
 import { recordSearch } from "@/lib/userInterestProfiler";
 import { bumpSearchCount } from "@/lib/zeroPartyCookies";
 import { useResearchSession } from "@/contexts/ResearchSessionContext";
