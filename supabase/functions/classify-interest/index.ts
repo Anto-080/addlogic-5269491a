@@ -143,19 +143,33 @@ async function callMistral(query: string): Promise<{
 
   const tierId = Number.isFinite(parsed.tierId) ? Number(parsed.tierId) : null;
   const tier = TIER_LABELS.find((t) => t.id === tierId);
-  const subs: string[] = Array.isArray(parsed.subcategories)
-    ? parsed.subcategories
-        .map((s: unknown) => (typeof s === "string" ? s.trim() : ""))
-        .filter((s: string) => s.length >= 2 && s.length <= 60)
-        .slice(0, 3)
-    : [];
+
+  const clean = (v: unknown): string | null => {
+    const s = typeof v === "string" ? v.trim() : "";
+    return s.length >= 2 && s.length <= 60 ? s : null;
+  };
+  const cleanList = (v: unknown): string[] =>
+    Array.isArray(v)
+      ? (v.map(clean).filter(Boolean) as string[]).slice(0, 3)
+      : [];
+
+  const subcategory = clean(parsed.subcategory);
+  const subinterest = clean(parsed.subinterest);
+  // Clusters: accept `clusters`, fall back to the legacy `subcategories` array.
+  const clusters = cleanList(parsed.clusters).length
+    ? cleanList(parsed.clusters)
+    : cleanList(parsed.subcategories);
   const confidence = Math.max(0, Math.min(1, Number(parsed.confidence) || 0));
 
   return {
     tierId: tier?.id ?? null,
     tierName: tier?.name ?? null,
     confidence,
-    subcategories: subs,
+    subcategory,
+    subinterest,
+    clusters,
+    // Backwards-compatible flat list for older clients.
+    subcategories: [subcategory, subinterest].filter(Boolean) as string[],
   };
 }
 
