@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { persistKeywords, persistSubcategories, extractKeywords, type ClassifyResult } from "@/hooks/useClassifyInterest";
+import { persistKeywords, persistTaxonomy, extractKeywords, normalizeClassifyResult, type ClassifyResult } from "@/hooks/useClassifyInterest";
 import { recordSearch } from "@/lib/userInterestProfiler";
 import { bumpSearchCount } from "@/lib/zeroPartyCookies";
 import { useResearchSession } from "@/contexts/ResearchSessionContext";
@@ -36,21 +36,18 @@ export function useLockInterest() {
         body: { text: trimmed },
       });
       const confidence = Number(data?.confidence) || 0;
-      if (data?.tierId && confidence >= (options.minConfidence ?? 0.4)) {
-        if (options.pulseSession !== false) session.pulse(data.tierId, "search", 90_000);
-        options.onTierClassified?.(data.tierId);
-        await persistSubcategories(user.id, data.tierId, Array.isArray(data.subcategories) ? data.subcategories : []);
-        await persistKeywords(user.id, data.tierId, extractKeywords(trimmed));
+      const result = data ? normalizeClassifyResult(data, trimmed) : null;
+      if (result?.tierId && confidence >= (options.minConfidence ?? 0.4)) {
+        if (options.pulseSession !== false) session.pulse(result.tierId, "search", 90_000);
+        options.onTierClassified?.(result.tierId);
+        await persistTaxonomy(user.id, result.tierId, {
+          subcategory: result.subcategory,
+          subinterest: result.subinterest,
+          clusters: result.clusters,
+        });
+        await persistKeywords(user.id, result.tierId, extractKeywords(trimmed));
       }
-      return data
-        ? {
-            tierId: data.tierId ?? null,
-            tierName: data.tierName ?? null,
-            confidence: Number(data.confidence) || 0,
-            subcategories: Array.isArray(data.subcategories) ? data.subcategories : [],
-            text: data.text ?? trimmed,
-          }
-        : null;
+      return result;
     } catch (e) {
       console.warn("interest lock failed:", (e as Error).message);
       return null;

@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { persistKeywords, persistSubcategories, extractKeywords } from "@/hooks/useClassifyInterest";
+import { persistKeywords, persistTaxonomy, extractKeywords } from "@/hooks/useClassifyInterest";
 
 /**
  * Site-wide interest lock-in. Called from EVERY search bar (PLOS,
@@ -18,7 +18,11 @@ export async function lockInterestFromQuery(text: string): Promise<void> {
       body: { text: trimmed },
     });
     if (!data?.tierId) return;
-    await persistSubcategories(userId, data.tierId, Array.isArray(data.subcategories) ? data.subcategories : []);
+    await persistTaxonomy(userId, data.tierId, {
+      subcategory: data.subcategory ?? null,
+      subinterest: data.subinterest ?? null,
+      clusters: Array.isArray(data.clusters) ? data.clusters : (Array.isArray(data.subcategories) ? data.subcategories : []),
+    });
     await persistKeywords(userId, data.tierId, extractKeywords(trimmed));
   } catch (e) {
     console.warn("interest lock failed:", (e as Error).message);

@@ -37,21 +37,28 @@ const TIER_LABELS: { id: number; name: string }[] = [
   { id: 21, name: "Women's Interests" },
 ];
 
-const SYSTEM_PROMPT = `You are a strict research-query classifier. The user submits a free-form research query. You MUST:
-1. Pick exactly ONE tier from the list (by id) that best captures the topic.
-2. Generate 1 to 3 short, specific subcategories (2-4 words each) that describe sub-themes of the query, in the same language as the query when possible.
-3. Estimate a confidence score in [0,1].
+const SYSTEM_PROMPT = `You are a taxonomy engine for a privacy-first research platform. The user submits a free-form research query. Build a 3-level hierarchy plus semantic clusters. You MUST:
+1. Pick exactly ONE main category (tier) from the list below, by id — the best fit for the query.
+2. subcategory: ONE broader discipline inside that tier (e.g. query about virology -> "Microbiology").
+3. subinterest: ONE narrower specialisation inside that subcategory (e.g. "Virology", "Bacteriology").
+4. clusters: 1 to 3 concrete semantic clusters (entities, organisms, relations, concepts) taken from the query itself
+   (e.g. ["Rhodopseudomonas Palustris", "Microorganism-Human Biology Interaction"]).
+5. Estimate a confidence score in [0,1].
+Keep every label 1-5 words, in the same language as the query when possible. Never invent personal data about the user.
 
 Tiers:
 ${TIER_LABELS.map((t) => `${t.id}. ${t.name}`).join("\n")}
 
 Return ONLY a JSON object with this exact shape, nothing else:
-{"tierId": <int>, "tierName": <string>, "confidence": <float 0..1>, "subcategories": [<string>, ...]}`;
+{"tierId": <int>, "tierName": <string>, "confidence": <float 0..1>, "subcategory": <string>, "subinterest": <string>, "clusters": [<string>, ...]}`;
 
 async function callMistral(query: string): Promise<{
   tierId: number | null;
   tierName: string | null;
   confidence: number;
+  subcategory: string | null;
+  subinterest: string | null;
+  clusters: string[];
   subcategories: string[];
 } | null> {
   const apiKey = Deno.env.get("MISTRAL_API_KEY");
@@ -136,19 +143,33 @@ async function callMistral(query: string): Promise<{
 
   const tierId = Number.isFinite(parsed.tierId) ? Number(parsed.tierId) : null;
   const tier = TIER_LABELS.find((t) => t.id === tierId);
-  const subs: string[] = Array.isArray(parsed.subcategories)
-    ? parsed.subcategories
-        .map((s: unknown) => (typeof s === "string" ? s.trim() : ""))
-        .filter((s: string) => s.length >= 2 && s.length <= 60)
-        .slice(0, 3)
-    : [];
+
+  const clean = (v: unknown): string | null => {
+    const s = typeof v === "string" ? v.trim() : "";
+    return s.length >= 2 && s.length <= 60 ? s : null;
+  };
+  const cleanList = (v: unknown): string[] =>
+    Array.isArray(v)
+      ? (v.map(clean).filter(Boolean) as string[]).slice(0, 3)
+      : [];
+
+  const subcategory = clean(parsed.subcategory);
+  const subinterest = clean(parsed.subinterest);
+  // Clusters: accept `clusters`, fall back to the legacy `subcategories` array.
+  const clusters = cleanList(parsed.clusters).length
+    ? cleanList(parsed.clusters)
+    : cleanList(parsed.subcategories);
   const confidence = Math.max(0, Math.min(1, Number(parsed.confidence) || 0));
 
   return {
     tierId: tier?.id ?? null,
     tierName: tier?.name ?? null,
     confidence,
-    subcategories: subs,
+    subcategory,
+    subinterest,
+    clusters,
+    // Backwards-compatible flat list for older clients.
+    subcategories: [subcategory, subinterest].filter(Boolean) as string[],
   };
 }
 

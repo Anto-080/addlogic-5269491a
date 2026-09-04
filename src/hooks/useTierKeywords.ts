@@ -1,50 +1,71 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import type { KeywordKind } from "@/hooks/useClassifyInterest";
 
 export type TierKeyword = {
   keyword: string;
   count: number;
   tier_id: number;
-  kind: "keyword" | "subcategory";
+  kind: KeywordKind;
+};
+
+type Buckets = Record<number, TierKeyword[]>;
+
+const emptyState = {
+  keywords: {} as Buckets,
+  subcategories: {} as Buckets,
+  subinterests: {} as Buckets,
+  clusters: {} as Buckets,
 };
 
 /**
- * Reads the user's personalised tier_keywords (zero-party data extracted by
- * the Mistral classifier from search queries). Returns rows grouped by tier
- * id, split into raw keywords and AI-derived subcategories.
+ * Reads the user's personalised zero-party taxonomy from `tier_keywords`
+ * (built by the Mistral classifier out of search queries), grouped by tier
+ * id and split by hierarchy level: subcategory → subinterest → clusters,
+ * plus the raw keywords. No personal data is involved — only topics.
  */
 export function useTierKeywords() {
   const { user } = useAuth();
-  const { data = { keywords: {}, subcategories: {} } } = useQuery({
+  const { data = emptyState } = useQuery({
     queryKey: ["tier_keywords", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      if (!user) return { keywords: {}, subcategories: {} };
+      if (!user) return emptyState;
       const { data } = await supabase
         .from("tier_keywords")
         .select("tier_id, keyword, count, kind")
         .eq("user_id", user.id)
         .order("count", { ascending: false })
-        .limit(400);
+        .limit(600);
 
-      const kws: Record<number, TierKeyword[]> = {};
-      const subs: Record<number, TierKeyword[]> = {};
+      const kws: Buckets = {};
+      const subs: Buckets = {};
+      const subints: Buckets = {};
+      const clusters: Buckets = {};
       for (const row of (data ?? []) as TierKeyword[]) {
-        const bucket = row.kind === "subcategory" ? subs : kws;
+        const bucket =
+          row.kind === "subcategory" ? subs
+          : row.kind === "subinterest" ? subints
+          : row.kind === "cluster" ? clusters
+          : kws;
         (bucket[row.tier_id] ??= []).push(row);
       }
-      return { keywords: kws, subcategories: subs };
+      return { keywords: kws, subcategories: subs, subinterests: subints, clusters };
     },
     staleTime: 10_000,
   });
 
   // Backward compat: legacy callers use the default export shape (keywords only).
-  return Object.assign(data.keywords, {
+  return Object.assign({ ...data.keywords }, {
     keywords: data.keywords,
     subcategories: data.subcategories,
+    subinterests: data.subinterests,
+    clusters: data.clusters,
   }) as Record<number, TierKeyword[]> & {
-    keywords: Record<number, TierKeyword[]>;
-    subcategories: Record<number, TierKeyword[]>;
+    keywords: Buckets;
+    subcategories: Buckets;
+    subinterests: Buckets;
+    clusters: Buckets;
   };
 }

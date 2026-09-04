@@ -368,12 +368,39 @@ export default function Tiers() {
                             <>
                               <p className="text-[11px] text-primary mt-3 mb-2 inline-flex items-center gap-1.5">
                                 <img src={mistralMark} alt="Mistral" className="brand-asset h-3 w-3" />
-                                AI-derived sub-interests (from your searches):
+                                Your subcategories (from your searches):
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 {personalKeywords.subcategories[tier.id].map((k) => (
                                   <span key={k.keyword} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-foreground/90 border border-primary/40 inline-flex items-center gap-1.5">
                                     <img src={mistralMark} alt="" className="brand-asset h-2.5 w-2.5" />
+                                    {k.keyword} <span className="text-muted-foreground">×{k.count}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                          {(personalKeywords.subinterests[tier.id]?.length ?? 0) > 0 && (
+                            <>
+                              <p className="text-[11px] text-primary/80 mt-3 mb-2 inline-flex items-center gap-1.5">
+                                <img src={mistralMark} alt="Mistral" className="brand-asset h-3 w-3" />
+                                Sub-interests (specialisations):
+                              </p>
+                              <div className="flex flex-wrap gap-2 pl-3 border-l border-primary/30">
+                                {personalKeywords.subinterests[tier.id].map((k) => (
+                                  <span key={k.keyword} className="text-xs px-2 py-1 rounded-full bg-primary/5 text-foreground/90 border border-primary/25">
+                                    {k.keyword} <span className="text-muted-foreground">×{k.count}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                          {(personalKeywords.clusters[tier.id]?.length ?? 0) > 0 && (
+                            <>
+                              <p className="text-[11px] text-money mt-3 mb-2">Semantic clusters (inferred intent, no personal data):</p>
+                              <div className="flex flex-wrap gap-2 pl-6 border-l border-money/30">
+                                {personalKeywords.clusters[tier.id].map((k) => (
+                                  <span key={k.keyword} className="text-xs px-2 py-1 rounded-full bg-money/10 text-foreground/90 border border-money/30">
                                     {k.keyword} <span className="text-muted-foreground">×{k.count}</span>
                                   </span>
                                 ))}
