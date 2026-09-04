@@ -37,21 +37,28 @@ const TIER_LABELS: { id: number; name: string }[] = [
   { id: 21, name: "Women's Interests" },
 ];
 
-const SYSTEM_PROMPT = `You are a strict research-query classifier. The user submits a free-form research query. You MUST:
-1. Pick exactly ONE tier from the list (by id) that best captures the topic.
-2. Generate 1 to 3 short, specific subcategories (2-4 words each) that describe sub-themes of the query, in the same language as the query when possible.
-3. Estimate a confidence score in [0,1].
+const SYSTEM_PROMPT = `You are a taxonomy engine for a privacy-first research platform. The user submits a free-form research query. Build a 3-level hierarchy plus semantic clusters. You MUST:
+1. Pick exactly ONE main category (tier) from the list below, by id — the best fit for the query.
+2. subcategory: ONE broader discipline inside that tier (e.g. query about virology -> "Microbiology").
+3. subinterest: ONE narrower specialisation inside that subcategory (e.g. "Virology", "Bacteriology").
+4. clusters: 1 to 3 concrete semantic clusters (entities, organisms, relations, concepts) taken from the query itself
+   (e.g. ["Rhodopseudomonas Palustris", "Microorganism-Human Biology Interaction"]).
+5. Estimate a confidence score in [0,1].
+Keep every label 1-5 words, in the same language as the query when possible. Never invent personal data about the user.
 
 Tiers:
 ${TIER_LABELS.map((t) => `${t.id}. ${t.name}`).join("\n")}
 
 Return ONLY a JSON object with this exact shape, nothing else:
-{"tierId": <int>, "tierName": <string>, "confidence": <float 0..1>, "subcategories": [<string>, ...]}`;
+{"tierId": <int>, "tierName": <string>, "confidence": <float 0..1>, "subcategory": <string>, "subinterest": <string>, "clusters": [<string>, ...]}`;
 
 async function callMistral(query: string): Promise<{
   tierId: number | null;
   tierName: string | null;
   confidence: number;
+  subcategory: string | null;
+  subinterest: string | null;
+  clusters: string[];
   subcategories: string[];
 } | null> {
   const apiKey = Deno.env.get("MISTRAL_API_KEY");
