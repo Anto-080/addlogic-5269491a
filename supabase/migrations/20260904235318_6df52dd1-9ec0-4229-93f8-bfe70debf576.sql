@@ -1,0 +1,2 @@
+ALTER TABLE public.tier_keywords DROP CONSTRAINT IF EXISTS tier_keywords_kind_check;
+ALTER TABLE public.tier_keywords ADD CONSTRAINT tier_keywords_kind_check CHECK (kind = ANY (ARRAY['keyword'::text, 'subcategory'::text, 'subinterest'::text, 'cluster'::text]));
