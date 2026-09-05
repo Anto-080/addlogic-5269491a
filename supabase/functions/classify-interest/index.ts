@@ -91,44 +91,34 @@ async function callMistral(query: string): Promise<{
     };
   }
 
-  const chatBody = {
-    model: "mistral-small-latest",
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: query },
-    ],
-    response_format: { type: "json_object" },
-    temperature: 0.2,
-  };
+  let r = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 
-  const post = (u: string, b: unknown) =>
-    fetch(u, {
+  // Fallback: if Agents API rejects (e.g. 4xx), try chat completions.
+  if (!r.ok && agentId) {
+    console.warn("Agents API failed, falling back to chat completions:", r.status);
+    r = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(b),
+      body: JSON.stringify({
+        model: "mistral-small-latest",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: query },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.2,
+      }),
     });
-
-  const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
-  let r = await post(url, body);
-
-  // Fallback: if Agents API rejects (e.g. 4xx), try chat completions.
-  if (!r.ok && agentId) {
-    console.warn("Agents API failed, falling back to chat completions:", r.status);
-    r = await post("https://api.mistral.ai/v1/chat/completions", chatBody);
-  }
-
-  // Bounded backoff for transient rate limits / upstream errors.
-  for (let attempt = 1; attempt <= 2 && (r.status === 429 || r.status >= 500); attempt++) {
-    const retryAfter = Number(r.headers.get("Retry-After"));
-    const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
-      ? Math.min(retryAfter * 1000, 4000)
-      : attempt * 900 + Math.floor(Math.random() * 400);
-    await sleep(waitMs);
-    r = await post("https://api.mistral.ai/v1/chat/completions", chatBody);
   }
 
   if (!r.ok) {
@@ -138,7 +128,6 @@ async function callMistral(query: string): Promise<{
     if (r.status === 402) throw new Error("payment_required");
     throw new Error(`mistral_${r.status}`);
   }
-
 
   const data = await r.json();
   const content = data?.choices?.[0]?.message?.content;
@@ -220,32 +209,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    let result: Awaited<ReturnType<typeof callMistral>>;
-    try {
-      result = await callMistral(text.trim());
-    } catch (e) {
-      const msg = (e as Error).message;
-      // Transient upstream limits must not surface as an app-breaking error:
-      // answer 200 with an empty, flagged taxonomy so the UI simply skips it.
-      if (msg === "rate_limited" || msg === "payment_required") {
-        return new Response(
-          JSON.stringify({
-            tierId: null, tierName: null, confidence: 0,
-            subcategory: null, subinterest: null, clusters: [], subcategories: [],
-            text, unavailable: msg,
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-      throw e;
-    }
+    const result = await callMistral(text.trim());
     if (!result) {
       return new Response(
         JSON.stringify({ error: "Classification failed" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-
 
     // Persist Mistral-derived multiplier on user_stats AND stamp a
     // 5-minute window during which the ExperienceBar accumulator ticks.
