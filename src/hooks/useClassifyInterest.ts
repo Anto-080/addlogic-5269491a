@@ -154,8 +154,11 @@ export async function persistTaxonomy(
   taxonomy: { subcategory?: string | null; subinterest?: string | null; clusters?: string[] },
 ) {
   if (taxonomy.subcategory) await upsertTierKeyword(userId, tierId, taxonomy.subcategory, "subcategory");
-  if (taxonomy.subinterest) await upsertTierKeyword(userId, tierId, taxonomy.subinterest, "subinterest");
-  for (const c of taxonomy.clusters ?? []) {
-    await upsertTierKeyword(userId, tierId, c, "cluster");
+  if (taxonomy.subinterest) {
+    await upsertTierKeyword(userId, tierId, taxonomy.subinterest, "subinterest", taxonomy.subcategory ?? null);
   }
+  for (const c of taxonomy.clusters ?? []) {
+    await upsertTierKeyword(userId, tierId, c, "cluster", taxonomy.subinterest ?? taxonomy.subcategory ?? null);
+  }
+
 }
