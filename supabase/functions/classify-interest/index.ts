@@ -91,34 +91,39 @@ async function callMistral(query: string): Promise<{
     };
   }
 
-  let r = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  // Fallback: if Agents API rejects (e.g. 4xx), try chat completions.
-  if (!r.ok && agentId) {
-    console.warn("Agents API failed, falling back to chat completions:", r.status);
-    r = await fetch("https://api.mistral.ai/v1/chat/completions", {
+  const post = (u: string, b: unknown) =>
+    fetch(u, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: "mistral-small-latest",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: query },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.2,
-      }),
+      body: JSON.stringify(b),
     });
+
+  const chatBody = {
+    model: "mistral-small-latest",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: query },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.2,
+  };
+
+  let r = await post(url, body);
+
+  // Fallback: if Agents API rejects (e.g. 4xx), try chat completions.
+  if (!r.ok && agentId) {
+    console.warn("Agents API failed, falling back to chat completions:", r.status);
+    r = await post("https://api.mistral.ai/v1/chat/completions", chatBody);
+  }
+
+  // Mistral throttles bursts — retry the plain chat endpoint twice with backoff
+  // so a single 429 doesn't break the research workflow.
+  for (let i = 0; i < 2 && r.status === 429; i++) {
+    await new Promise((res) => setTimeout(res, 900 * (i + 1)));
+    r = await post("https://api.mistral.ai/v1/chat/completions", chatBody);
   }
 
   if (!r.ok) {
@@ -128,6 +133,7 @@ async function callMistral(query: string): Promise<{
     if (r.status === 402) throw new Error("payment_required");
     throw new Error(`mistral_${r.status}`);
   }
+
 
   const data = await r.json();
   const content = data?.choices?.[0]?.message?.content;

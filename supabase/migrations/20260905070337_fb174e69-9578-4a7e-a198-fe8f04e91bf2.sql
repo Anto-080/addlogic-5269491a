@@ -1,0 +1,1 @@
+ALTER TABLE public.tier_keywords ADD COLUMN IF NOT EXISTS parent text;

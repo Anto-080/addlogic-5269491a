@@ -91,12 +91,13 @@ async function upsertTierKeyword(
   tierId: number,
   keyword: string,
   kind: KeywordKind,
+  parent?: string | null,
 ) {
   const label = keyword.trim();
   if (label.length < 2) return;
   const { data: existing } = await supabase
     .from("tier_keywords")
-    .select("id, count, kind")
+    .select("id, count, kind, parent")
     .eq("user_id", userId)
     .eq("tier_id", tierId)
     .eq("keyword", label)
@@ -110,14 +111,16 @@ async function upsertTierKeyword(
         count: existing.count + 1,
         last_seen: new Date().toISOString(),
         ...(promote ? { kind } : {}),
+        ...(parent && !(existing as { parent?: string | null }).parent ? { parent } : {}),
       })
       .eq("id", existing.id);
   } else {
     await supabase
       .from("tier_keywords")
-      .insert({ user_id: userId, tier_id: tierId, keyword: label, kind });
+      .insert({ user_id: userId, tier_id: tierId, keyword: label, kind, parent: parent ?? null });
   }
 }
+
 
 /**
  * Upserts each extracted keyword into `tier_keywords` (kind='keyword').
@@ -151,8 +154,11 @@ export async function persistTaxonomy(
   taxonomy: { subcategory?: string | null; subinterest?: string | null; clusters?: string[] },
 ) {
   if (taxonomy.subcategory) await upsertTierKeyword(userId, tierId, taxonomy.subcategory, "subcategory");
-  if (taxonomy.subinterest) await upsertTierKeyword(userId, tierId, taxonomy.subinterest, "subinterest");
-  for (const c of taxonomy.clusters ?? []) {
-    await upsertTierKeyword(userId, tierId, c, "cluster");
+  if (taxonomy.subinterest) {
+    await upsertTierKeyword(userId, tierId, taxonomy.subinterest, "subinterest", taxonomy.subcategory ?? null);
   }
+  for (const c of taxonomy.clusters ?? []) {
+    await upsertTierKeyword(userId, tierId, c, "cluster", taxonomy.subinterest ?? taxonomy.subcategory ?? null);
+  }
+
 }

@@ -8,7 +8,10 @@ export type TierKeyword = {
   count: number;
   tier_id: number;
   kind: KeywordKind;
+  /** Subcategory a subinterest belongs to (or subinterest for a cluster). */
+  parent?: string | null;
 };
+
 
 type Buckets = Record<number, TierKeyword[]>;
 
@@ -34,7 +37,7 @@ export function useTierKeywords() {
       if (!user) return emptyState;
       const { data } = await supabase
         .from("tier_keywords")
-        .select("tier_id, keyword, count, kind")
+        .select("tier_id, keyword, count, kind, parent")
         .eq("user_id", user.id)
         .order("count", { ascending: false })
         .limit(600);
