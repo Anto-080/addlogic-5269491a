@@ -440,6 +440,7 @@ export type Database = {
           keyword: string
           kind: string
           last_seen: string
+          parent: string | null
           tier_id: number
           user_id: string
         }
@@ -449,6 +450,7 @@ export type Database = {
           keyword: string
           kind?: string
           last_seen?: string
+          parent?: string | null
           tier_id: number
           user_id: string
         }
@@ -458,6 +460,7 @@ export type Database = {
           keyword?: string
           kind?: string
           last_seen?: string
+          parent?: string | null
           tier_id?: number
           user_id?: string
         }
