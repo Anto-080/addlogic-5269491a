@@ -67,6 +67,105 @@ function parseDdgHtml(html: string, limit: number): SearchResult[] {
   return out;
 }
 
+const UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+
+/** DuckDuckGo HTML endpoints. DDG answers 202 + an anomaly page when it
+ *  throttles datacenter IPs, so this can legitimately come back empty. */
+async function searchDdg(query: string, limit: number): Promise<SearchResult[]> {
+  const attempts: Array<() => Promise<Response>> = [
+    () =>
+      fetch("https://html.duckduckgo.com/html/", {
+        method: "POST",
+        headers: {
+          "User-Agent": UA,
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Referer": "https://duckduckgo.com/",
+        },
+        body: new URLSearchParams({ q: query, kl: "wt-wt" }).toString(),
+      }),
+    () =>
+      fetch(`https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`, {
+        headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" },
+      }),
+  ];
+  for (const attempt of attempts) {
+    try {
+      const r = await attempt();
+      if (!r.ok && r.status !== 202) continue;
+      const html = await r.text();
+      const parsed = parseDdgHtml(html, limit);
+      if (parsed.length) return parsed;
+      // The lite layout has no result__a classes — parse its table anchors.
+      const lite = parseLiteHtml(html, limit);
+      if (lite.length) return lite;
+    } catch (e) {
+      console.warn("ddg attempt failed:", (e as Error).message);
+    }
+  }
+  return [];
+}
+
+function parseLiteHtml(html: string, limit: number): SearchResult[] {
+  const out: SearchResult[] = [];
+  const re = /<a[^>]*class="[^"]*result-link[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) && out.length < limit) {
+    const url = unwrapDdgUrl(m[1]);
+    const title = decodeEntities(stripTags(m[2])).trim();
+    let source = "web";
+    try { source = new URL(url).hostname.replace(/^www\./, ""); } catch { /* noop */ }
+    if (url && title) out.push({ title, url, snippet: "", source });
+  }
+  return out;
+}
+
+/** Firecrawl web search — used when DuckDuckGo throttles our servers. */
+async function searchFirecrawl(query: string, limit: number): Promise<SearchResult[]> {
+  const key = Deno.env.get("FIRECRAWL_API_KEY");
+  if (!key) return [];
+  try {
+    const r = await fetch("https://api.firecrawl.dev/v2/search", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ query, limit }),
+    });
+    if (!r.ok) {
+      console.error("firecrawl search failed", r.status, (await r.text()).slice(0, 300));
+      return [];
+    }
+    const data = await r.json();
+    const rows: any[] = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.data?.web)
+        ? data.data.web
+        : [];
+    return rows.slice(0, limit).map((row) => {
+      const url = String(row?.url ?? "");
+      let source = "web";
+      try { source = new URL(url).hostname.replace(/^www\./, ""); } catch { /* noop */ }
+      return {
+        title: String(row?.title ?? url),
+        url,
+        snippet: String(row?.description ?? row?.snippet ?? ""),
+        source,
+      };
+    }).filter((r) => r.url && r.title);
+  } catch (e) {
+    console.error("firecrawl search error:", (e as Error).message);
+    return [];
+  }
+}
+
+async function runSearch(query: string, limit: number): Promise<SearchResult[]> {
+  const ddg = await searchDdg(query, limit);
+  if (ddg.length) return ddg;
+  return await searchFirecrawl(query, limit);
+}
+
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
