@@ -106,26 +106,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const ddg = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
-      method: "GET",
-      headers: {
-        // DDG returns a different (sparser) page without a real UA.
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-    });
+    const results = await runSearch(query, limit);
 
-    if (!ddg.ok) {
-      return new Response(
-        JSON.stringify({ error: "Search provider error", status: ddg.status }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    const html = await ddg.text();
-    const results = parseDdgHtml(html, limit);
 
     return new Response(
       JSON.stringify({ query, results }),
