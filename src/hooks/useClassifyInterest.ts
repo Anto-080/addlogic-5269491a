@@ -43,14 +43,23 @@ export function useClassifyInterest() {
     mutationFn: async (text: string): Promise<ClassifyResult | null> => {
       const trimmed = text.trim();
       if (trimmed.length < 2) return null;
-      const { data, error } = await supabase.functions.invoke("classify-interest", {
-        body: { text: trimmed },
-      });
-      if (error) throw error;
-      if (!data) return null;
-      return normalizeClassifyResult(data, trimmed);
+      // Never throw: a rate-limited / unavailable classifier must not break the UI.
+      try {
+        const { data, error } = await supabase.functions.invoke("classify-interest", {
+          body: { text: trimmed },
+        });
+        if (error || !data || (data as any).error) {
+          console.warn("classify-interest unavailable:", (error as Error)?.message ?? (data as any)?.error);
+          return null;
+        }
+        return normalizeClassifyResult(data, trimmed);
+      } catch (e) {
+        console.warn("classify-interest failed:", (e as Error).message);
+        return null;
+      }
     },
   });
+
 }
 
 const STOPWORDS = new Set([
