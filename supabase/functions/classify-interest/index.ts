@@ -220,13 +220,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    const result = await callMistral(text.trim());
+    let result: Awaited<ReturnType<typeof callMistral>>;
+    try {
+      result = await callMistral(text.trim());
+    } catch (e) {
+      const msg = (e as Error).message;
+      // Transient upstream limits must not surface as an app-breaking error:
+      // answer 200 with an empty, flagged taxonomy so the UI simply skips it.
+      if (msg === "rate_limited" || msg === "payment_required") {
+        return new Response(
+          JSON.stringify({
+            tierId: null, tierName: null, confidence: 0,
+            subcategory: null, subinterest: null, clusters: [], subcategories: [],
+            text, unavailable: msg,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      throw e;
+    }
     if (!result) {
       return new Response(
         JSON.stringify({ error: "Classification failed" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
 
     // Persist Mistral-derived multiplier on user_stats AND stamp a
     // 5-minute window during which the ExperienceBar accumulator ticks.
