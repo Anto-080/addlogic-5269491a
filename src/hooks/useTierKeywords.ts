@@ -8,7 +8,10 @@ export type TierKeyword = {
   count: number;
   tier_id: number;
   kind: KeywordKind;
+  /** Subcategory a subinterest belongs to (or subinterest for a cluster). */
+  parent?: string | null;
 };
+
 
 type Buckets = Record<number, TierKeyword[]>;
 
