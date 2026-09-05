@@ -37,7 +37,7 @@ export function useTierKeywords() {
       if (!user) return emptyState;
       const { data } = await supabase
         .from("tier_keywords")
-        .select("tier_id, keyword, count, kind")
+        .select("tier_id, keyword, count, kind, parent")
         .eq("user_id", user.id)
         .order("count", { ascending: false })
         .limit(600);
