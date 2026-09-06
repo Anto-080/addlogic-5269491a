@@ -266,7 +266,14 @@ Deno.serve(async (req) => {
         const cookies = !!prefs.cookies;
         const gps = !!prefs.gps;
         const base = 1 + (cookies ? 2 : 0) + (gps ? 5 : 0);
-        const w = result.tierId ? tierWeights[result.tierId] ?? 1 : 1;
+        // Top-tier + restricted tiers ARE part of the magnetic recognition,
+        // but their retribution is capped at the Science tier for regular users.
+        const RESTRICTED = new Set([1, 2, 3, 16, 17]);
+        const rawW = result.tierId ? tierWeights[result.tierId] ?? 1 : 1;
+        const w = result.tierId && RESTRICTED.has(result.tierId)
+          ? Math.min(rawW, tierWeights[19])
+          : rawW;
+
         const queryFactor = Math.max(1, w * (result.confidence || 0.5));
         const newMultiplier = Math.max(1, Math.min(20, base * queryFactor / 5));
         const lockedUntil = new Date(Date.now() + 5 * 60 * 1000).toISOString();
