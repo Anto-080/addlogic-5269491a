@@ -14,6 +14,8 @@ import { TierExperienceBar } from "@/components/TierExperienceBar";
 import { ExitInterstitial } from "@/components/ExitInterstitial";
 import { useOutboundExit } from "@/hooks/useOutboundExit";
 import { useTierKeywords } from "@/hooks/useTierKeywords";
+import { TierTaxonomy } from "@/components/TierTaxonomy";
+
 import { useTierTraffic } from "@/hooks/useTierTraffic";
 import mistralMark from "@/assets/mistral-mark.png";
 import { AcademicConnection } from "@/components/AcademicConnection";
