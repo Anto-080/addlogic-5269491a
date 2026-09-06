@@ -119,10 +119,11 @@ async function callMistral(query: string): Promise<{
     r = await post("https://api.mistral.ai/v1/chat/completions", chatBody);
   }
 
-  // Mistral throttles bursts — retry the plain chat endpoint twice with backoff
+  // Mistral throttles bursts — retry the plain chat endpoint with backoff
   // so a single 429 doesn't break the research workflow.
-  for (let i = 0; i < 2 && r.status === 429; i++) {
-    await new Promise((res) => setTimeout(res, 900 * (i + 1)));
+  for (let i = 0; i < 4 && r.status === 429; i++) {
+    const wait = Number(r.headers.get("retry-after")) * 1000 || 700 * Math.pow(2, i);
+    await new Promise((res) => setTimeout(res, Math.min(wait, 6000)));
     r = await post("https://api.mistral.ai/v1/chat/completions", chatBody);
   }
 
@@ -215,7 +216,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    const result = await callMistral(text.trim());
+    let result: Awaited<ReturnType<typeof callMistral>> = null;
+    try {
+      result = await callMistral(text.trim());
+    } catch (err) {
+      const m = err instanceof Error ? err.message : "";
+      // Transient upstream throttling must never break the research flow:
+      // answer 200 with a degraded (unclassified) result so the UI keeps working.
+      if (m === "rate_limited" || m === "payment_required") {
+        console.warn("classify-interest degraded:", m);
+        return new Response(
+          JSON.stringify({
+            tierId: null, tierName: null, confidence: 0,
+            subcategory: null, subinterest: null,
+            clusters: [], subcategories: [], text, degraded: m,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      throw err;
+    }
     if (!result) {
       return new Response(
         JSON.stringify({ error: "Classification failed" }),
