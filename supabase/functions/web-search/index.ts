@@ -122,48 +122,10 @@ function parseLiteHtml(html: string, limit: number): SearchResult[] {
   return out;
 }
 
-/** Firecrawl web search — used when DuckDuckGo throttles our servers. */
-async function searchFirecrawl(query: string, limit: number): Promise<SearchResult[]> {
-  const key = Deno.env.get("FIRECRAWL_API_KEY");
-  if (!key) return [];
-  try {
-    const r = await fetch("https://api.firecrawl.dev/v2/search", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ query, limit }),
-    });
-    if (!r.ok) {
-      console.error("firecrawl search failed", r.status, (await r.text()).slice(0, 300));
-      return [];
-    }
-    const data = await r.json();
-    const rows: any[] = Array.isArray(data?.data)
-      ? data.data
-      : Array.isArray(data?.data?.web)
-        ? data.data.web
-        : [];
-    return rows.slice(0, limit).map((row) => {
-      const url = String(row?.url ?? "");
-      let source = "web";
-      try { source = new URL(url).hostname.replace(/^www\./, ""); } catch { /* noop */ }
-      return {
-        title: String(row?.title ?? url),
-        url,
-        snippet: String(row?.description ?? row?.snippet ?? ""),
-        source,
-      };
-    }).filter((r) => r.url && r.title);
-  } catch (e) {
-    console.error("firecrawl search error:", (e as Error).message);
-    return [];
-  }
+async function runSearch(query: string, limit: number): Promise<SearchResult[]> {
+  return await searchDdg(query, limit);
 }
 
-async function runSearch(query: string, limit: number): Promise<SearchResult[]> {
-  const ddg = await searchDdg(query, limit);
-  if (ddg.length) return ddg;
-  return await searchFirecrawl(query, limit);
-}
 
 
 Deno.serve(async (req) => {
