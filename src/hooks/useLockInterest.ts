@@ -14,11 +14,39 @@ type LockInterestOptions = {
 };
 
 /**
+ * De-duplication cache: several search bars (DuckDuckGo, PLOS, OpenAlex) can
+ * submit the SAME query at nearly the same moment. Without this, two identical
+ * requests hit the Mistral agent simultaneously and trip its burst limit.
+ * One classification per query is shared for 60 seconds.
+ */
+const inFlight = new Map<string, Promise<unknown>>();
+const recent = new Map<string, { at: number; data: unknown }>();
+const TTL = 60_000;
+
+function classifyOnce(text: string): Promise<unknown> {
+  const key = text.toLowerCase();
+  const cached = recent.get(key);
+  if (cached && Date.now() - cached.at < TTL) return Promise.resolve(cached.data);
+  const pending = inFlight.get(key);
+  if (pending) return pending;
+  const p = supabase.functions
+    .invoke("classify-interest", { body: { text } })
+    .then(({ data }) => {
+      recent.set(key, { at: Date.now(), data });
+      return data;
+    })
+    .finally(() => inFlight.delete(key));
+  inFlight.set(key, p);
+  return p;
+}
+
+/**
  * Site-wide hook: every search bar (PLOS, DDG, OpenAlex) calls this with
  * the user's query. Mistral classifies → server stamps user_stats with
  * the multiplier + a 5-min `locked_until` window. We invalidate the
  * user_stats query so ExperienceBar picks up the new window immediately.
  */
+
 export function useLockInterest() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -32,10 +60,9 @@ export function useLockInterest() {
     bumpSearchCount();
 
     try {
-      const { data } = await supabase.functions.invoke("classify-interest", {
-        body: { text: trimmed },
-      });
+      const data = (await classifyOnce(trimmed)) as any;
       const confidence = Number(data?.confidence) || 0;
+
       const result = data ? normalizeClassifyResult(data, trimmed) : null;
       if (result?.tierId && confidence >= (options.minConfidence ?? 0.4)) {
         if (options.pulseSession !== false) session.pulse(result.tierId, "search", 90_000);
