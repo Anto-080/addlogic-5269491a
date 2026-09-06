@@ -60,10 +60,9 @@ export function useLockInterest() {
     bumpSearchCount();
 
     try {
-      const { data } = await supabase.functions.invoke("classify-interest", {
-        body: { text: trimmed },
-      });
+      const data = (await classifyOnce(trimmed)) as any;
       const confidence = Number(data?.confidence) || 0;
+
       const result = data ? normalizeClassifyResult(data, trimmed) : null;
       if (result?.tierId && confidence >= (options.minConfidence ?? 0.4)) {
         if (options.pulseSession !== false) session.pulse(result.tierId, "search", 90_000);
