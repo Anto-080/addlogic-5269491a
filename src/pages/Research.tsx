@@ -104,7 +104,7 @@ export default function Research() {
             <ExperienceBar earning />
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Each level requires <span className="text-foreground font-medium">{XP_PER_LEVEL.toLocaleString()} XP</span>. XP advances in real time while you are active in the Research Room.
+               XP advances in real time while you are active in the Research Room.
             </p>
 
             <div className="space-y-1">
