@@ -87,7 +87,7 @@ export default function Research() {
     <AppLayout>
       <div className="space-y-4 max-w-5xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">AddLogic Research</h1>
+          <h1 className="text-2xl font-bold text-foreground">AddLogic:Research</h1>
           <p className="text-sm text-muted-foreground">Browse via DuckDuckGo, earn from your curiosity.</p>
         </div>
 
