@@ -499,7 +499,7 @@ export function StakingPanel({ balance, level, onBack }: { balance: number; leve
 }
 
 
-/* ─────────────────────── 2 — ∆Delta-neutral plans ─────────────────────── */
+/* ─────────────────────── 2 — ∆•Delta-neutral plans ─────────────────────── */
 
 type LiveRate = {
   key: string;
