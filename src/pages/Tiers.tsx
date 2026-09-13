@@ -378,7 +378,7 @@ export default function Tiers() {
               <>
                 <div className="red-zone-frame" data-reveal>
                   <div className="red-zone-banner px-4 py-3 relative">
-                    <p className="text-center text-xs tracking-wider uppercase font-semibold" style={{ color: "#850101" }}>
+                    <p className="text-center text-xs tracking-wider uppercase font-semibold text-foreground/90">
                       Restricted Content
                     </p>
                   </div>
