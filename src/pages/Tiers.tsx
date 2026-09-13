@@ -15,12 +15,12 @@ import { ExitInterstitial } from "@/components/ExitInterstitial";
 import { useOutboundExit } from "@/hooks/useOutboundExit";
 import { useTierKeywords } from "@/hooks/useTierKeywords";
 import { TierTaxonomy } from "@/components/TierTaxonomy";
-
 import { useTierTraffic } from "@/hooks/useTierTraffic";
-import mistralMark from "@/assets/mistral-mark.png";
 import { AcademicConnection } from "@/components/AcademicConnection";
+import type { TierKeyword } from "@/hooks/useTierKeywords";
 
 const TOP_TIER_GATE = 50;
+const RED_ZONE_IDS = new Set([16, 17]);
 
 /** Ash Gold — the unified experience-bar fill used across the tier list. */
 const ASH_GOLD = "#8C6F54";
@@ -70,9 +70,6 @@ function FolderTab({ color }: { color: string }) {
   );
 }
 
-
-
-
 /** FE International–style scroll reveal, identical to the Investment Phase. */
 function useScrollReveal() {
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -99,7 +96,6 @@ function useScrollReveal() {
   }, []);
   return rootRef;
 }
-
 
 function WarningPill() {
   const [open, setOpen] = useState(false);
@@ -130,6 +126,98 @@ function WarningPill() {
   );
 }
 
+type TierFolderCardProps = {
+  tier: (typeof TIERS)[number];
+  maxMultiplier: number;
+  isOpen: boolean;
+  onToggle: () => void;
+  visits: string;
+  hours: string;
+  showTaxonomy?: boolean;
+  subcategories: TierKeyword[];
+  subinterests: TierKeyword[];
+  clusters: TierKeyword[];
+  keywords: TierKeyword[];
+};
+
+function TierFolderCard({
+  tier,
+  maxMultiplier,
+  isOpen,
+  onToggle,
+  visits,
+  hours,
+  showTaxonomy = false,
+  subcategories,
+  subinterests,
+  clusters,
+  keywords,
+}: TierFolderCardProps) {
+  const barWidth = (tier.multiplier / maxMultiplier) * 100;
+  return (
+    <div
+      data-reveal
+      className={`glow-card rounded-[2px_10px_6px_6px] cursor-pointer ${isOpen ? "is-glowing" : ""}`}
+    >
+      <FolderTab color={tier.color} />
+      <Card className="border transition-all bg-transparent shadow-none" style={tierSurface(tier.color)}>
+        <CardContent className="p-4">
+          <button type="button" onClick={onToggle} className="w-full text-left">
+            <div className="flex items-center gap-4">
+              <div className="shrink-0 w-12 flex justify-center" style={{ color: tier.color }}>
+                <TierIcon tierId={tier.id} size={28} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="min-w-0">
+                    <h3 className={`text-sm font-semibold text-foreground flex items-center gap-1 ${isOpen ? "" : "truncate"}`}>
+                      {tier.name}
+                      {tier.locked && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
+                    </h3>
+                  </div>
+                  <div className="text-right shrink-0 ml-2">
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                  </div>
+                </div>
+                <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
+                  <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: ASH_GOLD }} />
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{visits}</span>
+                  <span className="text-money font-medium">{hours}</span>
+                </div>
+              </div>
+            </div>
+          </button>
+          {isOpen && (
+            <div className="mt-3 pt-3 border-t border-border/40">
+              <p className="text-xs font-semibold mb-2" style={{ color: tier.color }}>
+                x{tier.multiplier} Experience Multiplier
+              </p>
+              <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
+              {showTaxonomy && (
+                <>
+                  <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {tier.subcategories.map((s) => (
+                      <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/60 text-foreground/80 border border-border/40">{s}</span>
+                    ))}
+                  </div>
+                  <TierTaxonomy
+                    subcategories={subcategories}
+                    subinterests={subinterests}
+                    clusters={clusters}
+                    keywords={keywords}
+                  />
+                </>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function Tiers() {
   const maxMultiplier = TIERS[0].multiplier;
@@ -165,10 +253,11 @@ export default function Tiers() {
     return [...top, ...rest];
   }, []);
 
+  const topTiers = orderedTiers.filter((t) => t.id <= 3);
+  const mainTiers = orderedTiers.filter((t) => t.id > 3 && !RED_ZONE_IDS.has(t.id));
+  const redZoneTiers = orderedTiers.filter((t) => RED_ZONE_IDS.has(t.id));
+
   const revealRoot = useScrollReveal();
-
-  // Glow is driven by the expanded state (see the tier cards below).
-
 
   return (
     <AppLayout>
@@ -199,7 +288,6 @@ export default function Tiers() {
                 </div>
               </div>
             </Card>
-
 
             <Card className="bg-card border-border/50 p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -246,141 +334,78 @@ export default function Tiers() {
                     </div>
                   </div>
                 )}
-                {orderedTiers.filter((t) => t.id <= 3).map((tier) => {
-                  const barWidth = (tier.multiplier / maxMultiplier) * 100;
-                  const isOpen = expanded === tier.id;
-                   return (
-                     <div
-                       key={tier.id}
-                       data-reveal
-                       className={`glow-card rounded-[2px_10px_6px_6px] cursor-pointer ${isOpen ? "is-glowing" : ""}`}
-                     >
-                     <FolderTab color={tier.color} />
-                     <Card
-                       className="border transition-all bg-transparent shadow-none"
-                       style={tierSurface(tier.color)}
-                     >
-                      <CardContent className="p-4">
-                        <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
-                          <div className="flex items-center gap-4">
-                            <div className="shrink-0 w-12 flex justify-center" style={{ color: tier.color }}>
-                              <TierIcon tierId={tier.id} size={28} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="min-w-0">
-                                  <h3 className={`text-sm font-semibold text-foreground flex items-center gap-1 ${isOpen ? "" : "truncate"}`}>
-                                    {tier.name}
-                                    {tier.locked && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
-                                  </h3>
-                                </div>
-                                <div className="text-right shrink-0 ml-2">
-                                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                                </div>
-
-                              </div>
-                              <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
-                                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: ASH_GOLD }} />
-
-                              </div>
-                              <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>{fmtVisits(tier.id)}</span>
-                                <span className="text-money font-medium">{fmtHours(tier.id)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                        {isOpen && (
-                          <div className="mt-3 pt-3 border-t border-border/40">
-                            <p className="text-xs font-semibold mb-2" style={{ color: tier.color }}>
-                              x{tier.multiplier} Experience Multiplier
-                            </p>
-                            <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
-                          </div>
-                        )}
-                      </CardContent>
-                     </Card>
-                     </div>
-                   );
-                })}
+                {topTiers.map((tier) => (
+                  <TierFolderCard
+                    key={tier.id}
+                    tier={tier}
+                    maxMultiplier={maxMultiplier}
+                    isOpen={expanded === tier.id}
+                    onToggle={() => setExpanded(expanded === tier.id ? null : tier.id)}
+                    visits={fmtVisits(tier.id)}
+                    hours={fmtHours(tier.id)}
+                    subcategories={[]}
+                    subinterests={[]}
+                    clusters={[]}
+                    keywords={[]}
+                  />
+                ))}
               </div>
             </div>
-
 
             <AcademicConnection />
 
             <div className="space-y-3">
-              {orderedTiers.filter((t) => t.id > 3).map((tier) => {
-                const barWidth = (tier.multiplier / maxMultiplier) * 100;
-                const isOpen = expanded === tier.id;
-                return (
-                  <div
-                    key={tier.id}
-                    data-reveal
-                    className={`glow-card rounded-[2px_10px_6px_6px] cursor-pointer ${isOpen ? "is-glowing" : ""}`}
-                  >
-                  <FolderTab color={tier.color} />
-                  <Card
-                    className="border transition-all bg-transparent shadow-none"
-                    style={tierSurface(tier.color)}
-                  >
-                    <CardContent className="p-4">
-                      <button type="button" onClick={() => setExpanded(isOpen ? null : tier.id)} className="w-full text-left">
-                        <div className="flex items-center gap-4">
-                          <div className="shrink-0 w-12 flex justify-center" style={{ color: tier.color }}>
-                            <TierIcon tierId={tier.id} size={28} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="min-w-0">
-                                <h3 className={`text-sm font-semibold text-foreground flex items-center gap-1 ${isOpen ? "" : "truncate"}`}>
-                                  {tier.name}
-                                  {tier.locked && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
-                                </h3>
-                              </div>
-                                <div className="text-right shrink-0 ml-2">
-                                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                                </div>
-
-                            </div>
-                            <div className="w-full bg-secondary/50 rounded-full h-2 mb-2">
-                              <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${barWidth}%`, backgroundColor: ASH_GOLD }} />
-                            </div>
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                              <span>{fmtVisits(tier.id)}</span>
-                              <span className="text-money font-medium">{fmtHours(tier.id)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                        {isOpen && (
-                          <div className="mt-3 pt-3 border-t border-border/40">
-                            <p className="text-xs font-semibold mb-2" style={{ color: tier.color }}>
-                              x{tier.multiplier} Experience Multiplier
-                            </p>
-                            <TierExperienceBar tierId={tier.id} tierMultiplier={tier.multiplier} />
-                            <p className="text-[11px] text-muted-foreground mb-2">Subcategories:</p>
-
-                          <div className="flex flex-wrap gap-2">
-                            {tier.subcategories.map((s) => (
-                              <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/60 text-foreground/80 border border-border/40">{s}</span>
-                            ))}
-                          </div>
-                          <TierTaxonomy
-                            subcategories={personalKeywords.subcategories[tier.id] ?? []}
-                            subinterests={personalKeywords.subinterests[tier.id] ?? []}
-                            clusters={personalKeywords.clusters[tier.id] ?? []}
-                            keywords={personalKeywords.keywords[tier.id] ?? []}
-                          />
-
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  </div>
-                );
-              })}
+              {mainTiers.map((tier) => (
+                <TierFolderCard
+                  key={tier.id}
+                  tier={tier}
+                  maxMultiplier={maxMultiplier}
+                  isOpen={expanded === tier.id}
+                  onToggle={() => setExpanded(expanded === tier.id ? null : tier.id)}
+                  showTaxonomy
+                  visits={fmtVisits(tier.id)}
+                  hours={fmtHours(tier.id)}
+                  subcategories={personalKeywords.subcategories[tier.id] ?? []}
+                  subinterests={personalKeywords.subinterests[tier.id] ?? []}
+                  clusters={personalKeywords.clusters[tier.id] ?? []}
+                  keywords={personalKeywords.keywords[tier.id] ?? []}
+                />
+              ))}
             </div>
+
+            {/* Deep-red restricted zone for locked adult / betting tiers */}
+            {redZoneTiers.length > 0 && (
+              <>
+                <div className="red-zone-frame" data-reveal>
+                  <div className="red-zone-banner px-4 py-3 relative">
+                    <p className="text-center text-xs tracking-wider uppercase font-semibold" style={{ color: "#850101" }}>
+                      Restricted Content
+                    </p>
+                  </div>
+                  <div className="p-3 space-y-3">
+                    {redZoneTiers.map((tier) => (
+                      <TierFolderCard
+                        key={tier.id}
+                        tier={tier}
+                        maxMultiplier={maxMultiplier}
+                        isOpen={expanded === tier.id}
+                        onToggle={() => setExpanded(expanded === tier.id ? null : tier.id)}
+                        showTaxonomy
+                        visits={fmtVisits(tier.id)}
+                        hours={fmtHours(tier.id)}
+                        subcategories={personalKeywords.subcategories[tier.id] ?? []}
+                        subinterests={personalKeywords.subinterests[tier.id] ?? []}
+                        clusters={personalKeywords.clusters[tier.id] ?? []}
+                        keywords={personalKeywords.keywords[tier.id] ?? []}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-center text-xs uppercase tracking-widest mt-1" style={{ color: "#850101" }}>
+                  Enter Red Zone
+                </p>
+              </>
+            )}
           </TabsContent>
 
           {/* ============ SPONSOR LIVE BIDDING ============ */}
@@ -416,4 +441,3 @@ export default function Tiers() {
     </AppLayout>
   );
 }
-
