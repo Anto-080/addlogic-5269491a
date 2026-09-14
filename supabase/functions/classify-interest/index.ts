@@ -1,6 +1,5 @@
 // Mistral Agent classifier — assigns a research query to one of the 18 tiers
 // and generates 1-3 dynamic, semantic subcategories.
-// Replaces the previous HuggingFace BART zero-shot classifier.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {

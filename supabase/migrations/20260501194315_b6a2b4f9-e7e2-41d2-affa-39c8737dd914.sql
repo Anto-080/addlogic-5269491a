@@ -29,7 +29,7 @@ CREATE POLICY "Users delete own cookie_audit"
   ON public.cookie_audit FOR DELETE
   USING (auth.uid() = user_id);
 
--- Tier keywords (HuggingFace-derived subcategories)
+-- Tier keywords (Mistral-derived subcategories)
 CREATE TABLE IF NOT EXISTS public.tier_keywords (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid NOT NULL,
