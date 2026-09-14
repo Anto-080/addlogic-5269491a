@@ -13,12 +13,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@capacitor/android": "^8.3.1",
-    "@capacitor/browser": "^8.0.3",
-    "@capacitor/cli": "^8.3.1",
-    "@capacitor/core": "^8.3.1",
-    "@capacitor/geolocation": "^8.2.0",
-    "@capacitor/ios": "^8.3.1",
     "@fingerprintjs/fingerprintjs-pro": "^3.11.0",
     "@hookform/resolvers": "^3.10.0",
     "@lovable.dev/cloud-auth-js": "^1.1.1",

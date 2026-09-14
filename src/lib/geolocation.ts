@@ -34,9 +34,8 @@ export function snapshotDeviceProfile(): DeviceProfile {
 }
 
 /**
- * Request geolocation. On Capacitor (Android/iOS) this triggers the OS
- * permission prompt via @capacitor/geolocation; on the web it falls back to
- * navigator.geolocation. Returns `null` if the user denies.
+ * Request geolocation. Uses the browser's navigator.geolocation API.
+ * Returns `null` if the user denies or the API is not available.
  */
 export async function requestGeolocation(): Promise<Coords | null> {
   if (typeof navigator === "undefined" || !navigator.geolocation) return null;

@@ -7,8 +7,6 @@
  * history reads, so we fall back to:
  *   1. document.referrer
  *   2. localStorage research-search log (key: "rr.searchLog")
- *   3. Capacitor native bridge (window.HistoryBridge?.read()) when wired
- *      to a Read-History plugin in the Android shell.
  *
  * The function is deterministic and silent on failure — it returns an
  * ordered list of tier IDs (best match first), or an empty array when
