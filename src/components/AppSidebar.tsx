@@ -1,4 +1,4 @@
-import { Users, Lock, LogOut, Tag, Heart, LineChart } from "lucide-react";
+import { Users, Lock, LogOut, Tag, Heart, LineChart, ChevronDown, ChevronUp } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import addlogicMark from "@/assets/addlogic-mark-square.jpg";
@@ -14,6 +14,9 @@ const secondaryItems = [
   { title: "Connections", url: "/connections", icon: Users },
   { title: "Investments", url: "/investments", icon: Lock },
   { title: "Offers", url: "/offers", icon: Tag },
+];
+
+const investmentSubItems = [
   { title: "Financial Basics", url: "/financial-trends", icon: LineChart },
 ];
 
@@ -56,6 +59,14 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem key="investments-sub">
+                <SidebarMenuButton asChild className="ml-6">
+                  <NavLink to={investmentSubItems[0].url} className="hover:bg-accent/50" activeClassName="bg-accent text-primary font-medium">
+                    <investmentSubItems[0].icon className="mr-2 h-4 w-4" />
+                    {!collapsed && <span>{investmentSubItems[0].title}</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
