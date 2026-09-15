@@ -59,14 +59,16 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              <SidebarMenuItem key="investments-sub">
-                <SidebarMenuButton asChild className="ml-6">
-                  <NavLink to={investmentSubItems[0].url} className="hover:bg-accent/50" activeClassName="bg-accent text-primary font-medium">
-                    <investmentSubItems[0].icon className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>{investmentSubItems[0].title}</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {investmentSubItems.map((sub) => (
+                <SidebarMenuItem key={sub.title}>
+                  <SidebarMenuButton asChild className="ml-6">
+                    <NavLink to={sub.url} className="hover:bg-accent/50" activeClassName="bg-accent text-primary font-medium">
+                      <sub.icon className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{sub.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
