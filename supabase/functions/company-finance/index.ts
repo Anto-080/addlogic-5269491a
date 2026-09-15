@@ -93,6 +93,22 @@ async function search(q: string): Promise<Company[]> {
   return filled;
 }
 
+/** Fetch chart data for a symbol */
+async function chartData(symbol: string, range: string = "5d"): Promise<{date: string; value: number}[]> {
+  try {
+    const j = await yf(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=${range}`);
+    const result = j?.chart?.result?.[0];
+    const timestamps: number[] = result?.timestamp ?? [];
+    const closes: number[] = (result?.indicators?.quote?.[0]?.close ?? []).filter((n: any) => typeof n === "number");
+    return timestamps.map((ts, i) => ({
+      date: new Date(ts * 1000).toISOString().slice(0, 10),
+      value: closes[i] ?? 0,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 /** Realized-volatility driven yield estimate — market volume/vol drives funding capture. */
 async function rates(interval: string) {
   const range = interval === "1mo" ? "5y" : interval === "1wk" ? "2y" : "6mo";
@@ -146,6 +162,14 @@ Deno.serve(async (req) => {
         ? url.searchParams.get("interval")!
         : "1d";
       return new Response(JSON.stringify({ interval, rates: await rates(interval) }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (action === "chart") {
+      const symbol = url.searchParams.get("symbol") ?? "";
+      const range = url.searchParams.get("range") ?? "5d";
+      const data = await chartData(symbol, range);
+      return new Response(JSON.stringify({ symbol, range, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

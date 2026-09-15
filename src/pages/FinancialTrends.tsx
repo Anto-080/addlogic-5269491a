@@ -83,18 +83,13 @@ export default function FinancialTrends() {
 
   async function loadChartData(symbol: string, range: string = "5d"): Promise<ChartData[]> {
     try {
-      const r = await fetch(
-        `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${range}`,
-        { headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" } }
-      );
+      const r = await fetch(`${fnBase()}?action=chart&symbol=${encodeURIComponent(symbol)}&range=${range}`, { headers: fnHeaders() });
       const j = await r.json();
-      const result = j?.chart?.result?.[0];
-      const timestamps: number[] = result?.timestamp ?? [];
-      const closes: number[] = result?.indicators?.quote?.[0]?.close?.filter((n: any) => typeof n === "number") ?? [];
+      const data: {date: string; value: number}[] = j?.data ?? [];
       
-      return timestamps.map((ts, i) => ({
-        date: new Date(ts * 1000).toISOString().slice(0, 10),
-        value: closes[i] ?? 0,
+      return data.map(d => ({
+        date: d.date,
+        value: d.value,
         name: symbol,
       }));
     } catch {
@@ -111,15 +106,19 @@ export default function FinancialTrends() {
         { key: "lending", symbol: "^VIX", name: "Lending Pools", color: "#2E8B57" },
       ];
       
-      const range = chartInterval === "1mo" ? "1mo" : chartInterval === "1wk" ? "5d" : "1d";
+      const rangeMap = { "1d": "5d", "1wk": "1mo", "1mo": "3mo" };
+      const range = rangeMap[chartInterval] ?? "5d";
       
       const data: Record<string, ChartData[]> = {};
-      for (const s of symbols) {
-        const prices = await loadChartData(s.symbol, range);
-        data[s.key] = prices.map(p => ({ ...p, name: s.name }));
-      }
+      await Promise.all(
+        symbols.map(async (s) => {
+          const prices = await loadChartData(s.symbol, range);
+          data[s.key] = prices.map(p => ({ ...p, name: s.name }));
+        })
+      );
       setChartData(data);
-    } catch {
+    } catch (e) {
+      console.error("Chart load error:", e);
       setChartData({});
     } finally {
       setLoadingCharts(false);
@@ -271,8 +270,8 @@ export default function FinancialTrends() {
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData.wgold || []} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" strokeOpacity={0.3} />
-                        <XAxis dataKey="date" hide />
-                        <YAxis hide />
+                        <XAxis dataKey="date" />
+                        <YAxis />
                         <Tooltip />
                         <Line
                           type="monotone"
@@ -305,8 +304,8 @@ export default function FinancialTrends() {
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData.wbtc || []} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" strokeOpacity={0.3} />
-                        <XAxis dataKey="date" hide />
-                        <YAxis hide />
+                        <XAxis dataKey="date" />
+                        <YAxis />
                         <Tooltip />
                         <Line
                           type="monotone"
@@ -339,8 +338,8 @@ export default function FinancialTrends() {
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData.lending || []} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" strokeOpacity={0.3} />
-                        <XAxis dataKey="date" hide />
-                        <YAxis hide />
+                        <XAxis dataKey="date" />
+                        <YAxis />
                         <Tooltip />
                         <Line
                           type="monotone"
