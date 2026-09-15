@@ -18,7 +18,7 @@ export default function FinancialTrends() {
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <LineChart className="h-6 w-6 text-primary" /> Financial Trends
+            <LineChart className="h-6 w-6 text-primary" /> Financial Basics
           </h1>
           <p className="text-sm text-muted-foreground">
             Live market data — realized volatility, delta-neutral yield estimates and public company fundamentals.

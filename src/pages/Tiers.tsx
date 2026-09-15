@@ -44,7 +44,7 @@ function tierSurface(color: string) {
     backdropFilter: "blur(10px) saturate(115%)",
     WebkitBackdropFilter: "blur(10px) saturate(115%)",
     borderColor: `color-mix(in srgb, ${color} 30%, transparent)`,
-    borderTop: `2px solid color-mix(in srgb, ${color} 75%, transparent)`,
+    borderTop: `1px solid color-mix(in srgb, ${color} 75%, transparent)`,
     borderRadius: "2px 13px 7px 5px",
     boxShadow:
       "inset 0 1px 0 rgba(255,255,255,0.10), 0 6px 18px -14px rgba(0,0,0,0.6)",
@@ -378,7 +378,7 @@ export default function Tiers() {
               <>
                 <div className="red-zone-frame" data-reveal>
                   <div className="red-zone-banner px-4 py-3 relative">
-                    <p className="text-center text-xs tracking-wider uppercase font-semibold text-foreground/90">
+                    <p className="text-center text-xs tracking-wider uppercase font-semibold" style={{ color: "#212121" }}>
                       Restricted Content
                     </p>
                   </div>

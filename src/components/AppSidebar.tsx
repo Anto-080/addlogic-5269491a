@@ -14,7 +14,7 @@ const secondaryItems = [
   { title: "Connections", url: "/connections", icon: Users },
   { title: "Investments", url: "/investments", icon: Lock },
   { title: "Offers", url: "/offers", icon: Tag },
-  { title: "Financial Trends", url: "/financial-trends", icon: LineChart },
+  { title: "Financial Basics", url: "/financial-trends", icon: LineChart },
 ];
 
 
