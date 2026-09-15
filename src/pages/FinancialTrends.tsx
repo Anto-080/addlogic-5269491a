@@ -4,6 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LineChart, TrendingUp, TrendingDown, Search, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 /** Public Yahoo Finance proxy — same edge function used by the Investment Phase. */
 function fnBase() {
@@ -34,6 +42,12 @@ type Company = {
   price: number | null;
 };
 
+type ChartData = {
+  date: string;
+  value: number;
+  name: string;
+};
+
 const INTERVALS = [
   { id: "1d", label: "Daily" },
   { id: "1wk", label: "Weekly" },
@@ -50,6 +64,9 @@ export default function FinancialTrends() {
   const [query, setQuery] = useState("");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [searching, setSearching] = useState(false);
+  const [chartData, setChartData] = useState<Record<string, ChartData[]>>({});
+  const [loadingCharts, setLoadingCharts] = useState(true);
+  const [chartInterval, setChartInterval] = useState<"1d" | "1wk" | "1mo">("1d");
 
   async function loadRates(iv: string) {
     setLoadingRates(true);
@@ -64,9 +81,58 @@ export default function FinancialTrends() {
     }
   }
 
+  async function loadChartData(symbol: string, range: string = "5d"): Promise<ChartData[]> {
+    try {
+      const r = await fetch(
+        `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=${range}`,
+        { headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" } }
+      );
+      const j = await r.json();
+      const result = j?.chart?.result?.[0];
+      const timestamps: number[] = result?.timestamp ?? [];
+      const closes: number[] = result?.indicators?.quote?.[0]?.close?.filter((n: any) => typeof n === "number") ?? [];
+      
+      return timestamps.map((ts, i) => ({
+        date: new Date(ts * 1000).toISOString().slice(0, 10),
+        value: closes[i] ?? 0,
+        name: symbol,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  async function loadAllCharts() {
+    setLoadingCharts(true);
+    try {
+      const symbols = [
+        { key: "wgold", symbol: "PAXG-USD", name: "wGold/PAXG", color: "#FFD700" },
+        { key: "wbtc", symbol: "BTC-USD", name: "WBTC", color: "#B7410E" },
+        { key: "lending", symbol: "^VIX", name: "Lending Pools", color: "#2E8B57" },
+      ];
+      
+      const range = chartInterval === "1mo" ? "1mo" : chartInterval === "1wk" ? "5d" : "1d";
+      
+      const data: Record<string, ChartData[]> = {};
+      for (const s of symbols) {
+        const prices = await loadChartData(s.symbol, range);
+        data[s.key] = prices.map(p => ({ ...p, name: s.name }));
+      }
+      setChartData(data);
+    } catch {
+      setChartData({});
+    } finally {
+      setLoadingCharts(false);
+    }
+  }
+
   useEffect(() => {
     loadRates(interval);
   }, [interval]);
+
+  useEffect(() => {
+    loadAllCharts();
+  }, [chartInterval]);
 
   async function runSearch() {
     const q = query.trim();
@@ -152,6 +218,147 @@ export default function FinancialTrends() {
             </div>
             <p className="text-[10px] text-muted-foreground">
               Estimates derived from realized volatility of live Yahoo Finance series. Indicative only — not financial advice.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* ===== Live Yahoo Finance Charts ===== */}
+        <Card className="bg-card border-border/50">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-foreground">Live Yahoo Finance Charts</p>
+              <div className="flex items-center gap-1">
+                {INTERVALS.map((iv) => (
+                  <Button
+                    key={iv.id}
+                    size="sm"
+                    variant={chartInterval === iv.id ? "secondary" : "ghost"}
+                    className="text-[11px] h-7 px-2"
+                    onClick={() => setChartInterval(iv.id)}
+                  >
+                    {iv.label}
+                  </Button>
+                ))}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0"
+                  aria-label="Refresh charts"
+                  onClick={() => loadAllCharts()}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${loadingCharts ? "animate-spin" : ""}`} />
+                </Button>
+              </div>
+            </div>
+
+            {loadingCharts && <p className="text-xs text-muted-foreground italic">Loading live chart data...</p>}
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Card className="bg-secondary/30 border-border/60">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-xs font-semibold text-foreground truncate">wGold/PAXG</p>
+                    <a
+                      href="https://it.finance.yahoo.com/quote/%5EGVZ/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-primary hover:underline"
+                    >
+                      View on Yahoo
+                    </a>
+                  </div>
+                  <div className="h-40">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData.wgold || []} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" strokeOpacity={0.3} />
+                        <XAxis dataKey="date" hide />
+                        <YAxis hide />
+                        <Tooltip />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#FFD700"
+                          strokeWidth={2}
+                          dot={false}
+                          name="wGold/PAXG"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">Gold theme</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-secondary/30 border-border/60">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-xs font-semibold text-foreground truncate">WBTC</p>
+                    <a
+                      href="https://finance.yahoo.com/quote/%5EBITVX/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-primary hover:underline"
+                    >
+                      View on Yahoo
+                    </a>
+                  </div>
+                  <div className="h-40">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData.wbtc || []} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" strokeOpacity={0.3} />
+                        <XAxis dataKey="date" hide />
+                        <YAxis hide />
+                        <Tooltip />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#B7410E"
+                          strokeWidth={2}
+                          dot={false}
+                          name="WBTC"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">Rust theme</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-secondary/30 border-border/60">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-xs font-semibold text-foreground truncate">Lending Pools</p>
+                    <a
+                      href="https://finance.yahoo.com/quote/%5EVIX/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-primary hover:underline"
+                    >
+                      View on Yahoo
+                    </a>
+                  </div>
+                  <div className="h-40">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData.lending || []} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" strokeOpacity={0.3} />
+                        <XAxis dataKey="date" hide />
+                        <YAxis hide />
+                        <Tooltip />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#2E8B57"
+                          strokeWidth={2}
+                          dot={false}
+                          name="Lending Pools"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">Dollar Green theme</p>
+                </CardContent>
+              </Card>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Live data from Yahoo Finance. Charts are indicative only — not financial advice.
             </p>
           </CardContent>
         </Card>
