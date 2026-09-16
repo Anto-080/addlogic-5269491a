@@ -1,0 +1,516 @@
+{
+  "name": "AddLogic Research Query Classifier",
+  "description": "A privacy-first taxonomy engine that classifies research queries into predefined tiers, extracts keywords, determines subcategories and subinterests, and aggregates zero-party data for user interest profiling.",
+  "version": "1.0.0",
+  "model": "mistral-large-latest",
+  "temperature": 0.2,
+  "max_tokens": 2000,
+  
+  "predefined_tiers": {
+    "description": "Complete list of predefined interest tiers with their subcategories for reference",
+    "tiers": [
+      {
+        "id": 1,
+        "name": "Biological Systems & Lifesaving Technologies",
+        "locked": true,
+        "subcategories": ["Genes Functioning", "Peptide Research", "Cancer research", "Vaccines", "Organ regeneration"]
+      },
+      {
+        "id": 2,
+        "name": "Biochemical Knowledge",
+        "locked": true,
+        "subcategories": ["Enzymology", "Metabolism", "Protein folding"]
+      },
+      {
+        "id": 3,
+        "name": "Systematically Important Scientific Research",
+        "locked": true,
+        "subcategories": ["Fusion energy", "Quantum physics", "Materials science"]
+      },
+      {
+        "id": 4,
+        "name": "Ecology & Natural Biomes",
+        "locked": false,
+        "subcategories": ["Reforestation", "Ocean health", "Biodiversity"]
+      },
+      {
+        "id": 5,
+        "name": "Financial & Economic Services",
+        "locked": false,
+        "subcategories": ["Macro analysis", "Investing", "Sustainable finance"]
+      },
+      {
+        "id": 6,
+        "name": "Technological Advancements",
+        "locked": false,
+        "subcategories": ["AI", "Robotics", "Software", "Hardware"]
+      },
+      {
+        "id": 7,
+        "name": "Art & Culture / Humanism",
+        "locked": false,
+        "subcategories": ["Painting", "History", "Philosophy", "Architecture"]
+      },
+      {
+        "id": 8,
+        "name": "Global News",
+        "locked": false,
+        "subcategories": ["Geopolitics", "Climate news", "Tech news"]
+      },
+      {
+        "id": 9,
+        "name": "Entertainment: Movies, Games, Books",
+        "locked": false,
+        "subcategories": ["Films", "Video games", "Music", "Books"]
+      },
+      {
+        "id": 10,
+        "name": "Food: Recipes, Nutrition, Diets",
+        "locked": false,
+        "subcategories": ["Recipes", "Nutrition", "Diet plans"]
+      },
+      {
+        "id": 11,
+        "name": "Real Estate Services",
+        "locked": false,
+        "subcategories": ["Buying", "Renting", "Investment property"]
+      },
+      {
+        "id": 12,
+        "name": "Personal Shopping",
+        "locked": false,
+        "subcategories": ["Electronics", "Home goods", "Gifts"]
+      },
+      {
+        "id": 13,
+        "name": "Personal Care: Skin, Perfume, Makeup",
+        "locked": false,
+        "subcategories": ["Skincare", "Fragrance", "Makeup"]
+      },
+      {
+        "id": 14,
+        "name": "Clothes & Accessories",
+        "locked": false,
+        "subcategories": ["Apparel", "Jewelry", "Eyewear"]
+      },
+      {
+        "id": 15,
+        "name": "Sports & eSports",
+        "locked": false,
+        "subcategories": ["Football", "Basketball", "eSports leagues"]
+      },
+      {
+        "id": 16,
+        "name": "Betting Services",
+        "locked": true,
+        "subcategories": ["Sports betting", "Casino"]
+      },
+      {
+        "id": 17,
+        "name": "Adult Entertainment",
+        "locked": true,
+        "subcategories": ["Adult content"]
+      },
+      {
+        "id": 18,
+        "name": "Tourism & Travel",
+        "locked": false,
+        "subcategories": ["Backpacking", "City breaks", "Adventure travel", "Cultural tours"]
+      },
+      {
+        "id": 19,
+        "name": "Sciences",
+        "locked": false,
+        "subcategories": ["Chemistry", "Botany", "Mathematics"]
+      },
+      {
+        "id": 20,
+        "name": "Energy",
+        "locked": false,
+        "subcategories": ["Electromagnetic Induction", "Fuels", "Renewables"]
+      },
+      {
+        "id": 21,
+        "name": "Women's Interests",
+        "locked": false,
+        "subcategories": ["Wellness", "Motherhood", "Career", "Lifestyle"]
+      }
+    ]
+  },
+  
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "The user's research query text to be classified and analyzed",
+        "minLength": 2,
+        "maxLength": 500
+      },
+      "user_id": {
+        "type": "string",
+        "description": "Optional user identifier for context (not used for personal tracking)",
+        "minLength": 0
+      },
+      "session_id": {
+        "type": "string",
+        "description": "Optional session identifier for grouping related queries",
+        "minLength": 0
+      }
+    },
+    "required": ["query"]
+  },
+  
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "classification": {
+        "type": "object",
+        "description": "Primary classification result for the query",
+        "properties": {
+          "tier_id": {
+            "type": "number",
+            "description": "The ID of the matched predefined tier (1-21)",
+            "minimum": 1,
+            "maximum": 21
+          },
+          "tier_name": {
+            "type": "string",
+            "description": "The name of the matched tier"
+          },
+          "confidence": {
+            "type": "number",
+            "description": "Confidence score of the classification (0-1)",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "is_locked": {
+            "type": "boolean",
+            "description": "Whether this tier is locked/restricted"
+          }
+        },
+        "required": ["tier_id", "tier_name", "confidence", "is_locked"]
+      },
+      "argument_analysis": {
+        "type": "object",
+        "description": "Understanding of the general argument and intent of the query",
+        "properties": {
+          "primary_intent": {
+            "type": "string",
+            "description": "The main intent or goal of the query (e.g., 'research', 'comparison', 'tutorial', 'news')"
+          },
+          "argument_summary": {
+            "type": "string",
+            "description": "A concise summary of what the query is asking or about"
+          },
+          "query_type": {
+            "type": "string",
+            "enum": ["question", "statement", "search", "comparison", "tutorial", "news", "review", "analysis", "other"],
+            "description": "The type of query based on its structure and intent"
+          }
+        },
+        "required": ["primary_intent", "argument_summary", "query_type"]
+      },
+      "taxonomy": {
+        "type": "object",
+        "description": "Hierarchical categorization of the query",
+        "properties": {
+          "subcategory": {
+            "type": "string",
+            "description": "The broader discipline or category within the tier"
+          },
+          "subinterest": {
+            "type": "string",
+            "description": "The specific narrower specialization within the subcategory"
+          },
+          "clusters": {
+            "type": "array",
+            "description": "Semantic clusters extracted from the query (1-3 specific entities, organisms, concepts, or relations)",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 3
+          }
+        },
+        "required": ["subcategory", "subinterest", "clusters"]
+      },
+      "keywords": {
+        "type": "object",
+        "description": "All extracted keywords from the query, categorized for zero-party data aggregation",
+        "properties": {
+          "primary_keywords": {
+            "type": "array",
+            "description": "Main keywords that directly relate to the classified tier and taxonomy",
+            "items": {
+              "type": "object",
+              "properties": {
+                "keyword": {
+                  "type": "string",
+                  "description": "The keyword text"
+                },
+                "relevance": {
+                  "type": "number",
+                  "description": "Relevance score (0-1) to the classified tier",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "category": {
+                  "type": "string",
+                  "enum": ["tier", "subcategory", "subinterest", "cluster"],
+                  "description": "Which part of the taxonomy this keyword belongs to"
+                }
+              },
+              "required": ["keyword", "relevance", "category"]
+            }
+          },
+          "secondary_keywords": {
+            "type": "array",
+            "description": "Additional keywords that don't fit the primary classification but are still meaningful",
+            "items": {
+              "type": "object",
+              "properties": {
+                "keyword": {
+                  "type": "string"
+                },
+                "relevance": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": ["keyword", "relevance"]
+            }
+          },
+          "aggregate_zero_party_data": {
+            "type": "array",
+            "description": "All remaining keywords saved as aggregate zero-party data for future analysis and pattern detection",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["primary_keywords", "secondary_keywords", "aggregate_zero_party_data"]
+      },
+      "metadata": {
+        "type": "object",
+        "description": "Processing metadata",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The original query text"
+          },
+          "language": {
+            "type": "string",
+            "description": "Detected language of the query (ISO 639-1 code)"
+          },
+          "processed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the query was processed"
+          },
+          "processing_time_ms": {
+            "type": "number",
+            "description": "Time taken to process the query in milliseconds"
+          }
+        },
+        "required": ["query", "language", "processed_at"]
+      }
+    },
+    "required": ["classification", "argument_analysis", "taxonomy", "keywords", "metadata"]
+  },
+  
+  "system_prompt": "You are a taxonomy engine for a privacy-first research platform called AddLogic. Your task is to analyze research queries and perform the following functions:
+
+## PRIMARY OBJECTIVES:
+
+1. **FETCH KEYWORDS**: Extract all meaningful keywords from the user's research query
+2. **UNDERSTAND GENERAL ARGUMENT**: Analyze the intent, type, and meaning of the query
+3. **LOCK-IN SPECIFIC INTEREST**: Match the query to exactly ONE of the predefined 21 tiers
+4. **DEFINE SUBCATEGORY & SUBINTEREST**: Create a 3-level hierarchy (tier > subcategory > subinterest)
+5. **SAVE AGGREGATE ZERO-PARTY DATA**: Store remaining keywords as aggregate data
+
+## RULES:
+
+### Classification Rules:
+- You MUST select exactly ONE tier from the predefined list (IDs 1-21)
+- The tier must be the BEST fit for the query
+- If the query could fit multiple tiers, choose the most specific/important one
+- Use confidence scores to indicate certainty (0.0-1.0)
+
+### Taxonomy Rules:
+- subcategory: ONE broader discipline inside the selected tier (1-5 words)
+- subinterest: ONE narrower specialization inside that subcategory (1-5 words)
+- clusters: 1-3 semantic clusters (entities, organisms, relations, concepts) from the query itself
+
+### Keyword Extraction Rules:
+- Extract ALL meaningful keywords (filter out stopwords: the, and, for, with, etc.)
+- Keywords must be 4+ characters long
+- Categorize keywords as: 'tier', 'subcategory', 'subinterest', or 'cluster'
+- Primary keywords: directly relate to the classified tier/taxonomy
+- Secondary keywords: meaningful but don't fit primary classification
+- Aggregate zero-party data: ALL remaining keywords for future pattern analysis
+
+### Argument Analysis Rules:
+- primary_intent: What is the user trying to do? (research, comparison, tutorial, news, etc.)
+- argument_summary: Concise summary of what the query is asking/about
+- query_type: One of: question, statement, search, comparison, tutorial, news, review, analysis, other
+
+### Output Format:
+- Return ONLY a valid JSON object matching the output_schema
+- Never include explanations, apologies, or markdown
+- All string values must be 1-60 characters
+- Use the same language as the query when possible
+- Never invent personal data about the user
+
+### Predefined Tiers (for reference):
+1. Biological Systems & Lifesaving Technologies
+2. Biochemical Knowledge
+3. Systematically Important Scientific Research
+4. Ecology & Natural Biomes
+5. Financial & Economic Services
+6. Technological Advancements
+7. Art & Culture / Humanism
+8. Global News
+9. Entertainment: Movies, Games, Books
+10. Food: Recipes, Nutrition, Diets
+11. Real Estate Services
+12. Personal Shopping
+13. Personal Care: Skin, Perfume, Makeup
+14. Clothes & Accessories
+15. Sports & eSports
+16. Betting Services
+17. Adult Entertainment
+18. Tourism & Travel
+19. Sciences
+20. Energy
+21. Women's Interests
+
+REMEMBER: You are ONLY a classifier. Return only JSON, nothing else.",
+  
+  "processing_instructions": {
+    "keyword_extraction": {
+      "stopwords": [
+        "the", "and", "for", "with", "from", "into", "this", "that", "these", "those",
+        "what", "when", "where", "why", "how", "who", "which", "is", "are", "was",
+        "were", "been", "being", "have", "has", "had", "do", "does", "did", "of",
+        "in", "on", "at", "to", "by", "as", "an", "a", "or", "but", "not", "no",
+        "yes", "i", "you", "he", "she", "it", "we", "they", "my", "your", "their",
+        "our", "his", "her", "its"
+      ],
+      "min_keyword_length": 4,
+      "max_keywords": 50
+    },
+    "confidence_thresholds": {
+      "high": 0.8,
+      "medium": 0.6,
+      "low": 0.4
+    }
+  },
+  
+  "example_request": {
+    "query": "How does CRISPR gene editing work in human cells?",
+    "user_id": "user_123",
+    "session_id": "session_456"
+  },
+  
+  "example_response": {
+    "classification": {
+      "tier_id": 1,
+      "tier_name": "Biological Systems & Lifesaving Technologies",
+      "confidence": 0.95,
+      "is_locked": true
+    },
+    "argument_analysis": {
+      "primary_intent": "research",
+      "argument_summary": "Understanding CRISPR gene editing mechanism in human cells",
+      "query_type": "question"
+    },
+    "taxonomy": {
+      "subcategory": "Genes Functioning",
+      "subinterest": "Gene editing",
+      "clusters": ["CRISPR", "gene editing", "human cells"]
+    },
+    "keywords": {
+      "primary_keywords": [
+        {"keyword": "CRISPR", "relevance": 0.95, "category": "cluster"},
+        {"keyword": "gene", "relevance": 0.9, "category": "subcategory"},
+        {"keyword": "editing", "relevance": 0.9, "category": "subinterest"},
+        {"keyword": "human", "relevance": 0.85, "category": "cluster"},
+        {"keyword": "cells", "relevance": 0.85, "category": "cluster"}
+      ],
+      "secondary_keywords": [
+        {"keyword": "does", "relevance": 0.3},
+        {"keyword": "work", "relevance": 0.3}
+      ],
+      "aggregate_zero_party_data": ["how", "does", "work"]
+    },
+    "metadata": {
+      "query": "How does CRISPR gene editing work in human cells?",
+      "language": "en",
+      "processed_at": "2024-01-15T10:30:00Z",
+      "processing_time_ms": 150
+    }
+  },
+  
+  "database_schema": {
+    "description": "Schema for storing classification results in the database",
+    "tables": {
+      "tier_keywords": {
+        "description": "Stores extracted keywords with their classification metadata",
+        "columns": {
+          "id": "uuid primary key",
+          "user_id": "uuid references profiles(id)",
+          "tier_id": "integer",
+          "keyword": "text",
+          "kind": "text (keyword, subcategory, subinterest, cluster)",
+          "parent": "text nullable (for hierarchy)",
+          "count": "integer default 1",
+          "last_seen": "timestamp",
+          "created_at": "timestamp default now()"
+        },
+        "indexes": [
+          "user_id, tier_id",
+          "keyword",
+          "kind"
+        ]
+      },
+      "user_stats": {
+        "description": "Stores user statistics including current multiplier and locked query",
+        "columns": {
+          "id": "uuid primary key",
+          "user_id": "uuid references profiles(id)",
+          "current_multiplier": "float",
+          "locked_query": "text",
+          "locked_until": "timestamp",
+          "updated_at": "timestamp default now()"
+        }
+      }
+    }
+  },
+  
+  "api_endpoints": {
+    "classify": {
+      "path": "/api/classify-interest",
+      "method": "POST",
+      "description": "Classify a research query and return full analysis",
+      "request_body": "application/json",
+      "response_format": "application/json"
+    }
+  },
+  
+  "error_handling": {
+    "invalid_query": {
+      "status_code": 400,
+      "message": "Query must be 2-500 characters"
+    },
+    "rate_limited": {
+      "status_code": 429,
+      "message": "Too many requests, please retry"
+    },
+    "classification_failed": {
+      "status_code": 502,
+      "message": "Classification service unavailable"
+    }
+  }
+}
