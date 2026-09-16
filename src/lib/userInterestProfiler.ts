@@ -72,5 +72,6 @@ export async function deriveInterestTiers(consents: {
     return { id: t.id, score };
   });
   scored.sort((a, b) => b.score - a.score);
-  return scored.filter((s) => s.score > 0).slice(0, 5).map((s) => s.id);
+  // Return all tiers with score > 0, up to all 21 tiers
+  return scored.filter((s) => s.score > 0).slice(0, TIERS.length).map((s) => s.id);
 }

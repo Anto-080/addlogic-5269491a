@@ -72,6 +72,17 @@ export function useLockInterest() {
           subinterest: result.subinterest,
           clusters: result.clusters,
         });
+        // Persist all keyword types
+        if (result.primaryKeywords?.length) {
+          await persistKeywords(user.id, result.tierId, result.primaryKeywords, "keyword");
+        }
+        if (result.secondaryKeywords?.length) {
+          await persistKeywords(user.id, result.tierId, result.secondaryKeywords, "keyword");
+        }
+        if (result.aggregateKeywords?.length) {
+          await persistKeywords(user.id, result.tierId, result.aggregateKeywords, "keyword");
+        }
+        // Fallback to extracted keywords
         await persistKeywords(user.id, result.tierId, extractKeywords(trimmed));
       }
       return result;

@@ -1,6 +1,7 @@
-// Mistral Agent classifier — assigns a research query to one of the 18 tiers
-// and generates 1-3 dynamic, semantic subcategories.
+// Mistral Agent classifier — assigns a research query to one of the 21 tiers
+// and generates 1-3 dynamic, semantic subcategories plus keyword extraction.
 // Replaces the previous HuggingFace BART zero-shot classifier.
+// Schema: mistral-agent-schema.json in the repository root.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -32,25 +33,82 @@ const TIER_LABELS: { id: number; name: string }[] = [
   { id: 16, name: "Betting Services" },
   { id: 17, name: "Adult Entertainment" },
   { id: 18, name: "Tourism & Travel" },
-  { id: 19, name: "Sciences (Chemistry, Botany, Mathematics)" },
-  { id: 20, name: "Energy (Electromagnetic Induction, Fuels, Renewables)" },
+  { id: 19, name: "Sciences" },
+  { id: 20, name: "Energy" },
   { id: 21, name: "Women's Interests" },
 ];
 
-const SYSTEM_PROMPT = `You are a taxonomy engine for a privacy-first research platform. The user submits a free-form research query. Build a 3-level hierarchy plus semantic clusters. You MUST:
-1. Pick exactly ONE main category (tier) from the list below, by id — the best fit for the query.
-2. subcategory: ONE broader discipline inside that tier (e.g. query about virology -> "Microbiology").
-3. subinterest: ONE narrower specialisation inside that subcategory (e.g. "Virology", "Bacteriology").
-4. clusters: 1 to 3 concrete semantic clusters (entities, organisms, relations, concepts) taken from the query itself
-   (e.g. ["Rhodopseudomonas Palustris", "Microorganism-Human Biology Interaction"]).
-5. Estimate a confidence score in [0,1].
-Keep every label 1-5 words, in the same language as the query when possible. Never invent personal data about the user.
+const SYSTEM_PROMPT = `You are a taxonomy engine for a privacy-first research platform called AddLogic. Your task is to analyze research queries and perform the following functions:
 
-Tiers:
+## PRIMARY OBJECTIVES:
+1. FETCH KEYWORDS: Extract all meaningful keywords from the user's research query
+2. UNDERSTAND GENERAL ARGUMENT: Analyze the intent, type, and meaning of the query
+3. LOCK-IN SPECIFIC INTEREST: Match the query to exactly ONE of the predefined 21 tiers
+4. DEFINE SUBCATEGORY & SUBINTEREST: Create a 3-level hierarchy (tier > subcategory > subinterest)
+5. SAVE AGGREGATE ZERO-PARTY DATA: Store remaining keywords as aggregate data
+
+## RULES:
+### Classification Rules:
+- You MUST select exactly ONE tier from the predefined list (IDs 1-21)
+- The tier must be the BEST fit for the query
+- If the query could fit multiple tiers, choose the most specific/important one
+- Use confidence scores to indicate certainty (0.0-1.0)
+
+### Taxonomy Rules:
+- subcategory: ONE broader discipline inside the selected tier (1-5 words)
+- subinterest: ONE narrower specialization inside that subcategory (1-5 words)
+- clusters: 1-3 semantic clusters (entities, organisms, relations, concepts) from the query itself
+
+### Keyword Extraction Rules:
+- Extract ALL meaningful keywords (filter out common stopwords)
+- Keywords must be 4+ characters long
+- Primary keywords: directly relate to the classified tier/taxonomy
+- Secondary keywords: meaningful but don't fit primary classification
+- Aggregate zero-party data: ALL remaining keywords for future pattern analysis
+
+### Argument Analysis Rules:
+- primary_intent: What is the user trying to do? (research, comparison, tutorial, news, etc.)
+- argument_summary: Concise summary of what the query is asking/about
+- query_type: One of: question, statement, search, comparison, tutorial, news, review, analysis, other
+
+### Output Format:
+- Return ONLY a valid JSON object with the exact structure below
+- Never include explanations, apologies, or markdown
+- All string values must be 1-60 characters
+- Use the same language as the query when possible
+- Never invent personal data about the user
+
+### Predefined Tiers:
 ${TIER_LABELS.map((t) => `${t.id}. ${t.name}`).join("\n")}
 
-Return ONLY a JSON object with this exact shape, nothing else:
-{"tierId": <int>, "tierName": <string>, "confidence": <float 0..1>, "subcategory": <string>, "subinterest": <string>, "clusters": [<string>, ...]}`;
+Return ONLY a JSON object with this exact shape:
+{
+  \"tierId\": <int>, \"tierName\": <string>, \"confidence\": <float 0..1>, \"is_locked\": <boolean>,
+  \"subcategory\": <string>, \"subinterest\": <string>, \"clusters\": [<string>, ...],
+  \"argument_analysis\": {\"primary_intent\": <string>, \"argument_summary\": <string>, \"query_type\": <string>},
+  \"keywords\": {\"primary\": [<string>], \"secondary\": [<string>], \"aggregate\": [<string>]}
+}`;
+
+const STOPWORDS = new Set([
+  "the", "and", "for", "with", "from", "into", "this", "that", "these", "those",
+  "what", "when", "where", "why", "how", "who", "which", "is", "are", "was",
+  "were", "been", "being", "have", "has", "had", "do", "does", "did", "of",
+  "in", "on", "at", "to", "by", "as", "an", "a", "or", "but", "not", "no",
+  "yes", "i", "you", "he", "she", "it", "we", "they", "my", "your", "their",
+  "our", "his", "her", "its",
+]);
+
+function extractKeywordsFromText(text: string, max = 50): string[] {
+  return Array.from(
+    new Set(
+      text
+        .toLowerCase()
+        .replace(/[^\\p{L}\\p{N}\\s]/gu, " ")
+        .split(/\\s+/)
+        .filter((w) => w.length >= 4 && !STOPWORDS.has(w)),
+    ),
+  ).slice(0, max);
+}
 
 async function callMistral(query: string): Promise<{
   tierId: number | null;
@@ -60,6 +118,12 @@ async function callMistral(query: string): Promise<{
   subinterest: string | null;
   clusters: string[];
   subcategories: string[];
+  primary_intent?: string | null;
+  argument_summary?: string | null;
+  query_type?: string | null;
+  primary_keywords?: string[];
+  secondary_keywords?: string[];
+  aggregate_keywords?: string[];
 } | null> {
   const apiKey = Deno.env.get("MISTRAL_API_KEY");
   const agentId = Deno.env.get("MISTRAL_AGENT_ID");
@@ -150,6 +214,7 @@ async function callMistral(query: string): Promise<{
 
   const tierId = Number.isFinite(parsed.tierId) ? Number(parsed.tierId) : null;
   const tier = TIER_LABELS.find((t) => t.id === tierId);
+  const isLocked = tierId !== null && tier !== undefined && [1, 2, 3, 16, 17].includes(tierId);
 
   const clean = (v: unknown): string | null => {
     const s = typeof v === "string" ? v.trim() : "";
@@ -162,11 +227,42 @@ async function callMistral(query: string): Promise<{
 
   const subcategory = clean(parsed.subcategory);
   const subinterest = clean(parsed.subinterest);
-  // Clusters: accept `clusters`, fall back to the legacy `subcategories` array.
-  const clusters = cleanList(parsed.clusters).length
-    ? cleanList(parsed.clusters)
-    : cleanList(parsed.subcategories);
+  
+  // Clusters: accept `clusters`, fall back to the legacy `subcategories` array, or extract from keywords
+  let clusters = cleanList(parsed.clusters);
+  if (clusters.length === 0) {
+    clusters = cleanList(parsed.subcategories);
+  }
+  if (clusters.length === 0 && parsed.keywords?.primary) {
+    clusters = cleanList(parsed.keywords.primary).slice(0, 3);
+  }
+  
   const confidence = Math.max(0, Math.min(1, Number(parsed.confidence) || 0));
+
+  // Extract argument analysis
+  const argumentAnalysis = parsed.argument_analysis || {};
+  const primaryIntent = clean(argumentAnalysis.primary_intent);
+  const argumentSummary = clean(argumentAnalysis.argument_summary);
+  const queryType = clean(argumentAnalysis.query_type);
+
+  // Extract keywords
+  let primaryKeywords: string[] = [];
+  let secondaryKeywords: string[] = [];
+  let aggregateKeywords: string[] = [];
+
+  if (parsed.keywords) {
+    primaryKeywords = cleanList(parsed.keywords.primary || parsed.keywords.primary_keywords || []);
+    secondaryKeywords = cleanList(parsed.keywords.secondary || parsed.keywords.secondary_keywords || []);
+    aggregateKeywords = cleanList(parsed.keywords.aggregate || parsed.keywords.aggregate_zero_party_data || []);
+  }
+
+  // Fallback: extract from query text if not provided
+  if (primaryKeywords.length === 0 && secondaryKeywords.length === 0 && aggregateKeywords.length === 0) {
+    const allKeywords = extractKeywordsFromText(query);
+    primaryKeywords = allKeywords.slice(0, Math.min(5, allKeywords.length));
+    secondaryKeywords = allKeywords.slice(5, Math.min(10, allKeywords.length));
+    aggregateKeywords = allKeywords.slice(10);
+  }
 
   return {
     tierId: tier?.id ?? null,
@@ -175,8 +271,13 @@ async function callMistral(query: string): Promise<{
     subcategory,
     subinterest,
     clusters,
-    // Backwards-compatible flat list for older clients.
     subcategories: [subcategory, subinterest].filter(Boolean) as string[],
+    primary_intent: primaryIntent,
+    argument_summary: argumentSummary,
+    query_type: queryType,
+    primary_keywords: primaryKeywords,
+    secondary_keywords: secondaryKeywords,
+    aggregate_keywords: aggregateKeywords,
   };
 }
 
@@ -270,9 +371,8 @@ Deno.serve(async (req) => {
         // but their retribution is capped at the Science tier for regular users.
         const RESTRICTED = new Set([1, 2, 3, 16, 17]);
         const rawW = result.tierId ? tierWeights[result.tierId] ?? 1 : 1;
-        const w = result.tierId && RESTRICTED.has(result.tierId)
-          ? Math.min(rawW, tierWeights[19])
-          : rawW;
+        const isRestricted = result.tierId && RESTRICTED.has(result.tierId);
+        const w = isRestricted ? Math.min(rawW, tierWeights[19]) : rawW;
 
         const queryFactor = Math.max(1, w * (result.confidence || 0.5));
         const newMultiplier = Math.max(1, Math.min(20, base * queryFactor / 5));
@@ -289,8 +389,15 @@ Deno.serve(async (req) => {
       console.warn("multiplier persist failed:", (e as Error).message);
     }
 
+    // Build enhanced response with all fields
+    const response = {
+      ...result,
+      text,
+      is_locked: result.tierId ? [1, 2, 3, 16, 17].includes(result.tierId) : false,
+    };
+
     return new Response(
-      JSON.stringify({ ...result, text }),
+      JSON.stringify(response),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {

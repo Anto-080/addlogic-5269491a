@@ -5,6 +5,7 @@ export type ClassifyResult = {
   tierId: number | null;
   tierName: string | null;
   confidence: number;
+  isLocked?: boolean;
   /** Broader discipline inside the tier, e.g. "Microbiology". */
   subcategory: string | null;
   /** Narrower specialisation inside the subcategory, e.g. "Virology". */
@@ -14,6 +15,14 @@ export type ClassifyResult = {
   /** Legacy flat list = [subcategory, subinterest]. */
   subcategories: string[];
   text: string;
+  /** Argument analysis */
+  primaryIntent?: string | null;
+  argumentSummary?: string | null;
+  queryType?: string | null;
+  /** Keywords */
+  primaryKeywords?: string[];
+  secondaryKeywords?: string[];
+  aggregateKeywords?: string[];
 };
 
 export function normalizeClassifyResult(data: any, fallbackText: string): ClassifyResult {
@@ -21,15 +30,35 @@ export function normalizeClassifyResult(data: any, fallbackText: string): Classi
   const subinterest = data?.subinterest ?? null;
   const clusters = Array.isArray(data?.clusters) ? data.clusters : [];
   const legacy = Array.isArray(data?.subcategories) ? data.subcategories : [];
+  
+  // Extract argument analysis
+  const argumentAnalysis = data?.argument_analysis || {};
+  
+  // Extract keywords
+  const keywords = data?.keywords || {};
+  const primaryKeywords = Array.isArray(keywords.primary) ? keywords.primary : 
+                         Array.isArray(keywords.primary_keywords) ? keywords.primary_keywords : [];
+  const secondaryKeywords = Array.isArray(keywords.secondary) ? keywords.secondary : 
+                           Array.isArray(keywords.secondary_keywords) ? keywords.secondary_keywords : [];
+  const aggregateKeywords = Array.isArray(keywords.aggregate) ? keywords.aggregate : 
+                           Array.isArray(keywords.aggregate_zero_party_data) ? keywords.aggregate_zero_party_data : [];
+
   return {
     tierId: data?.tierId ?? null,
     tierName: data?.tierName ?? null,
     confidence: Number(data?.confidence) || 0,
+    isLocked: data?.is_locked ?? data?.isLocked ?? false,
     subcategory,
     subinterest,
     clusters: clusters.length ? clusters : legacy,
     subcategories: [subcategory, subinterest].filter(Boolean) as string[],
     text: data?.text ?? fallbackText,
+    primaryIntent: argumentAnalysis.primary_intent ?? null,
+    argumentSummary: argumentAnalysis.argument_summary ?? null,
+    queryType: argumentAnalysis.query_type ?? null,
+    primaryKeywords,
+    secondaryKeywords,
+    aggregateKeywords,
   };
 }
 
@@ -125,9 +154,9 @@ async function upsertTierKeyword(
 /**
  * Upserts each extracted keyword into `tier_keywords` (kind='keyword').
  */
-export async function persistKeywords(userId: string, tierId: number, keywords: string[]) {
+export async function persistKeywords(userId: string, tierId: number, keywords: string[], kind: KeywordKind = "keyword"): Promise<void> {
   for (const keyword of keywords) {
-    await upsertTierKeyword(userId, tierId, keyword, "keyword");
+    await upsertTierKeyword(userId, tierId, keyword, kind);
   }
 }
 
