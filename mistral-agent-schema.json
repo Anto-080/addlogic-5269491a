@@ -2,7 +2,7 @@
   "name": "AddLogic Research Query Classifier",
   "description": "A privacy-first taxonomy engine that classifies research queries into predefined tiers, extracts keywords, determines subcategories and subinterests, and aggregates zero-party data for user interest profiling.",
   "version": "1.0.0",
-  "model": "mistral-large-latest",
+  "model": "mistral-medium-latest",
   "temperature": 0.2,
   "max_tokens": 2000,
   
