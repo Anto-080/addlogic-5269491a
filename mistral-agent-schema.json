@@ -409,7 +409,7 @@ REMEMBER: You are ONLY a classifier. Return only JSON, nothing else.",
   },
   
   "example_request": {
-    "query": "How does CRISPR gene editing work in human cells?",
+    "query": "How does CRISPR gene editing pose dangers to human cells?",
     "user_id": "user_123",
     "session_id": "session_456"
   },
@@ -423,7 +423,7 @@ REMEMBER: You are ONLY a classifier. Return only JSON, nothing else.",
     },
     "argument_analysis": {
       "primary_intent": "research",
-      "argument_summary": "Understanding CRISPR gene editing mechanism in human cells",
+      "argument_summary": "Understanding CRISPR gene pose dangers to human cells",
       "query_type": "question"
     },
     "taxonomy": {
@@ -446,7 +446,7 @@ REMEMBER: You are ONLY a classifier. Return only JSON, nothing else.",
       "aggregate_zero_party_data": ["how", "does", "work"]
     },
     "metadata": {
-      "query": "How does CRISPR gene editing work in human cells?",
+      "query": "How does CRISPR gene editing pose dangers to human cells?",
       "language": "en",
       "processed_at": "2024-01-15T10:30:00Z",
       "processing_time_ms": 150
