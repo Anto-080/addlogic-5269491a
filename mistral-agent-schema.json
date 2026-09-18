@@ -423,7 +423,7 @@ REMEMBER: You are ONLY a classifier. Return only JSON, nothing else.",
     },
     "argument_analysis": {
       "primary_intent": "research",
-      "argument_summary": "Understanding CRISPR gene pose dangers to human cells",
+      "argument_summary": "Understanding CRISPR gene editing dangers to human cells",
       "query_type": "question"
     },
     "taxonomy": {
